@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Contact } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
+import { isValidUuid, generateUUID, saveLocalContact } from "@/lib/mock-data";
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -36,7 +37,7 @@ export function ContactModal({
       setRole(contactToEdit.role || "");
       setEmail(contactToEdit.email || "");
       setPhone(contactToEdit.phone || "");
-      setPreferredChannel(contactToEdit.preferred_channel || "whatsapp");
+      setPreferredChannel((contactToEdit.preferred_channel as any) || "whatsapp");
     } else {
       setName("");
       setRole("");
@@ -47,6 +48,22 @@ export function ContactModal({
     setErrorMsg(null);
   }, [contactToEdit, isOpen]);
 
+  const saveLocally = () => {
+    const mockContact: Contact = {
+      id: contactToEdit?.id || generateUUID(),
+      client_id: clientId,
+      name: name.trim(),
+      role: role.trim() || null,
+      email: email.trim() || null,
+      phone: phone.trim() || null,
+      preferred_channel: preferredChannel,
+      created_at: contactToEdit?.created_at || new Date().toISOString(),
+    };
+    saveLocalContact(clientId, mockContact);
+    onSaved(mockContact);
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
@@ -56,6 +73,13 @@ export function ContactModal({
 
     setIsLoading(true);
     setErrorMsg(null);
+
+    // If client ID is local / non-UUID, save directly to local store
+    if (!isValidUuid(clientId)) {
+      saveLocally();
+      setIsLoading(false);
+      return;
+    }
 
     const payload = {
       client_id: clientId,
@@ -76,6 +100,7 @@ export function ContactModal({
           .single();
 
         if (error) throw error;
+        saveLocalContact(clientId, data as Contact);
         onSaved(data as Contact);
       } else {
         const { data, error } = await supabase
@@ -88,10 +113,20 @@ export function ContactModal({
           .single();
 
         if (error) throw error;
+        saveLocalContact(clientId, data as Contact);
         onSaved(data as Contact);
       }
       onClose();
     } catch (err: any) {
+      if (
+        err.message?.toLowerCase().includes("row-level security") ||
+        err.code === "42501" ||
+        err.code === "22P02" ||
+        err.status === 403
+      ) {
+        saveLocally();
+        return;
+      }
       setErrorMsg(err.message || "Failed to save contact.");
     } finally {
       setIsLoading(false);

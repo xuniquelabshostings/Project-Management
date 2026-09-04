@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ContactModal } from "./ContactModal";
 import { supabase } from "@/lib/supabase/client";
+import { isValidUuid, deleteLocalContact } from "@/lib/mock-data";
 
 interface ContactsListProps {
   clientId: string;
@@ -30,13 +31,15 @@ export function ContactsList({ clientId, contacts, onContactsUpdated }: Contacts
 
   const handleDelete = async (contactId: string) => {
     if (!confirm("Are you sure you want to remove this contact?")) return;
+    deleteLocalContact(clientId, contactId);
     try {
-      const { error } = await supabase.from("contacts").delete().eq("id", contactId);
-      if (error) throw error;
-      onContactsUpdated();
+      if (isValidUuid(contactId)) {
+        await supabase.from("contacts").delete().eq("id", contactId);
+      }
     } catch (err: any) {
-      alert(`Failed to delete contact: ${err.message}`);
+      console.warn("Could not delete from Supabase:", err.message);
     }
+    onContactsUpdated();
   };
 
   const cleanPhoneForWa = (phone?: string | null) => {

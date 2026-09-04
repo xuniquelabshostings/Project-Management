@@ -1,4 +1,4 @@
-import { Client, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile } from "@/types/database.types";
+import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile } from "@/types/database.types";
 
 export const MOCK_PROFILES: Profile[] = [
   {
@@ -338,4 +338,69 @@ export function generateUUID(): string {
     const v = c === "x" ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+export function saveLocalContact(clientId: string, contact: Contact): void {
+  if (typeof window === "undefined") return;
+  try {
+    const clients = getLocalClients();
+    const targetClient = clients.find((c) => c.id === clientId);
+    if (targetClient) {
+      const currentContacts = targetClient.contacts || [];
+      const existingIndex = currentContacts.findIndex((c) => c.id === contact.id);
+      let updatedContacts: Contact[];
+      if (existingIndex >= 0) {
+        updatedContacts = [...currentContacts];
+        updatedContacts[existingIndex] = contact;
+      } else {
+        updatedContacts = [contact, ...currentContacts];
+      }
+      targetClient.contacts = updatedContacts;
+      saveLocalClient(targetClient);
+    }
+  } catch (err) {
+    console.warn("Failed to save local contact:", err);
+  }
+}
+
+export function deleteLocalContact(clientId: string, contactId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const clients = getLocalClients();
+    const targetClient = clients.find((c) => c.id === clientId);
+    if (targetClient && targetClient.contacts) {
+      targetClient.contacts = targetClient.contacts.filter((c) => c.id !== contactId);
+      saveLocalClient(targetClient);
+    }
+  } catch (err) {
+    console.warn("Failed to delete local contact:", err);
+  }
+}
+
+const LOCAL_ACTIVITIES_KEY = "xunique_custom_activities";
+
+export function getLocalActivities(clientId?: string): ActivityLogEntry[] {
+  if (typeof window === "undefined") {
+    return clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
+  }
+  try {
+    const raw = localStorage.getItem(LOCAL_ACTIVITIES_KEY);
+    const parsed: ActivityLogEntry[] = raw ? JSON.parse(raw) : [];
+    const all = [...parsed, ...MOCK_ACTIVITIES];
+    return clientId ? all.filter((a: ActivityLogEntry) => a.client_id === clientId) : all;
+  } catch {
+    return clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
+  }
+}
+
+export function saveLocalActivity(activity: ActivityLogEntry): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(LOCAL_ACTIVITIES_KEY);
+    const parsed: ActivityLogEntry[] = raw ? JSON.parse(raw) : [];
+    const updated = [activity, ...parsed.filter((a) => a.id !== activity.id)];
+    localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Failed to save local activity:", err);
+  }
 }
