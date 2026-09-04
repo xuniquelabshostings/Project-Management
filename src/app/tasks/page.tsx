@@ -32,6 +32,8 @@ export default function TasksPage() {
   const [selectedProject, setSelectedProject] = useState<string>("all");
   const [selectedPriority, setSelectedPriority] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"list" | "board">("board");
+  const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
 
   const fetchTasksAndProjects = async () => {
     try {
@@ -89,21 +91,28 @@ export default function TasksPage() {
   const globalColumns = ["To Do", "In Progress", "Review", "Done"];
 
   const handleMoveColumn = async (taskId: string, targetColumn: string) => {
-    try {
-      const { error } = await supabase
-        .from("tasks")
-        .update({
-          kanban_column: targetColumn,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", taskId);
+    // 1. Optimistically update local state immediately
+    setTasks((prev) =>
+      prev.map((t) => (t.id === taskId ? { ...t, kanban_column: targetColumn } : t))
+    );
 
-      if (error) throw error;
-      setTasks((prev) =>
-        prev.map((t) => (t.id === taskId ? { ...t, kanban_column: targetColumn } : t))
-      );
+    // 2. Sync to Supabase if it's a live database UUID
+    try {
+      if (!taskId.startsWith("a0000000")) {
+        const { error } = await supabase
+          .from("tasks")
+          .update({
+            kanban_column: targetColumn,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", taskId);
+
+        if (error) {
+          console.warn("Could not persist task move to Supabase:", error.message);
+        }
+      }
     } catch (err: any) {
-      alert(`Failed to move task: ${err.message}`);
+      console.warn("Error moving task:", err.message);
     }
   };
 
@@ -209,10 +218,38 @@ export default function TasksPage() {
                 (t) => t.kanban_column === colName
               );
 
+              const isColumnDraggedOver = dragOverColumn === colName;
+
               return (
                 <div
                   key={colName}
-                  className="rounded-lg border border-border bg-surface-elevated/40 p-3 flex flex-col min-w-[260px]"
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = "move";
+                    if (dragOverColumn !== colName) {
+                      setDragOverColumn(colName);
+                    }
+                  }}
+                  onDragLeave={(e) => {
+                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                      setDragOverColumn(null);
+                    }
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    const droppedTaskId =
+                      e.dataTransfer.getData("text/plain") || draggingTaskId;
+                    if (droppedTaskId) {
+                      handleMoveColumn(droppedTaskId, colName);
+                    }
+                    setDraggingTaskId(null);
+                    setDragOverColumn(null);
+                  }}
+                  className={`rounded-lg border transition-all duration-150 p-3 flex flex-col min-w-[260px] ${
+                    isColumnDraggedOver
+                      ? "border-accent bg-accent/10 ring-2 ring-accent/30 shadow-md scale-[1.01]"
+                      : "border-border bg-surface-elevated/40"
+                  }`}
                 >
                   <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
                     <span className="text-xs font-semibold text-foreground">
@@ -224,13 +261,37 @@ export default function TasksPage() {
                   </div>
 
                   <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[calc(100vh-280px)] min-h-[140px]">
-                    {colTasks.length === 0 ? (
+                    {/* Active Drag Drop Indicator */}
+                    {isColumnDraggedOver && draggingTaskId && (
+                      <div className="py-2.5 px-3 border-2 border-dashed border-accent/70 bg-accent/10 rounded-lg flex items-center justify-center text-xs font-medium text-accent animate-pulse">
+                        Drop to move to {colName}
+                      </div>
+                    )}
+
+                    {colTasks.length === 0 && !isColumnDraggedOver ? (
                       <div className="h-20 flex items-center justify-center border border-dashed border-border/40 rounded-md text-[11px] text-muted/60">
-                        No tasks in {colName}
+                        Drop tasks here
                       </div>
                     ) : (
                       colTasks.map((t) => (
-                        <div key={t.id} className="relative group">
+                        <div
+                          key={t.id}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("text/plain", t.id);
+                            e.dataTransfer.effectAllowed = "move";
+                            setDraggingTaskId(t.id);
+                          }}
+                          onDragEnd={() => {
+                            setDraggingTaskId(null);
+                            setDragOverColumn(null);
+                          }}
+                          className={`relative group select-none transition-all duration-150 ${
+                            draggingTaskId === t.id
+                              ? "opacity-35 scale-95 ring-2 ring-accent/40 rounded-lg"
+                              : "hover:-translate-y-0.5"
+                          }`}
+                        >
                           <div className="mb-1 text-[10px] text-muted flex items-center gap-1 truncate font-medium">
                             <Briefcase className="w-3 h-3 text-muted/70 shrink-0" />
                             <Link
@@ -240,14 +301,14 @@ export default function TasksPage() {
                               {t.project?.name || "Project"}
                             </Link>
                           </div>
-                          <TaskCard task={t} />
+                          <TaskCard task={t} isDragging={draggingTaskId === t.id} />
 
-                          {/* Quick stage switch */}
+                          {/* Quick stage switch fallback */}
                           <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-surface/95 border border-border rounded p-0.5 shadow-xs">
                             <select
                               value={t.kanban_column}
                               onChange={(e) => handleMoveColumn(t.id, e.target.value)}
-                              className="text-[9px] bg-transparent text-foreground border-0 focus:outline-none pr-1"
+                              className="text-[9px] bg-transparent text-foreground border-0 focus:outline-none pr-1 cursor-pointer"
                             >
                               {globalColumns.map((c) => (
                                 <option key={c} value={c}>

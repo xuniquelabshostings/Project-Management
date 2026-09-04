@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Calendar, MessageSquare, AlertCircle } from "lucide-react";
+import { Calendar, MessageSquare, AlertCircle, GripVertical } from "lucide-react";
 import { Task, TaskPriority } from "@/types/database.types";
 import { Badge } from "@/components/ui/badge";
 
@@ -30,14 +30,17 @@ export function TaskCard({ task, onClick, isDragging }: TaskCardProps) {
   return (
     <div
       onClick={onClick}
-      className={`p-3.5 rounded-lg border border-border bg-surface shadow-2xs hover:border-accent/50 cursor-pointer transition-all ${
+      className={`p-3.5 rounded-lg border border-border bg-surface shadow-2xs hover:border-accent/50 cursor-grab active:cursor-grabbing transition-all ${
         isDragging ? "opacity-50 rotate-1 shadow-lg scale-102" : ""
       }`}
     >
       <div className="flex items-start justify-between gap-2 mb-1.5">
-        <h4 className="text-xs font-medium text-foreground leading-snug line-clamp-2">
-          {task.title}
-        </h4>
+        <div className="flex items-start gap-1.5 flex-1 min-w-0">
+          <GripVertical className="w-3.5 h-3.5 text-muted/30 group-hover:text-muted/80 shrink-0 mt-0.5 transition-colors" />
+          <h4 className="text-xs font-medium text-foreground leading-snug line-clamp-2">
+            {task.title}
+          </h4>
+        </div>
         <div className="flex items-center gap-1.5 shrink-0 pt-0.5" title={`Priority: ${task.priority}`}>
           <span
             className={`w-2 h-2 rounded-full ${getPriorityDotColor(task.priority)}`}
