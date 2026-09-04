@@ -226,7 +226,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
             ))}
           </select>
           <p className="text-[11px] text-muted mt-1">
-            Account Managers only have RLS visibility into clients assigned to them.
+            The assigned account manager oversees client communication and deliverables.
           </p>
         </div>
 

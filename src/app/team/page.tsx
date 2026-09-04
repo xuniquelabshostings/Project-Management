@@ -129,7 +129,7 @@ export default function TeamPage() {
                 Team & User Permissions
               </h1>
               <p className="text-sm text-muted mt-1">
-                Manage roles and internal access boundaries enforced via Postgres Row Level Security
+                Manage team members, organizational roles, and workspace permissions
               </p>
             </div>
 
@@ -241,10 +241,10 @@ export default function TeamPage() {
             </CardContent>
           </Card>
 
-          {/* Security & Access Reference Card */}
+          {/* Roles Reference Card */}
           <Card className="bg-surface-elevated/40 border-border/60">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Role & RLS Access Control Matrix</CardTitle>
+              <CardTitle className="text-sm">Team Roles & Access Levels</CardTitle>
             </CardHeader>
             <CardContent className="text-xs text-muted space-y-2">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -131,7 +131,7 @@ export function TaskModal({
           </label>
           <Input
             required
-            placeholder="e.g. Implement Supabase Auth RLS policies"
+            placeholder="e.g. Redesign navigation menu"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />

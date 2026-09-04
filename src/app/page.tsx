@@ -279,10 +279,10 @@ export default function DashboardPage() {
                 <CardContent className="p-5 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-muted uppercase tracking-wider">
-                      Security Context
+                      Workspace Status
                     </p>
                     <h3 className="font-sans text-sm font-semibold text-foreground mt-1">
-                      RLS Protected
+                      Active Access
                     </h3>
                   </div>
                   <div className="w-10 h-10 rounded-md bg-success-bg text-success flex items-center justify-center">
@@ -438,24 +438,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {/* RLS Security Guard Info */}
-            <Card className="border-border/60 bg-surface-elevated/40">
-              <CardContent className="p-5 flex items-start gap-4">
-                <div className="p-2.5 rounded-md bg-accent-light text-accent shrink-0 mt-0.5">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-semibold text-foreground">
-                    Postgres Row Level Security (RLS) Enforcement
-                  </h4>
-                  <p className="text-xs text-muted mt-1 leading-relaxed">
-                    Data isolation is enforced at the database level by PostgreSQL policies.
-                    Developers cannot query financial figures, contracts, or unassigned projects.
-                    Account Managers can only access records belonging to their assigned clients.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+
           </div>
 
           {/* Right Column: Activity Feed or Quick Nav */}

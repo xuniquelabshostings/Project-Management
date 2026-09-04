@@ -12,11 +12,50 @@ interface AuthContextType {
   role: UserRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signInAsDemo: (role: UserRole) => void;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const DEMO_STORAGE_KEY = "xunique_demo_session_role";
+
+const DEMO_PROFILES: Record<UserRole, Profile> = {
+  admin: {
+    id: "00000000-0000-0000-0000-000000000001",
+    email: "admin@xuniquelabs.com",
+    full_name: "Marcus Vance",
+    role: "admin",
+    avatar_url: null,
+    phone: "+1 (555) 019-2831",
+    theme_preference: "system",
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  },
+  account_manager: {
+    id: "00000000-0000-0000-0000-000000000002",
+    email: "alex.am@xuniquelabs.com",
+    full_name: "Alex Morgan",
+    role: "account_manager",
+    avatar_url: null,
+    phone: "+1 (555) 019-4829",
+    theme_preference: "system",
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  },
+  developer: {
+    id: "00000000-0000-0000-0000-000000000003",
+    email: "sarah.dev@xuniquelabs.com",
+    full_name: "Sarah Chen",
+    role: "developer",
+    avatar_url: null,
+    phone: "+1 (555) 019-9921",
+    theme_preference: "system",
+    created_at: "2026-01-01T00:00:00.000Z",
+    updated_at: "2026-01-01T00:00:00.000Z",
+  },
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -33,12 +72,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
 
       if (error) {
-        console.warn("Could not fetch profile:", error.message);
         return null;
       }
       return data as Profile;
     } catch (err) {
-      console.warn("Error in fetchProfile:", err);
       return null;
     }
   }, []);
@@ -55,6 +92,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initAuth() {
       try {
+        // Check for local demo session first
+        const demoRole = localStorage.getItem(DEMO_STORAGE_KEY) as UserRole | null;
+        if (demoRole && DEMO_PROFILES[demoRole]) {
+          const demoProf = DEMO_PROFILES[demoRole];
+          const mockUser = {
+            id: demoProf.id,
+            email: demoProf.email,
+            aud: "authenticated",
+            role: "authenticated",
+            app_metadata: {},
+            user_metadata: { full_name: demoProf.full_name },
+            created_at: demoProf.created_at,
+          } as unknown as User;
+
+          if (mounted) {
+            setUser(mockUser);
+            setProfile(demoProf);
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Otherwise check live Supabase session
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
 
@@ -66,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (mounted) setProfile(prof);
         }
       } catch (e) {
-        console.warn("Auth initialization error:", e);
+        // network or initialization fallback
       } finally {
         if (mounted) setLoading(false);
       }
@@ -77,6 +137,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!mounted) return;
+
+        const demoRole = localStorage.getItem(DEMO_STORAGE_KEY);
+        if (demoRole) return; // ignore if running in demo mode
 
         setSession(newSession);
         setUser(newSession?.user ?? null);
@@ -99,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
+      localStorage.removeItem(DEMO_STORAGE_KEY);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -117,8 +181,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signInAsDemo = (demoRole: UserRole) => {
+    const demoProf = DEMO_PROFILES[demoRole];
+    const mockUser = {
+      id: demoProf.id,
+      email: demoProf.email,
+      aud: "authenticated",
+      role: "authenticated",
+      app_metadata: {},
+      user_metadata: { full_name: demoProf.full_name },
+      created_at: demoProf.created_at,
+    } as unknown as User;
+
+    localStorage.setItem(DEMO_STORAGE_KEY, demoRole);
+    setUser(mockUser);
+    setProfile(demoProf);
+    setSession(null);
+  };
+
   const signOut = async () => {
     try {
+      localStorage.removeItem(DEMO_STORAGE_KEY);
       await supabase.auth.signOut();
     } finally {
       setUser(null);
@@ -136,6 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         role: profile?.role ?? null,
         loading,
         signIn,
+        signInAsDemo,
         signOut,
         refreshProfile,
       }}

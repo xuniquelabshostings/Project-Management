@@ -112,7 +112,7 @@ export default function SettingsPage() {
                   <Mail className="w-4 h-4 text-muted absolute left-3 top-2.5 pointer-events-none" />
                 </div>
                 <p className="text-[11px] text-muted mt-1">
-                  Email addresses are managed via Supabase Auth
+                  Contact an administrator to change your registered email address.
                 </p>
               </div>
 

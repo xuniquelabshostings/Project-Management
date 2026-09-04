@@ -122,7 +122,7 @@ function ClientDetailContent() {
           Client Not Found or Access Denied
         </h2>
         <p className="text-xs text-muted mt-2">
-          This record may not exist or your account may not have PostgreSQL RLS permissions to view it.
+          This record may not exist or you do not have permission to access it.
         </p>
         <Link href="/clients">
           <Button variant="outline" size="sm" className="mt-4">

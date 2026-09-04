@@ -92,7 +92,7 @@ function DocumentsContent() {
             Document Repository
           </h1>
           <p className="text-sm text-muted mt-1">
-            Central file and contract storage &bull; Protected by Row Level Security
+            Central repository for client contracts, statements of work, and project assets
           </p>
         </div>
 

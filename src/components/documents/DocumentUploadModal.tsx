@@ -192,8 +192,7 @@ export function DocumentUploadModal({
               Mark as Sensitive / Confidential
             </label>
             <p className="text-[11px] text-muted mt-0.5">
-              Restricted via Postgres RLS to Administrators and assigned Account Managers.
-              Developers cannot view or query sensitive documents.
+              Sensitive documents (such as master contracts and credentials) are restricted to Administrators and Account Managers.
             </p>
           </div>
         </div>
