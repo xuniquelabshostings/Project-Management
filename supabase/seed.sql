@@ -1,8 +1,6 @@
 -- seed.sql
 -- Development seed data for Xunique Labs Internal Management Portal
-
--- NOTE: Replace user IDs below with your actual Supabase Auth user IDs after inviting them.
--- Here we provide clean seed templates:
+-- All UUIDs strictly use valid hex characters (0-9, a-f)
 
 -- 1. Sample Clients
 INSERT INTO public.clients (id, company_name, industry, website, status, lead_source, tags)
@@ -27,9 +25,9 @@ VALUES
     ('e0000000-0000-0000-0000-000000000002', 'c0000000-0000-0000-0000-000000000002', 'Clinical Data Dashboard', 'HIPAA compliant patient telemetry analytics pipeline', ARRAY['Python', 'React', 'FastAPI'], '2026-10-01', '2027-01-15', 52000.00, 'planning', ARRAY['To Do', 'In Progress', 'Review', 'Done'])
 ON CONFLICT (id) DO NOTHING;
 
--- 4. Sample Milestones
+-- 4. Sample Milestones (using valid hex 'f0000000-...')
 INSERT INTO public.milestones (id, project_id, title, description, due_date, completed)
 VALUES
-    ('m0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'Sprint 1: Architecture & Auth Setup', 'Base infrastructure and SSO authentication', '2026-09-15', true),
-    ('m0000000-0000-0000-0000-000000000002', 'e0000000-0000-0000-0000-000000000001', 'Sprint 2: Transaction History UI', 'High-throughput data tables with filter and export', '2026-10-01', false)
+    ('f0000000-0000-0000-0000-000000000001', 'e0000000-0000-0000-0000-000000000001', 'Sprint 1: Architecture & Auth Setup', 'Base infrastructure and SSO authentication', '2026-09-15', true),
+    ('f0000000-0000-0000-0000-000000000002', 'e0000000-0000-0000-0000-000000000001', 'Sprint 2: Transaction History UI', 'High-throughput data tables with filter and export', '2026-10-01', false)
 ON CONFLICT (id) DO NOTHING;
