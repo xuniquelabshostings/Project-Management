@@ -1,26 +1,113 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FAF9F5;
+  --surface: #FFFFFF;
+  --surface-elevated: #F5F2EB;
+  --surface-hover: #F0ECE2;
+  --foreground: #1F1B16;
+  --muted: #6B6459;
+  --muted-foreground: #8C8479;
+  --border: #E8E4DD;
+  --border-subtle: #F0EDE6;
+  --accent: #CC785C;
+  --accent-hover: #BA6A4F;
+  --accent-light: #FAF1EC;
+  --accent-foreground: #FFFFFF;
+  
+  --success: #4E7C53;
+  --success-bg: #EFF6F0;
+  --warning: #B37D28;
+  --warning-bg: #FAF5EB;
+  --danger: #B8503C;
+  --danger-bg: #FAEFED;
+  --info: #4F7090;
+  --info-bg: #EEF3F8;
+  
+  --ring: rgba(204, 120, 92, 0.35);
 }
 
-@theme inline {
+.dark {
+  --background: #1A1815;
+  --surface: #232019;
+  --surface-elevated: #2C2720;
+  --surface-hover: #342F27;
+  --foreground: #F2EFE9;
+  --muted: #9B9488;
+  --muted-foreground: #7D766A;
+  --border: #332E27;
+  --border-subtle: #29241E;
+  --accent: #D4896E;
+  --accent-hover: #E09A80;
+  --accent-light: #2C211B;
+  --accent-foreground: #FFFFFF;
+  
+  --success: #6E9973;
+  --success-bg: #1B281D;
+  --warning: #C79745;
+  --warning-bg: #292414;
+  --danger: #C85F4C;
+  --danger-bg: #2B1B18;
+  --info: #6A8CA8;
+  --info-bg: #18232D;
+  
+  --ring: rgba(212, 137, 110, 0.35);
+}
+
+@theme {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-light: var(--accent-light);
+  --color-accent-foreground: var(--accent-foreground);
+  
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
+  
+  --font-serif: var(--font-lora), Georgia, serif;
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-mono), monospace;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), system-ui, -apple-system, sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, .font-heading {
+  font-family: var(--font-lora), Georgia, serif;
+}
+
+/* Custom scrollbar matching the theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--muted);
 }
