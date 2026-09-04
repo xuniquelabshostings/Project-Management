@@ -366,7 +366,10 @@ function ClientDetailContent() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         clientToEdit={client}
-        onSaved={() => fetchClientFullData()}
+        onSaved={(updated) => {
+          setClient(updated);
+          fetchClientFullData();
+        }}
       />
     </div>
   );

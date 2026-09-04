@@ -417,7 +417,10 @@ export default function ClientsPage() {
         <ClientModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          onSaved={() => fetchClients()}
+          onSaved={(savedClient) => {
+            setClients((prev) => [savedClient, ...prev.filter((c) => c.id !== savedClient.id)]);
+            fetchClients();
+          }}
         />
       </RoleGate>
     </DashboardLayout>
