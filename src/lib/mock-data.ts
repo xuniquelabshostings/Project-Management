@@ -321,3 +321,21 @@ export function deleteLocalClient(clientId: string): Client[] {
     return MOCK_CLIENTS.filter((c) => c.id !== clientId);
   }
 }
+
+export function isValidUuid(str: string | null | undefined): boolean {
+  if (!str) return false;
+  // Match standard 8-4-4-4-12 hex UUID format (case insensitive)
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(str);
+}
+
+export function generateUUID(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}

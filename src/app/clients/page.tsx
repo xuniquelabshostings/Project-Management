@@ -27,7 +27,7 @@ import { ClientModal } from "@/components/clients/ClientModal";
 import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_CLIENTS, getLocalClients, saveLocalClient } from "@/lib/mock-data";
+import { MOCK_CLIENTS, getLocalClients, saveLocalClient, isValidUuid } from "@/lib/mock-data";
 
 export default function ClientsPage() {
   const { profile } = useAuth();
@@ -48,7 +48,7 @@ export default function ClientsPage() {
         .order("created_at", { ascending: false });
 
       if (data && data.length > 0) {
-        const localCustom = getLocalClients().filter((c) => c.id.includes("-local"));
+        const localCustom = getLocalClients().filter((c) => c.id.includes("-local") || !isValidUuid(c.id));
         const combined = [
           ...localCustom.filter((lc) => !data.some((d) => d.id === lc.id)),
           ...(data as Client[]),
@@ -79,34 +79,44 @@ export default function ClientsPage() {
       const matchesStatus =
         selectedStatus === "all" || c.status === selectedStatus;
 
-      const matchesSource =
+      const matchesLeadSource =
         selectedLeadSource === "all" || c.lead_source === selectedLeadSource;
 
-      return matchesSearch && matchesStatus && matchesSource;
+      return matchesSearch && matchesStatus && matchesLeadSource;
     });
   }, [clients, searchQuery, selectedStatus, selectedLeadSource]);
 
   const pipelineStages: { id: ClientStatus; label: string }[] = [
-    { id: "lead", label: "Lead" },
-    { id: "negotiation", label: "Negotiation" },
-    { id: "active", label: "Active" },
+    { id: "lead", label: "Lead Inbound" },
+    { id: "negotiation", label: "Proposal / Neg." },
+    { id: "active", label: "Active Project" },
     { id: "on_hold", label: "On Hold" },
-    { id: "churned", label: "Past / Churned" },
+    { id: "churned", label: "Completed / Churned" },
   ];
 
   const handleStatusChange = async (clientId: string, newStatus: ClientStatus) => {
-    try {
-      const { error } = await supabase
-        .from("clients")
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq("id", clientId);
+    // 1. Optimistic update in state & localStorage
+    setClients((prev) =>
+      prev.map((c) => {
+        if (c.id === clientId) {
+          const updated = { ...c, status: newStatus, updated_at: new Date().toISOString() };
+          saveLocalClient(updated);
+          return updated;
+        }
+        return c;
+      })
+    );
 
-      if (error) throw error;
-      setClients((prev) =>
-        prev.map((c) => (c.id === clientId ? { ...c, status: newStatus } : c))
-      );
+    // 2. Sync to Supabase if valid UUID
+    try {
+      if (isValidUuid(clientId)) {
+        await supabase
+          .from("clients")
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq("id", clientId);
+      }
     } catch (err: any) {
-      alert(`Failed to update status: ${err.message}`);
+      console.warn("Could not sync status to Supabase:", err.message);
     }
   };
 

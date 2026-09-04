@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Client, ClientStatus, LeadSource, Profile } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { saveLocalClient } from "@/lib/mock-data";
+import { saveLocalClient, generateUUID } from "@/lib/mock-data";
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -67,7 +67,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
 
   const saveLocally = (tagsArray: string[], safeAMId: string | null) => {
     const mockClient: Client = {
-      id: clientToEdit?.id || `c${Date.now()}-local`,
+      id: clientToEdit?.id || generateUUID(),
       company_name: companyName.trim(),
       industry: industry.trim() || null,
       website: website.trim() || null,

@@ -32,7 +32,7 @@ import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients } from "@/lib/mock-data";
+import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, isValidUuid } from "@/lib/mock-data";
 
 function ClientDetailContent() {
   const searchParams = useSearchParams();
@@ -52,7 +52,22 @@ function ClientDetailContent() {
     try {
       setIsLoading(true);
 
-      // 1. Fetch client
+      // 1. If not a valid UUID (e.g. legacy test ID), load directly from local store
+      if (!isValidUuid(clientId)) {
+        const localList = getLocalClients();
+        const fallback =
+          localList.find((c) => c.id === clientId) ||
+          MOCK_CLIENTS.find((c) => c.id === clientId) ||
+          MOCK_CLIENTS[0];
+        setClient(fallback);
+        setContacts(fallback.contacts || []);
+        setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
+        setProjects(MOCK_PROJECTS.filter((p) => p.client_id === fallback.id));
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Fetch client from live database
       const { data: clientData, error: clientErr } = await supabase
         .from("clients")
         .select("*, account_manager:profiles(*)")
@@ -61,7 +76,10 @@ function ClientDetailContent() {
 
       if (clientErr || !clientData) {
         const localList = getLocalClients();
-        const fallback = localList.find((c) => c.id === clientId) || MOCK_CLIENTS.find((c) => c.id === clientId) || MOCK_CLIENTS[0];
+        const fallback =
+          localList.find((c) => c.id === clientId) ||
+          MOCK_CLIENTS.find((c) => c.id === clientId) ||
+          MOCK_CLIENTS[0];
         if (fallback) {
           setClient(fallback);
           setContacts(fallback.contacts || []);
@@ -69,38 +87,46 @@ function ClientDetailContent() {
           setProjects(MOCK_PROJECTS.filter((p) => p.client_id === fallback.id));
           return;
         }
-        throw clientErr;
+      } else {
+        setClient(clientData as Client);
       }
 
-      setClient(clientData as Client);
-
-      // 2. Fetch contacts
+      // 3. Fetch contacts
       const { data: contactsData } = await supabase
         .from("contacts")
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: true });
-      if (contactsData) setContacts(contactsData as Contact[]);
+      if (contactsData && contactsData.length > 0) {
+        setContacts(contactsData as Contact[]);
+      }
 
-      // 3. Fetch activity log
+      // 4. Fetch activity log
       const { data: activitiesData } = await supabase
         .from("activity_log")
         .select("*, author:profiles(*)")
         .eq("client_id", clientId)
         .order("occurred_at", { ascending: false });
-      if (activitiesData) setActivities(activitiesData as ActivityLogEntry[]);
+      if (activitiesData && activitiesData.length > 0) {
+        setActivities(activitiesData as ActivityLogEntry[]);
+      }
 
-      // 4. Fetch linked projects
+      // 5. Fetch linked projects
       const { data: projectsData } = await supabase
         .from("projects")
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
-      if (projectsData) setProjects(projectsData as Project[]);
+      if (projectsData && projectsData.length > 0) {
+        setProjects(projectsData as Project[]);
+      }
     } catch (err: any) {
       console.warn("Error fetching client details, checking fallback:", err.message);
       const localList = getLocalClients();
-      const fallback = localList.find((c) => c.id === clientId) || MOCK_CLIENTS.find((c) => c.id === clientId) || MOCK_CLIENTS[0];
+      const fallback =
+        localList.find((c) => c.id === clientId) ||
+        MOCK_CLIENTS.find((c) => c.id === clientId) ||
+        MOCK_CLIENTS[0];
       if (fallback) {
         setClient(fallback);
         setContacts(fallback.contacts || []);

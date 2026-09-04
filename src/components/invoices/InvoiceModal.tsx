@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Invoice, InvoiceStatus, Client, Project, Milestone } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
+import { isValidUuid, MOCK_PROJECTS } from "@/lib/mock-data";
 
 interface LineItemDraft {
   id?: string;
@@ -61,11 +62,21 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
         setMilestones([]);
         return;
       }
+      if (!isValidUuid(clientId)) {
+        const localProjs = MOCK_PROJECTS.filter((p) => p.client_id === clientId);
+        setProjects(localProjs);
+        return;
+      }
       const { data } = await supabase
         .from("projects")
         .select("id, name")
         .eq("client_id", clientId);
-      if (data) setProjects(data as Project[]);
+      if (data && data.length > 0) {
+        setProjects(data as Project[]);
+      } else {
+        const localProjs = MOCK_PROJECTS.filter((p) => p.client_id === clientId);
+        setProjects(localProjs);
+      }
     }
     loadProjects();
   }, [clientId]);
