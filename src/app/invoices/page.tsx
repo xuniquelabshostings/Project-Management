@@ -27,6 +27,7 @@ import { InvoiceModal } from "@/components/invoices/InvoiceModal";
 import { Invoice, InvoiceStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { MOCK_INVOICES } from "@/lib/mock-data";
 
 export default function InvoicesPage() {
   const { profile } = useAuth();
@@ -46,9 +47,14 @@ export default function InvoicesPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      if (data) setInvoices(data as Invoice[]);
+      if (data && data.length > 0) {
+        setInvoices(data as Invoice[]);
+      } else {
+        setInvoices(MOCK_INVOICES);
+      }
     } catch (err: any) {
-      console.warn("Failed to load invoices:", err.message);
+      console.warn("Failed to load invoices, using fallback:", err.message);
+      setInvoices(MOCK_INVOICES);
     } finally {
       setIsLoading(false);
     }

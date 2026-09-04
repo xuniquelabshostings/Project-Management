@@ -22,6 +22,7 @@ import { ProjectModal } from "@/components/projects/ProjectModal";
 import { Project, ProjectStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
+import { MOCK_PROJECTS } from "@/lib/mock-data";
 
 function ProjectsContent() {
   const searchParams = useSearchParams();
@@ -42,10 +43,17 @@ function ProjectsContent() {
         .select("*, client:clients(*), members:project_members(*)")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      if (data) setProjects(data as Project[]);
+      if (data && data.length > 0) {
+        setProjects(data as Project[]);
+      } else {
+        const isDemo = typeof window !== "undefined" && localStorage.getItem("xunique_demo_session_role");
+        if (isDemo || !data || data.length === 0) {
+          setProjects(MOCK_PROJECTS);
+        }
+      }
     } catch (err: any) {
-      console.warn("Failed to load projects:", err.message);
+      console.warn("Failed to load projects, using fallback data:", err.message);
+      setProjects(MOCK_PROJECTS);
     } finally {
       setIsLoading(false);
     }

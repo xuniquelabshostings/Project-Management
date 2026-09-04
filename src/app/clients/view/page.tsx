@@ -32,6 +32,7 @@ import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
 import { useAuth } from "@/providers/AuthProvider";
+import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS } from "@/lib/mock-data";
 
 function ClientDetailContent() {
   const searchParams = useSearchParams();
@@ -58,7 +59,18 @@ function ClientDetailContent() {
         .eq("id", clientId)
         .single();
 
-      if (clientErr) throw clientErr;
+      if (clientErr || !clientData) {
+        const fallback = MOCK_CLIENTS.find((c) => c.id === clientId) || MOCK_CLIENTS[0];
+        if (fallback) {
+          setClient(fallback);
+          setContacts(fallback.contacts || []);
+          setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
+          setProjects(MOCK_PROJECTS.filter((p) => p.client_id === fallback.id));
+          return;
+        }
+        throw clientErr;
+      }
+
       setClient(clientData as Client);
 
       // 2. Fetch contacts
@@ -85,7 +97,14 @@ function ClientDetailContent() {
         .order("created_at", { ascending: false });
       if (projectsData) setProjects(projectsData as Project[]);
     } catch (err: any) {
-      console.warn("Error fetching client details:", err.message);
+      console.warn("Error fetching client details, checking fallback:", err.message);
+      const fallback = MOCK_CLIENTS.find((c) => c.id === clientId) || MOCK_CLIENTS[0];
+      if (fallback) {
+        setClient(fallback);
+        setContacts(fallback.contacts || []);
+        setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
+        setProjects(MOCK_PROJECTS.filter((p) => p.client_id === fallback.id));
+      }
     } finally {
       setIsLoading(false);
     }

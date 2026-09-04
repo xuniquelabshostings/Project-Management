@@ -27,6 +27,7 @@ import { ClientModal } from "@/components/clients/ClientModal";
 import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { MOCK_CLIENTS } from "@/lib/mock-data";
 
 export default function ClientsPage() {
   const { profile } = useAuth();
@@ -46,10 +47,17 @@ export default function ClientsPage() {
         .select("*, account_manager:profiles(*), contacts(*)")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
-      if (data) setClients(data as Client[]);
+      if (data && data.length > 0) {
+        setClients(data as Client[]);
+      } else {
+        const isDemo = typeof window !== "undefined" && localStorage.getItem("xunique_demo_session_role");
+        if (isDemo || !data || data.length === 0) {
+          setClients(MOCK_CLIENTS);
+        }
+      }
     } catch (err: any) {
-      console.warn("Failed to fetch clients:", err.message);
+      console.warn("Failed to fetch clients, using fallback data:", err.message);
+      setClients(MOCK_CLIENTS);
     } finally {
       setIsLoading(false);
     }

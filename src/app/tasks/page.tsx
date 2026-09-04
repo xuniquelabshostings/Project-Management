@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { Task, TaskPriority, Project } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
+import { MOCK_TASKS, MOCK_PROJECTS } from "@/lib/mock-data";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -44,10 +45,21 @@ export default function TasksPage() {
         supabase.from("projects").select("id, name").order("name", { ascending: true }),
       ]);
 
-      if (tasksRes.data) setTasks(tasksRes.data as Task[]);
-      if (projectsRes.data) setProjects(projectsRes.data as Project[]);
+      if (tasksRes.data && tasksRes.data.length > 0) {
+        setTasks(tasksRes.data as Task[]);
+      } else {
+        setTasks(MOCK_TASKS);
+      }
+
+      if (projectsRes.data && projectsRes.data.length > 0) {
+        setProjects(projectsRes.data as Project[]);
+      } else {
+        setProjects(MOCK_PROJECTS);
+      }
     } catch (err: any) {
-      console.warn("Failed to load tasks:", err.message);
+      console.warn("Failed to load tasks, using fallback:", err.message);
+      setTasks(MOCK_TASKS);
+      setProjects(MOCK_PROJECTS);
     } finally {
       setIsLoading(false);
     }
