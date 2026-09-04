@@ -27,7 +27,7 @@ import { ClientModal } from "@/components/clients/ClientModal";
 import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_CLIENTS } from "@/lib/mock-data";
+import { MOCK_CLIENTS, getLocalClients, saveLocalClient } from "@/lib/mock-data";
 
 export default function ClientsPage() {
   const { profile } = useAuth();
@@ -48,16 +48,18 @@ export default function ClientsPage() {
         .order("created_at", { ascending: false });
 
       if (data && data.length > 0) {
-        setClients(data as Client[]);
+        const localCustom = getLocalClients().filter((c) => c.id.includes("-local"));
+        const combined = [
+          ...localCustom.filter((lc) => !data.some((d) => d.id === lc.id)),
+          ...(data as Client[]),
+        ];
+        setClients(combined);
       } else {
-        const isDemo = typeof window !== "undefined" && localStorage.getItem("xunique_demo_session_role");
-        if (isDemo || !data || data.length === 0) {
-          setClients(MOCK_CLIENTS);
-        }
+        setClients(getLocalClients());
       }
     } catch (err: any) {
-      console.warn("Failed to fetch clients, using fallback data:", err.message);
-      setClients(MOCK_CLIENTS);
+      console.warn("Failed to fetch clients, using local store:", err.message);
+      setClients(getLocalClients());
     } finally {
       setIsLoading(false);
     }
@@ -418,8 +420,8 @@ export default function ClientsPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSaved={(savedClient) => {
+            saveLocalClient(savedClient);
             setClients((prev) => [savedClient, ...prev.filter((c) => c.id !== savedClient.id)]);
-            fetchClients();
           }}
         />
       </RoleGate>

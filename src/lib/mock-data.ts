@@ -271,3 +271,53 @@ export const MOCK_ACTIVITIES: ActivityLogEntry[] = [
     author: MOCK_PROFILES[1],
   },
 ];
+
+const LOCAL_CLIENTS_KEY = "xunique_custom_clients";
+
+export function getLocalClients(): Client[] {
+  if (typeof window === "undefined") return MOCK_CLIENTS;
+  try {
+    const raw = localStorage.getItem(LOCAL_CLIENTS_KEY);
+    if (!raw) return MOCK_CLIENTS;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const customIds = new Set(parsed.map((c: Client) => c.id));
+      const remainingDefaults = MOCK_CLIENTS.filter((c) => !customIds.has(c.id));
+      return [...parsed, ...remainingDefaults];
+    }
+    return MOCK_CLIENTS;
+  } catch {
+    return MOCK_CLIENTS;
+  }
+}
+
+export function saveLocalClient(client: Client): Client[] {
+  if (typeof window === "undefined") return [client, ...MOCK_CLIENTS];
+  try {
+    const current = getLocalClients();
+    const existingIndex = current.findIndex((c) => c.id === client.id);
+    let updated: Client[];
+    if (existingIndex >= 0) {
+      updated = [...current];
+      updated[existingIndex] = client;
+    } else {
+      updated = [client, ...current];
+    }
+    localStorage.setItem(LOCAL_CLIENTS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [client, ...MOCK_CLIENTS];
+  }
+}
+
+export function deleteLocalClient(clientId: string): Client[] {
+  if (typeof window === "undefined") return MOCK_CLIENTS.filter((c) => c.id !== clientId);
+  try {
+    const current = getLocalClients();
+    const updated = current.filter((c) => c.id !== clientId);
+    localStorage.setItem(LOCAL_CLIENTS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return MOCK_CLIENTS.filter((c) => c.id !== clientId);
+  }
+}

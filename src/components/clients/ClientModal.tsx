@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Client, ClientStatus, LeadSource, Profile } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { saveLocalClient } from "@/lib/mock-data";
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -64,7 +65,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
     setErrorMsg(null);
   }, [clientToEdit, isOpen, currentProfile]);
 
-  const saveLocally = (tagsArray: string[]) => {
+  const saveLocally = (tagsArray: string[], safeAMId: string | null) => {
     const mockClient: Client = {
       id: clientToEdit?.id || `c${Date.now()}-local`,
       company_name: companyName.trim(),
@@ -73,13 +74,14 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       status,
       lead_source: leadSource,
       tags: tagsArray,
-      account_manager_id: accountManagerId || null,
+      account_manager_id: safeAMId || null,
       account_manager:
-        accountManagers.find((am) => am.id === accountManagerId) || currentProfile || null,
+        accountManagers.find((am) => am.id === safeAMId) || currentProfile || null,
       contacts: clientToEdit?.contacts || [],
       created_at: clientToEdit?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
+    saveLocalClient(mockClient);
     onSaved(mockClient);
     onClose();
   };
@@ -101,17 +103,17 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
 
     const isDemo = !session || (currentProfile?.id && currentProfile.id.startsWith("00000000"));
 
-    if (isDemo) {
-      saveLocally(tagsArray);
-      setIsLoading(false);
-      return;
-    }
-
     // Sanitize accountManagerId: avoid sending mock ID to live database
     const safeAccountManagerId =
       accountManagerId && !accountManagerId.startsWith("00000000")
         ? accountManagerId
         : session?.user?.id || null;
+
+    if (isDemo) {
+      saveLocally(tagsArray, safeAccountManagerId);
+      setIsLoading(false);
+      return;
+    }
 
     const payload = {
       company_name: companyName.trim(),
@@ -134,6 +136,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
           .single();
 
         if (error) throw error;
+        saveLocalClient(data as Client);
         onSaved(data as Client);
       } else {
         const { data, error } = await supabase
@@ -146,6 +149,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
           .single();
 
         if (error) throw error;
+        saveLocalClient(data as Client);
         onSaved(data as Client);
       }
       onClose();
@@ -155,8 +159,8 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
         err.code === "42501" ||
         err.status === 403
       ) {
-        // Fallback locally so the user is never stuck during testing
-        saveLocally(tagsArray);
+        // Fallback locally and persist so the newly added client appears right away
+        saveLocally(tagsArray, safeAccountManagerId);
         return;
       }
       setErrorMsg(err.message || "Failed to save client.");
