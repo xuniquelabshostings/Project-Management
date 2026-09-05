@@ -378,7 +378,7 @@ export function AgreementModal({
             </label>
             <Input
               type="text"
-              placeholder="e.g. Hosting costs on AWS/Supabase to be billed directly to Client"
+              placeholder="e.g. Cloud hosting and external infrastructure costs to be billed directly to Client"
               value={specialTerms}
               onChange={(e) => setSpecialTerms(e.target.value)}
               className="text-sm"

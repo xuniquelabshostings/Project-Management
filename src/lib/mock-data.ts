@@ -616,7 +616,7 @@ export const MOCK_AGREEMENTS: Agreement[] = [
     payment_terms: "50% upfront retainer prior to development kickoff, 50% upon final milestone inspection and code delivery.",
     scope_of_work: "Full-stack React & Next.js frontend, secure REST APIs, automated transaction monitoring dashboard, and Supabase database architecture with strict Row Level Security.",
     warranty_days: 14,
-    special_terms: "All cloud hosting and external infrastructure costs (AWS, Supabase, Vercel) to be directly billed to and managed by Client.",
+    special_terms: "All cloud hosting and external infrastructure costs to be directly billed to and managed by Client.",
     status: "active",
     created_at: "2026-08-15T10:00:00Z",
     client: MOCK_CLIENTS[0],
@@ -649,9 +649,21 @@ export function getLocalAgreements(): Agreement[] {
     if (!raw) return MOCK_AGREEMENTS;
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed) && parsed.length > 0) {
-      const customIds = new Set(parsed.map((a: Agreement) => a.id));
+      const sanitized = parsed.map((a: Agreement) => {
+        if (a.special_terms && a.special_terms.includes("(AWS, Supabase, Vercel)")) {
+          return {
+            ...a,
+            special_terms: a.special_terms
+              .replace(/\s*\(AWS,\s*Supabase,\s*Vercel\):?/gi, "")
+              .replace(/AWS,\s*Supabase,\s*Vercel:?/gi, "")
+              .trim(),
+          };
+        }
+        return a;
+      });
+      const customIds = new Set(sanitized.map((a: Agreement) => a.id));
       const remainingDefaults = MOCK_AGREEMENTS.filter((a) => !customIds.has(a.id));
-      return [...parsed, ...remainingDefaults];
+      return [...sanitized, ...remainingDefaults];
     }
     return MOCK_AGREEMENTS;
   } catch {
