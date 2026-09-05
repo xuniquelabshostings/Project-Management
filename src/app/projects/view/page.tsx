@@ -7,7 +7,7 @@ import {
   Briefcase,
   Calendar,
   Building2,
-  DollarSign,
+  IndianRupee,
   ArrowLeft,
   Edit2,
   CheckSquare,
@@ -17,6 +17,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { formatINR } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -184,10 +185,10 @@ function ProjectWorkspaceContent() {
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted pt-1">
                 {project.budget && (isAdmin || isAccountManager) && (
                   <span className="flex items-center gap-1">
-                    <DollarSign className="w-3.5 h-3.5 text-accent" />
+                    <IndianRupee className="w-3.5 h-3.5 text-accent" />
                     Budget:{" "}
                     <strong className="text-foreground font-mono">
-                      ${Number(project.budget).toLocaleString()}
+                      {formatINR(project.budget)}
                     </strong>
                   </span>
                 )}

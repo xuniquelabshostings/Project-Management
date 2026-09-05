@@ -51,7 +51,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
             fontSize={11}
             tickLine={false}
             axisLine={{ stroke: "var(--border)" }}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            tickFormatter={(value) => `₹${(value / 1000).toFixed(0)}k`}
           />
           <Tooltip
             contentStyle={{
@@ -61,7 +61,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
               fontSize: "12px",
               color: "var(--foreground)",
             }}
-            formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Revenue"]}
+            formatter={(value: any) => [`₹${Number(value).toLocaleString("en-IN")}`, "Revenue"]}
           />
           <Area
             type="monotone"

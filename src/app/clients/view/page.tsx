@@ -31,8 +31,8 @@ import { ContactsList } from "@/components/clients/ContactsList";
 import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
-import { useAuth } from "@/providers/AuthProvider";
 import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, getLocalProjects, getLocalActivities, isValidUuid } from "@/lib/mock-data";
+import { formatINR } from "@/lib/utils";
 
 function ClientDetailContent() {
   const searchParams = useSearchParams();
@@ -390,7 +390,7 @@ function ClientDetailContent() {
                     <span>
                       Budget:{" "}
                       <strong className="text-foreground font-mono">
-                        {proj.budget ? `$${Number(proj.budget).toLocaleString()}` : "Not set"}
+                        {proj.budget ? formatINR(proj.budget) : "Not set"}
                       </strong>
                     </span>
                     <Link

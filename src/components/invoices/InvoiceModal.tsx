@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, DollarSign } from "lucide-react";
+import { Plus, Trash2, IndianRupee } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Invoice, InvoiceStatus, Client, Project, Milestone } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { isValidUuid, MOCK_PROJECTS, getLocalClients, getLocalProjects } from "@/lib/mock-data";
+import { formatINR } from "@/lib/utils";
 
 interface LineItemDraft {
   id?: string;
@@ -453,13 +454,13 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
                   min="0"
                   step="50"
                   required
-                  placeholder="Rate"
+                  placeholder="Rate (₹)"
                   value={li.unit_price}
                   onChange={(e) => handleLineItemChange(idx, "unit_price", e.target.value)}
                   className="w-24 text-xs font-mono"
                 />
-                <span className="w-20 text-right font-mono font-medium text-foreground">
-                  ${((Number(li.quantity) || 1) * (Number(li.unit_price) || 0)).toLocaleString()}
+                <span className="w-24 text-right font-mono font-medium text-foreground">
+                  {formatINR((Number(li.quantity) || 1) * (Number(li.unit_price) || 0))}
                 </span>
                 <button
                   type="button"
@@ -477,7 +478,7 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
             <div className="text-right">
               <span className="text-xs text-muted mr-3">Total Amount:</span>
               <span className="font-serif font-bold text-base text-foreground font-mono">
-                ${grandTotal.toLocaleString()}
+                {formatINR(grandTotal)}
               </span>
             </div>
           </div>

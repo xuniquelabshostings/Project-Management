@@ -275,13 +275,13 @@ export function ProjectModal({
 
           <div>
             <label className="block text-xs font-medium text-foreground mb-1.5">
-              Estimated Budget (USD)
+              Estimated Budget (INR - ₹)
             </label>
             <Input
               type="number"
               min="0"
-              step="100"
-              placeholder="25000"
+              step="1000"
+              placeholder="250000"
               value={budget}
               onChange={(e) => setBudget(e.target.value)}
             />

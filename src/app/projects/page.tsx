@@ -8,7 +8,7 @@ import {
   Plus,
   Search,
   Calendar,
-  DollarSign,
+  IndianRupee,
   ArrowRight,
   Code2,
   Building2,
@@ -23,6 +23,7 @@ import { Project, ProjectStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
 import { MOCK_PROJECTS, getLocalProjects, saveLocalProject } from "@/lib/mock-data";
+import { formatINR } from "@/lib/utils";
 
 function ProjectsContent() {
   const searchParams = useSearchParams();
@@ -137,7 +138,7 @@ function ProjectsContent() {
             <div className="text-xs text-muted font-mono bg-surface border border-border px-2.5 py-1.5 rounded-md">
               Total Budget:{" "}
               <span className="text-foreground font-semibold">
-                ${totalBudget.toLocaleString()}
+                {formatINR(totalBudget)}
               </span>
             </div>
           )}
@@ -216,7 +217,7 @@ function ProjectsContent() {
                 <div>
                   {project.budget ? (
                     <span className="text-muted font-mono">
-                      ${Number(project.budget).toLocaleString()}
+                      {formatINR(project.budget)}
                     </span>
                   ) : (
                     <span className="text-muted/60">No budget set</span>

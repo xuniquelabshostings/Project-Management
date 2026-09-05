@@ -7,7 +7,7 @@ import {
   Briefcase,
   CheckSquare,
   Receipt,
-  DollarSign,
+  IndianRupee,
   Calendar,
   Clock,
   ArrowUpRight,
@@ -34,6 +34,7 @@ import {
   MOCK_INVOICES,
   MOCK_ACTIVITIES,
 } from "@/lib/mock-data";
+import { formatINR } from "@/lib/utils";
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -151,11 +152,7 @@ export default function DashboardPage() {
   }, [isAdmin, isAccountManager]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(amount);
+    return formatINR(amount);
   };
 
   return (
@@ -250,7 +247,7 @@ export default function DashboardPage() {
                     </h3>
                   </div>
                   <div className="w-10 h-10 rounded-md bg-warning-bg text-warning flex items-center justify-center">
-                    <DollarSign className="w-5 h-5" />
+                    <IndianRupee className="w-5 h-5" />
                   </div>
                 </CardContent>
               </Card>
@@ -393,7 +390,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-danger font-mono font-bold">
-                        ${Number(inv.total_amount).toLocaleString()}
+                        {formatINR(inv.total_amount)}
                       </span>
                       <span className="text-muted font-mono text-[11px]">
                         Due: {new Date(inv.due_date).toLocaleDateString()}

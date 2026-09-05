@@ -9,7 +9,7 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  DollarSign,
+  IndianRupee,
   ArrowUpRight,
   Shield,
   Send,
@@ -28,6 +28,7 @@ import { Invoice, InvoiceStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { MOCK_INVOICES } from "@/lib/mock-data";
+import { formatINR } from "@/lib/utils";
 
 export default function InvoicesPage() {
   const { profile } = useAuth();
@@ -167,7 +168,7 @@ export default function InvoicesPage() {
                     Total Paid Revenue
                   </p>
                   <h3 className="font-serif text-2xl font-bold text-foreground mt-1">
-                    ${totalPaid.toLocaleString()}
+                    {formatINR(totalPaid)}
                   </h3>
                 </div>
                 <div className="w-10 h-10 rounded-md bg-success-bg text-success flex items-center justify-center">
@@ -183,7 +184,7 @@ export default function InvoicesPage() {
                     Outstanding Receivables
                   </p>
                   <h3 className="font-serif text-2xl font-bold text-foreground mt-1">
-                    ${totalOutstanding.toLocaleString()}
+                    {formatINR(totalOutstanding)}
                   </h3>
                 </div>
                 <div className="w-10 h-10 rounded-md bg-warning-bg text-warning flex items-center justify-center">
@@ -199,7 +200,7 @@ export default function InvoicesPage() {
                     Overdue Invoices
                   </p>
                   <h3 className="font-serif text-2xl font-bold text-foreground mt-1">
-                    ${totalOverdue.toLocaleString()}
+                    {formatINR(totalOverdue)}
                   </h3>
                 </div>
                 <div className="w-10 h-10 rounded-md bg-danger-bg text-danger flex items-center justify-center">
@@ -308,7 +309,7 @@ export default function InvoicesPage() {
                         </TableCell>
 
                         <TableCell className="text-right font-mono font-bold text-sm text-foreground">
-                          ${Number(inv.total_amount).toLocaleString()}
+                          {formatINR(inv.total_amount)}
                         </TableCell>
 
                         <TableCell className="text-right">
