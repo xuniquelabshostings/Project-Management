@@ -30,6 +30,17 @@ import { TaskModal } from "@/components/tasks/TaskModal";
 import { Project, Task, Milestone, ProjectMember } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
+import {
+  MOCK_PROJECTS,
+  MOCK_CLIENTS,
+  MOCK_TASKS,
+  MOCK_MILESTONES,
+  MOCK_PROFILES,
+  getLocalProjects,
+  getLocalClients,
+  getLocalTasks,
+  isValidUuid,
+} from "@/lib/mock-data";
 
 function ProjectWorkspaceContent() {
   const searchParams = useSearchParams();
@@ -51,44 +62,139 @@ function ProjectWorkspaceContent() {
     try {
       setIsLoading(true);
 
-      // 1. Fetch project info
-      const { data: pData, error: pErr } = await supabase
-        .from("projects")
-        .select("*, client:clients(*)")
-        .eq("id", projectId)
-        .single();
+      const localProjects = getLocalProjects();
+      const localClients = getLocalClients();
+      const fallbackProj =
+        localProjects.find((p) => p.id === projectId) ||
+        MOCK_PROJECTS.find((p) => p.id === projectId);
 
-      if (pErr) throw pErr;
-      setProject(pData as Project);
+      // 1. Fetch project info from Supabase if valid UUID
+      let activeProj: Project | null = null;
+      if (isValidUuid(projectId)) {
+        try {
+          const { data: pData, error: pErr } = await supabase
+            .from("projects")
+            .select("*, client:clients(*)")
+            .eq("id", projectId)
+            .single();
+
+          if (!pErr && pData) {
+            activeProj = pData as Project;
+          }
+        } catch {
+          // use fallback
+        }
+      }
+
+      if (!activeProj && fallbackProj) {
+        activeProj = { ...fallbackProj };
+      }
+
+      if (activeProj) {
+        if (!activeProj.client && activeProj.client_id) {
+          activeProj.client =
+            localClients.find((c) => c.id === activeProj!.client_id) ||
+            MOCK_CLIENTS.find((c) => c.id === activeProj!.client_id) ||
+            MOCK_CLIENTS[0];
+        }
+        setProject(activeProj);
+      } else {
+        setProject(null);
+      }
 
       // 2. Fetch tasks
-      const { data: tData } = await supabase
-        .from("tasks")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("column_order", { ascending: true })
-        .order("created_at", { ascending: false });
+      const localTasks = getLocalTasks(projectId);
+      let fetchedTasks: Task[] = [];
+      if (isValidUuid(projectId)) {
+        try {
+          const { data: tData } = await supabase
+            .from("tasks")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("column_order", { ascending: true })
+            .order("created_at", { ascending: false });
 
-      if (tData) setTasks(tData as Task[]);
+          if (tData && tData.length > 0) {
+            fetchedTasks = tData as Task[];
+          }
+        } catch {}
+      }
+
+      if (fetchedTasks.length > 0) {
+        const customT = localTasks.filter((lt) => !fetchedTasks.some((ft) => ft.id === lt.id));
+        setTasks([...fetchedTasks, ...customT]);
+      } else {
+        setTasks(localTasks);
+      }
 
       // 3. Fetch milestones
-      const { data: mData } = await supabase
-        .from("milestones")
-        .select("*")
-        .eq("project_id", projectId)
-        .order("due_date", { ascending: true });
+      const mockMilestones = MOCK_MILESTONES.filter((m) => m.project_id === projectId);
+      let fetchedMilestones: Milestone[] = [];
+      if (isValidUuid(projectId)) {
+        try {
+          const { data: mData } = await supabase
+            .from("milestones")
+            .select("*")
+            .eq("project_id", projectId)
+            .order("due_date", { ascending: true });
 
-      if (mData) setMilestones(mData as Milestone[]);
+          if (mData && mData.length > 0) {
+            fetchedMilestones = mData as Milestone[];
+          }
+        } catch {}
+      }
+
+      if (fetchedMilestones.length > 0) {
+        const customM = mockMilestones.filter((mm) => !fetchedMilestones.some((fm) => fm.id === mm.id));
+        setMilestones([...fetchedMilestones, ...customM]);
+      } else {
+        setMilestones(mockMilestones);
+      }
 
       // 4. Fetch team members
-      const { data: memData } = await supabase
-        .from("project_members")
-        .select("*, user:profiles(*)")
-        .eq("project_id", projectId);
+      let fetchedMembers: ProjectMember[] = [];
+      if (isValidUuid(projectId)) {
+        try {
+          const { data: memData } = await supabase
+            .from("project_members")
+            .select("*, user:profiles(*)")
+            .eq("project_id", projectId);
 
-      if (memData) setMembers(memData as ProjectMember[]);
+          if (memData && memData.length > 0) {
+            fetchedMembers = memData as ProjectMember[];
+          }
+        } catch {}
+      }
+
+      if (fetchedMembers.length > 0) {
+        setMembers(fetchedMembers);
+      } else {
+        const defaultMembers: ProjectMember[] = [
+          {
+            id: `mem-${projectId}-1`,
+            project_id: projectId,
+            user_id: MOCK_PROFILES[0].id,
+            project_role: "lead",
+            created_at: new Date().toISOString(),
+            user: MOCK_PROFILES[0],
+          },
+          {
+            id: `mem-${projectId}-2`,
+            project_id: projectId,
+            user_id: MOCK_PROFILES[2].id,
+            project_role: "contributor",
+            created_at: new Date().toISOString(),
+            user: MOCK_PROFILES[2],
+          },
+        ];
+        setMembers(defaultMembers);
+      }
     } catch (err: any) {
       console.warn("Failed to fetch project workspace data:", err.message);
+      const fallbackProj = getLocalProjects().find((p) => p.id === projectId) || MOCK_PROJECTS[0];
+      setProject(fallbackProj);
+      setTasks(getLocalTasks(projectId));
+      setMilestones(MOCK_MILESTONES.filter((m) => m.project_id === projectId));
     } finally {
       setIsLoading(false);
     }

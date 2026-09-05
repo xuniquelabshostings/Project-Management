@@ -469,3 +469,51 @@ export function deleteLocalProject(projectId: string): Project[] {
     return MOCK_PROJECTS.filter((p) => p.id !== projectId);
   }
 }
+
+const LOCAL_TASKS_KEY = "xunique_custom_tasks";
+
+export function getLocalTasks(projectId?: string): Task[] {
+  if (typeof window === "undefined") {
+    return projectId ? MOCK_TASKS.filter((t) => t.project_id === projectId) : MOCK_TASKS;
+  }
+  try {
+    const raw = localStorage.getItem(LOCAL_TASKS_KEY);
+    const parsed: Task[] = raw ? JSON.parse(raw) : [];
+    const customIds = new Set(parsed.map((t) => t.id));
+    const all = [...parsed, ...MOCK_TASKS.filter((t) => !customIds.has(t.id))];
+    return projectId ? all.filter((t) => t.project_id === projectId) : all;
+  } catch {
+    return projectId ? MOCK_TASKS.filter((t) => t.project_id === projectId) : MOCK_TASKS;
+  }
+}
+
+export function saveLocalTask(task: Task): Task[] {
+  if (typeof window === "undefined") return [task, ...MOCK_TASKS];
+  try {
+    const current = getLocalTasks();
+    const existingIndex = current.findIndex((t) => t.id === task.id);
+    let updated: Task[];
+    if (existingIndex >= 0) {
+      updated = [...current];
+      updated[existingIndex] = task;
+    } else {
+      updated = [task, ...current];
+    }
+    localStorage.setItem(LOCAL_TASKS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [task, ...MOCK_TASKS];
+  }
+}
+
+export function deleteLocalTask(taskId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const current = getLocalTasks();
+    const updated = current.filter((t) => t.id !== taskId);
+    localStorage.setItem(LOCAL_TASKS_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Failed to delete local task:", err);
+  }
+}
+

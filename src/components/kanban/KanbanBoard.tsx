@@ -7,6 +7,7 @@ import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskModal } from "@/components/tasks/TaskModal";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase/client";
+import { saveLocalTask, deleteLocalTask, isValidUuid } from "@/lib/mock-data";
 
 interface KanbanBoardProps {
   projectId: string;
@@ -44,10 +45,11 @@ export function KanbanBoard({
 
     // Optimistically update
     task.kanban_column = targetColumn;
+    saveLocalTask(task);
     onTasksUpdated();
 
     try {
-      if (!task.id.startsWith("a0000000")) {
+      if (isValidUuid(task.id) && !task.id.startsWith("a0000000")) {
         const { error } = await supabase
           .from("tasks")
           .update({
@@ -57,11 +59,11 @@ export function KanbanBoard({
           .eq("id", task.id);
 
         if (error) {
-          console.warn("Could not update task column:", error.message);
+          console.warn("Could not update task column in database:", error.message);
         }
       }
     } catch (err: any) {
-      console.warn("Failed to move task:", err.message);
+      console.warn("Failed to move task in database:", err.message);
     }
   };
 
@@ -69,13 +71,15 @@ export function KanbanBoard({
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this task?")) return;
 
+    deleteLocalTask(taskId);
     try {
-      const { error } = await supabase.from("tasks").delete().eq("id", taskId);
-      if (error) throw error;
-      onTasksUpdated();
+      if (isValidUuid(taskId)) {
+        await supabase.from("tasks").delete().eq("id", taskId);
+      }
     } catch (err: any) {
-      alert(`Failed to delete task: ${err.message}`);
+      console.warn("Failed to delete task in database:", err.message);
     }
+    onTasksUpdated();
   };
 
   return (

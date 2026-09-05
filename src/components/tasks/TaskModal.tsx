@@ -7,6 +7,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Task, TaskPriority, Profile, Project } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { saveLocalTask, isValidUuid, generateUUID } from "@/lib/mock-data";
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -59,13 +60,36 @@ export function TaskModal({
       setErrorMsg("Task title is required.");
       return;
     }
-    if (!profile) {
-      setErrorMsg("You must be logged in to create or edit tasks.");
-      return;
-    }
 
     setIsLoading(true);
     setErrorMsg(null);
+
+    const authorId = profile?.id || "00000000-0000-0000-0000-000000000001";
+
+    const saveLocally = () => {
+      const mockTask: Task = {
+        id: taskToEdit?.id || generateUUID(),
+        project_id: projectId,
+        title: title.trim(),
+        description: description.trim() || null,
+        priority,
+        kanban_column: column,
+        due_date: dueDate || null,
+        column_order: taskToEdit?.column_order || 0,
+        created_by: authorId,
+        created_at: taskToEdit?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      saveLocalTask(mockTask);
+      onSaved(mockTask);
+      onClose();
+    };
+
+    if (!isValidUuid(projectId) || authorId.startsWith("00000000")) {
+      saveLocally();
+      setIsLoading(false);
+      return;
+    }
 
     const payload = {
       project_id: projectId,
@@ -87,6 +111,7 @@ export function TaskModal({
           .single();
 
         if (error) throw error;
+        saveLocalTask(data as Task);
         onSaved(data as Task);
       } else {
         const { data, error } = await supabase
@@ -94,18 +119,20 @@ export function TaskModal({
           .insert({
             ...payload,
             column_order: 0,
-            created_by: profile.id,
+            created_by: authorId,
             created_at: new Date().toISOString(),
           })
           .select()
           .single();
 
         if (error) throw error;
+        saveLocalTask(data as Task);
         onSaved(data as Task);
       }
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to save task.");
+      console.warn("Falling back to local task store:", err.message);
+      saveLocally();
     } finally {
       setIsLoading(false);
     }
