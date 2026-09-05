@@ -42,16 +42,17 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
       existingFrame.remove();
     }
 
-    // Create an isolated hidden iframe
+    // Create an isolated hidden iframe with desktop dimensions so media queries don't collapse
     const iframe = document.createElement("iframe");
     iframe.id = "invoice-print-frame";
     iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
+    iframe.style.left = "-9999px";
+    iframe.style.top = "0";
+    iframe.style.width = "1024px";
+    iframe.style.height = "1400px";
     iframe.style.border = "0";
-    iframe.style.visibility = "hidden";
+    iframe.style.opacity = "0";
+    iframe.style.pointerEvents = "none";
     document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow?.document;
@@ -233,7 +234,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
             className="w-full max-w-3xl bg-white text-slate-900 p-8 sm:p-12 rounded-lg shadow-sm border border-slate-200 print:border-none print:shadow-none print:p-0 print:m-0"
           >
             {/* Header: Company Info + Invoice Details */}
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-8 border-b-2 border-slate-100">
+            <div className="flex flex-row justify-between items-start gap-6 pb-8 border-b-2 border-slate-100">
               <div>
                 <div className="flex items-center gap-3">
                   {branding.logoUrl ? (
@@ -264,7 +265,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                 </div>
               </div>
 
-              <div className="text-left sm:text-right">
+              <div className="text-right shrink-0">
                 <div className="inline-block px-3 py-1 rounded bg-slate-100 font-mono text-xs font-bold text-slate-800 tracking-wider uppercase mb-2">
                   INVOICE
                 </div>
@@ -273,7 +274,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                 </div>
 
                 <div className="mt-3 text-xs space-y-1">
-                  <div className="flex sm:justify-end gap-3">
+                  <div className="flex justify-end gap-3">
                     <span className="text-slate-500">Issue Date:</span>
                     <span className="font-medium text-slate-800">
                       {new Date(invoice.created_at || Date.now()).toLocaleDateString("en-IN", {
@@ -283,7 +284,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                       })}
                     </span>
                   </div>
-                  <div className="flex sm:justify-end gap-3">
+                  <div className="flex justify-end gap-3">
                     <span className="text-slate-500">Due Date:</span>
                     <span className="font-medium text-slate-900">
                       {new Date(invoice.due_date).toLocaleDateString("en-IN", {
@@ -293,7 +294,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                       })}
                     </span>
                   </div>
-                  <div className="flex sm:justify-end gap-3 items-center pt-1">
+                  <div className="flex justify-end gap-3 items-center pt-1">
                     <span className="text-slate-500">Status:</span>
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
@@ -312,7 +313,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
             </div>
 
             {/* Bill To & Project Details */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 py-6 border-b border-slate-100 text-xs">
+            <div className="grid grid-cols-2 gap-8 py-6 border-b border-slate-100 text-xs">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">
                   Billed To
@@ -386,7 +387,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
             </div>
 
             {/* Financial Summary & Calculations */}
-            <div className="py-6 flex flex-col sm:flex-row justify-between items-start gap-6 border-b border-slate-100">
+            <div className="py-6 flex flex-row justify-between items-start gap-6 border-b border-slate-100">
               <div className="max-w-xs text-xs text-slate-500 space-y-1">
                 <p className="font-semibold text-slate-700">Payment Notes:</p>
                 <p className="text-slate-600 italic">
@@ -394,7 +395,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                 </p>
               </div>
 
-              <div className="w-full sm:w-64 text-xs space-y-2">
+              <div className="w-64 text-xs space-y-2 shrink-0">
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal:</span>
                   <span className="font-mono font-medium">{formatINR(subtotal)}</span>
@@ -418,14 +419,14 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
             </div>
 
             {/* Footer / Terms */}
-            <div className="pt-6 flex flex-col sm:flex-row justify-between items-end gap-4 text-[11px] text-slate-400 border-t border-slate-100">
+            <div className="pt-6 flex flex-row justify-between items-end gap-4 text-[11px] text-slate-400 border-t border-slate-100">
               <div>
                 <p className="font-medium text-slate-600">Terms &amp; Conditions</p>
                 <p>1. Payment is due within 15 days of invoice issue date.</p>
                 <p>2. Please quote invoice number in all communications.</p>
               </div>
 
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <div className="h-10 border-b border-dashed border-slate-300 w-40 ml-auto mb-1"></div>
                 <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
                   Authorized Signatory
