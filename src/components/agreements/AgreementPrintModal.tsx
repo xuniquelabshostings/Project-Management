@@ -352,188 +352,75 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
               </p>
             </div>
 
-            {/* Numbered Legal Clauses */}
-            <div className="space-y-4 text-xs leading-relaxed text-slate-700">
-              {/* Article 1 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 1: Scope of Work &amp; Deliverables
-                </h3>
-                <p className="mt-1.5">
-                  Service Provider shall develop and deliver the custom software components specified for <strong>{agreement.project_name}</strong> as summarized below:
-                </p>
-                <div className="mt-2 p-3 rounded-md bg-slate-50 border border-slate-200 text-slate-800 font-medium">
-                  {agreement.scope_of_work}
-                </div>
-                <p className="mt-1.5 text-slate-500 text-[11px]">
-                  * Any features, integrations, redesigns, architectural pivots, or maintenance requests outside this explicit scope constitute a &quot;Scope Change&quot; requiring separate written estimates and additional compensation.
-                </p>
-              </div>
+            {/* Agreement Terms & Conditions (Points Format) */}
+            <div className="space-y-3 pt-2">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-wider text-slate-900 pb-1.5 border-b border-slate-200">
+                TERMS &amp; CONDITIONS
+              </h3>
 
-              {/* Article 2 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 2: Agency Status &amp; Statutory GST Non-Applicability Disclosure
-                </h3>
-                <p className="mt-1.5">
-                  The Client explicitly acknowledges and agrees that the Service Provider is an independent, unregistered micro-enterprise whose aggregate turnover is strictly below the mandatory statutory registration threshold specified under Section 22 of the Central Goods and Services Tax (CGST) Act, 2017. Consequently, <strong>no GST is charged, levied, collected, or applicable</strong> on any fees or invoices issued under this Agreement. All agreed amounts are pure professional development fees.
-                </p>
-              </div>
+              <ul className="space-y-3 text-xs leading-relaxed text-slate-700 list-disc pl-5">
+                <li>
+                  <strong>Scope of Work &amp; Deliverables:</strong> Service Provider shall develop and deliver the custom software components specified for <strong>{agreement.project_name}</strong> as defined: <span className="text-slate-900 font-medium">{agreement.scope_of_work}</span>. Any features, integrations, redesigns, architectural pivots, or maintenance requests outside this explicit scope constitute a scope change requiring separate written estimates and additional compensation.
+                </li>
 
-              {/* Article 3 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 3: Independent Contractor Status
-                </h3>
-                <p className="mt-1.5">
-                  The relationship between Service Provider and Client is strictly that of an <strong>Independent Contractor</strong>. Nothing in this Agreement shall be construed to create a partnership, joint venture, agency, franchise, or employer-employee relationship. Neither party has authority to bind the other or incur liabilities on the other&apos;s behalf.
-                </p>
-              </div>
+                <li>
+                  <strong>Agency Status &amp; Statutory GST Non-Applicability:</strong> The Client explicitly acknowledges and agrees that the Service Provider is an independent, unregistered micro-enterprise whose aggregate turnover is strictly below the mandatory statutory registration threshold specified under Section 22 of the Central Goods and Services Tax (CGST) Act, 2017. Consequently, <strong>no GST is charged, levied, collected, or applicable</strong> on any fees or invoices issued under this Agreement. All agreed amounts are pure professional development fees.
+                </li>
 
-              {/* Article 4 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 4: Commercial Fees, Milestone Payments &amp; Remedies
-                </h3>
-                <div className="mt-1.5 grid grid-cols-2 gap-4 p-3 rounded-md bg-slate-50 border border-slate-200">
-                  <div>
-                    <span className="text-[10px] uppercase font-mono text-slate-500 font-bold">Total Agreed Project Fee</span>
-                    <p className="text-lg font-bold font-mono text-slate-900">{formatINR(agreement.total_fee)}</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] uppercase font-mono text-slate-500 font-bold">Billing &amp; Payment Structure</span>
-                    <p className="text-xs text-slate-800 font-medium mt-0.5">{agreement.payment_terms}</p>
-                  </div>
-                </div>
-                <p className="mt-1.5">
-                  All invoices are due upon presentation or within 7 calendar days. If Client defaults or delays payment past 7 days, Service Provider reserves the right to immediately suspend development, halt deployments, withhold repository commits, and withhold source code handover until all arrears are fully satisfied.
-                </p>
-              </div>
+                <li>
+                  <strong>Independent Contractor Status:</strong> The relationship between Service Provider and Client is strictly that of an <strong>Independent Contractor</strong>. Nothing in this Agreement shall be construed to create a partnership, joint venture, agency, franchise, or employer-employee relationship. Neither party has authority to bind the other or incur liabilities on the other&apos;s behalf.
+                </li>
 
-              {/* Article 5 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 5: Client Inspection, Bug Warranty &amp; Irrevocable Acceptance
-                </h3>
-                <p className="mt-1.5">
-                  Upon deployment to a staging or production environment, Client is granted an inspection window of exactly <strong>{agreement.warranty_days || 14} calendar days</strong> (the &quot;Warranty Period&quot;) to test deliverables and notify Developer in writing of any reproducible functional bugs that deviate directly from the agreed scope. Developer shall make good-faith commercially reasonable efforts to fix verified functional defects within scope during this period.
-                </p>
-                <p className="mt-1">
-                  Upon the expiration of the {agreement.warranty_days || 14}-day period, or upon Client putting the software into commercial or public live use (whichever occurs first), the deliverables shall be <strong>irrevocably deemed 100% accepted, complete, and final</strong>. Any subsequent bugs, alterations, OS updates, or feature additions require a separate paid maintenance engagement.
-                </p>
-              </div>
+                <li>
+                  <strong>Commercial Fees &amp; Payment Terms:</strong> The agreed total project fee is <strong>{formatINR(agreement.total_fee)}</strong>. Billing and payment schedule: <span className="font-medium text-slate-900">{agreement.payment_terms}</span>. All invoices are due upon presentation or within 7 calendar days. If Client defaults or delays payment past 7 days, Service Provider reserves the right to immediately suspend development, halt deployments, withhold repository commits, and withhold source code handover until all arrears are fully satisfied.
+                </li>
 
-              {/* Article 6 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 6: Strict &quot;AS IS&quot; Software Warranty Disclaimer
-                </h3>
-                <p className="mt-1.5 uppercase text-[11px] font-semibold text-slate-800 leading-normal">
-                  EXCEPT AS EXPRESSLY STIPULATED IN ARTICLE 5, ALL SOFTWARE CODE, SCRIPTS, USER INTERFACES, BACKEND APIS, SCHEMAS, AND DELIVERABLES ARE PROVIDED STRICTLY &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot;, WITH ALL FAULTS AND WITHOUT WARRANTY OF ANY KIND, WHETHER EXPRESS, IMPLIED, STATUTORY, OR OTHERWISE.
-                </p>
-                <p className="mt-1">
-                  THE DEVELOPER SPECIFICALLY DISCLAIMS ALL IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OPERABILITY, TITLE, UNINTERRUPTED OPERATION, AND NON-INFRINGEMENT. THE DEVELOPER DOES NOT WARRANT THAT THE SOFTWARE WILL BE SECURE AGAINST ALL FUTURE CYBER THREATS, IMMUNE FROM BUGS, UNINTERRUPTED, OR COMPATIBLE WITH EVERY ARBITRARY BROWSER, SYSTEM, OR HARDWARE CONFIGURATION.
-                </p>
-              </div>
+                <li>
+                  <strong>Client Inspection, Bug Warranty &amp; Final Acceptance:</strong> Upon deployment to a staging or production environment, Client is granted an inspection window of exactly <strong>{agreement.warranty_days || 14} calendar days</strong> (the &quot;Warranty Period&quot;) to test deliverables and notify Developer in writing of any reproducible functional bugs that deviate directly from the agreed scope. Developer shall make good-faith commercially reasonable efforts to fix verified functional defects within scope during this period. Upon the expiration of this window, or upon Client putting the software into commercial or live use (whichever occurs first), the deliverables shall be <strong>irrevocably deemed 100% accepted, complete, and final</strong>. Any subsequent bugs, alterations, OS updates, or feature additions require a separate paid maintenance engagement.
+                </li>
 
-              {/* Article 7 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 7: Comprehensive Legal Exemption &amp; Limitation of Liability
-                </h3>
-                <p className="mt-1.5 uppercase text-[11px] font-bold text-slate-900 leading-normal">
-                  To the maximum extent permitted by applicable law:
-                </p>
-                <ul className="mt-1.5 list-disc pl-4 space-y-1 text-slate-800">
+                <li>
+                  <strong>Strict &quot;AS IS&quot; Software Warranty Disclaimer:</strong> Except as expressly stipulated in the inspection window above, all software code, scripts, user interfaces, backend APIs, schemas, and deliverables are provided strictly &quot;AS IS&quot; and &quot;AS AVAILABLE&quot;, with all faults and without warranty of any kind, whether express, implied, statutory, or otherwise. The Developer specifically disclaims all implied warranties of merchantability, fitness for a particular purpose, operability, title, uninterrupted operation, and non-infringement. The Developer does not warrant that the software will be secure against all future cyber threats, immune from bugs, uninterrupted, or compatible with every arbitrary browser, system, or hardware configuration.
+                </li>
+
+                <li>
+                  <strong>Comprehensive Legal Exemption &amp; Limitation of Liability:</strong> To the maximum extent permitted by applicable law, in no event shall Service Provider, its founders, developers, subcontractors, or agents be liable to Client, Client&apos;s customers, end-users, or any third party for any direct, indirect, incidental, consequential, special, punitive, or exemplary damages whatsoever. This legal exemption includes, without limitation, damages for loss of profits, loss of revenue, loss of goodwill, loss or corruption of data, hardware failure, system breaches, DDoS attacks, business interruption, loss of commercial opportunity, reputational damage, or statutory/regulatory fines arising from or related to the software or its deployment, regardless of the legal theory or cause of action asserted (whether in contract, tort, negligence, strict liability, misrepresentation, or statute), even if the Service Provider has been expressly warned of the potential for such damages.
+                </li>
+
+                <li>
+                  <strong>Maximum Aggregate Monetary Liability Cap:</strong> If, notwithstanding the comprehensive exemptions above, any competent court or arbitrator determines that the Developer cannot be fully exempted under law, <strong>the Developer&apos;s entire cumulative monetary liability arising out of or in connection with this Agreement or the software deliverables shall be strictly limited to and shall not exceed the total monetary fees actually received by the Developer from the Client under this specific Agreement</strong>, or ₹1,000 (Indian Rupees One Thousand only), whichever is less.
+                </li>
+
+                <li>
+                  <strong>Third-Party Services, Cloud Platforms &amp; API Dependencies:</strong> Modern software relies upon third-party platforms, APIs, libraries, and hosting vendors. Service Provider exercises zero control over third-party server downtimes, terms-of-service revisions, pricing hikes, API deprecations, app rejections, or account suspensions. <strong>Service Provider bears zero legal or financial liability for any disruption or failure caused by third-party platforms.</strong>
+                </li>
+
+                <li>
+                  <strong>Client Legal Compliance &amp; Absolute Indemnification:</strong> Client holds sole and unshared responsibility for the lawful operation of its commercial venture. Client represents and warrants that all materials, data, designs, and requirements provided to Developer do not infringe upon any copyright, trademark, privacy, or statutory right of any party. <strong>Client agrees to defend, indemnify, and hold harmless Service Provider</strong>, its proprietors, and contractors from and against any and all claims, civil actions, government investigations, regulator penalties, consumer complaints, liabilities, losses, damages, and reasonable legal/attorney expenses arising out of: (a) Client&apos;s business activities, products, or services; (b) Client&apos;s handling of end-user data under applicable data privacy laws; or (c) any breach by Client of this Agreement.
+                </li>
+
+                <li>
+                  <strong>Intellectual Property &amp; Source Code Ownership:</strong> Conditioned strictly upon receipt of <strong>100% full and final payment</strong> of all agreed fees, Developer assigns to Client all right, title, and interest in the bespoke custom source code authored exclusively for Client under this Agreement. Developer retains perpetual, royalty-free rights to its pre-existing algorithms, developer tools, internal boilerplate, and open-source utility code.
+                </li>
+
+                {agreement.special_terms && (
                   <li>
-                    <strong>Complete Exclusion of Consequential Damages:</strong> In no event shall Service Provider, its founders, developers, subcontractors, or agents be liable to Client, Client&apos;s customers, end-users, or any third party for any direct, indirect, incidental, consequential, special, punitive, or exemplary damages whatsoever.
-                  </li>
-                  <li>
-                    <strong>Exempted Harms:</strong> This legal exemption includes, without limitation, damages for loss of profits, loss of revenue, loss of goodwill, loss or corruption of data, hardware failure, system breaches, DDoS attacks, business interruption, loss of commercial opportunity, reputational damage, or statutory/regulatory fines arising from or related to the software or its deployment.
-                  </li>
-                  <li>
-                    <strong>Applicability:</strong> This clause applies regardless of the legal theory or cause of action asserted (whether in contract, tort, negligence, strict liability, misrepresentation, or statute), even if the Service Provider has been expressly warned of the potential for such damages.
-                  </li>
-                </ul>
-              </div>
-
-              {/* Article 8 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 8: Maximum Aggregate Monetary Liability Cap
-                </h3>
-                <p className="mt-1.5">
-                  IF, NOTWITHSTANDING THE COMPREHENSIVE EXEMPTIONS IN ARTICLE 7, ANY COMPETENT COURT OR ARBITRATOR DETERMINES THAT THE DEVELOPER CANNOT BE FULLY EXEMPTED UNDER LAW, <strong>THE DEVELOPER&apos;S ENTIRE CUMULATIVE MONETARY LIABILITY ARISING OUT OF OR IN CONNECTION WITH THIS AGREEMENT OR THE SOFTWARE DELIVERABLES SHALL BE STRICTLY LIMITED TO AND SHALL NOT EXCEED THE TOTAL MONETARY FEES ACTUALLY RECEIVED BY THE DEVELOPER FROM THE CLIENT UNDER THIS SPECIFIC AGREEMENT</strong>, OR ₹1,000 (INDIAN RUPEES ONE THOUSAND ONLY), WHICHEVER IS LESS.
-                </p>
-              </div>
-
-              {/* Article 9 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 9: Third-Party Services, Cloud Platforms &amp; API Dependencies
-                </h3>
-                <p className="mt-1.5">
-                  Modern software relies upon third-party platforms, APIs, libraries, and hosting vendors (including, but not limited to, AWS, Vercel, Supabase, Google Cloud, Razorpay, Stripe, Apple App Store, Google Play, OpenAI, GitHub, or open-source packages). Service Provider exercises zero control over third-party server downtimes, terms-of-service revisions, pricing hikes, API deprecations, app rejections, or account suspensions. <strong>Service Provider bears zero legal or financial liability for any disruption or failure caused by third-party platforms.</strong>
-                </p>
-              </div>
-
-              {/* Article 10 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 10: Client Legal Compliance &amp; Absolute Indemnification
-                </h3>
-                <p className="mt-1.5">
-                  Client holds sole and unshared responsibility for the lawful operation of its commercial venture. Client represents and warrants that all materials, data, designs, and requirements provided to Developer do not infringe upon any copyright, trademark, privacy, or statutory right of any party.
-                </p>
-                <p className="mt-1">
-                  <strong>Client agrees to defend, indemnify, and hold harmless Service Provider</strong>, its proprietors, and contractors from and against any and all claims, civil actions, government investigations, regulator penalties, consumer complaints, liabilities, losses, damages, and reasonable legal/attorney expenses arising out of: (a) Client&apos;s business activities, products, or services; (b) Client&apos;s handling of end-user data under applicable data privacy laws; or (c) any breach by Client of this Agreement.
-                </p>
-              </div>
-
-              {/* Article 11 */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  Article 11: Intellectual Property &amp; Source Code Ownership
-                </h3>
-                <p className="mt-1.5">
-                  Conditioned strictly upon receipt of <strong>100% full and final payment</strong> of all agreed fees, Developer assigns to Client all right, title, and interest in the bespoke custom source code authored exclusively for Client under this Agreement. Developer retains perpetual, royalty-free rights to its pre-existing algorithms, developer tools, internal boilerplate, and open-source utility code.
-                </p>
-              </div>
-
-              {/* Article 12: Special Terms (if provided) */}
-              {agreement.special_terms && (
-                <div>
-                  <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                    Article 12: Special Provisions &amp; Project Stipulations
-                  </h3>
-                  <div className="mt-1.5 p-3 rounded-md bg-slate-50 border border-slate-200 text-slate-800">
+                    <strong>Special Provisions &amp; Project Stipulations:</strong>{" "}
                     {agreement.special_terms
                       .replace(/\s*\(AWS,\s*Supabase,\s*Vercel\):?/gi, "")
                       .replace(/AWS,\s*Supabase,\s*Vercel:?/gi, "")
                       .trim()}
-                  </div>
-                </div>
-              )}
+                  </li>
+                )}
 
-              {/* Governing Law */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  {agreement.special_terms ? "Article 13" : "Article 12"}: Governing Law, Amicable Settlement &amp; Jurisdiction
-                </h3>
-                <p className="mt-1.5">
-                  This Agreement shall be governed by and construed in accordance with the substantive laws of the Republic of India. In the event of any grievance or dispute, the parties shall first attempt to resolve the issue amicably through good-faith executive discussion within 15 calendar days. Failing amicable resolution, any legal proceeding arising out of this Agreement shall be subject to the <strong>exclusive territorial jurisdiction of the competent courts located in Siddharth Nagar, UP, India</strong>.
-                </p>
-              </div>
+                <li>
+                  <strong>Governing Law, Amicable Settlement &amp; Jurisdiction:</strong> This Agreement shall be governed by and construed in accordance with the substantive laws of the Republic of India. In the event of any grievance or dispute, the parties shall first attempt to resolve the issue amicably through good-faith executive discussion within 15 calendar days. Failing amicable resolution, any legal proceeding arising out of this Agreement shall be subject to the <strong>exclusive territorial jurisdiction of the competent courts located in Siddharth Nagar, UP, India</strong>.
+                </li>
 
-              {/* Entire Agreement */}
-              <div>
-                <h3 className="font-bold text-slate-900 text-sm pb-1 border-b border-slate-100">
-                  {agreement.special_terms ? "Article 14" : "Article 13"}: Entire Agreement &amp; Digital Acceptance
-                </h3>
-                <p className="mt-1.5">
-                  This Agreement constitutes the entire and final understanding between the parties regarding the subject matter hereof and supersedes all prior verbal discussions, quotations, or representations. This Agreement may be executed in counterparts and via electronic signature, digital confirmation, or written email acceptance, each of which shall be deemed legally binding.
-                </p>
-              </div>
+                <li>
+                  <strong>Entire Agreement &amp; Digital Acceptance:</strong> This Agreement constitutes the entire and final understanding between the parties regarding the subject matter hereof and supersedes all prior verbal discussions, quotations, or representations. This Agreement may be executed in counterparts and via electronic signature, digital confirmation, or written email acceptance, each of which shall be deemed legally binding.
+                </li>
+              </ul>
             </div>
 
             {/* Signature Block */}
