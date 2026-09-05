@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/providers/ThemeProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
+import { BrandingProvider } from "@/providers/BrandingProvider";
 
 const lora = Lora({
   variable: "--font-lora",
@@ -59,7 +60,9 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans bg-background text-foreground antialiased selection:bg-accent/20 selection:text-foreground">
         <ThemeProvider>
           <QueryProvider>
-            <AuthProvider>{children}</AuthProvider>
+            <AuthProvider>
+              <BrandingProvider>{children}</BrandingProvider>
+            </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

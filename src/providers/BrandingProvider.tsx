@@ -1,0 +1,86 @@
+"use client";
+
+import React, { createContext, useContext, useState, useEffect } from "react";
+
+export interface AppBranding {
+  companyName: string;
+  tagline: string;
+  logoUrl: string | null;
+  addressLine1: string;
+  addressLine2: string;
+  email: string;
+  phone: string;
+  taxId: string;
+}
+
+export const DEFAULT_BRANDING: AppBranding = {
+  companyName: "XUnique Labs",
+  tagline: "Design & Engineering Studio",
+  logoUrl: null,
+  addressLine1: "104 Tech Park Boulevard, Sector 5",
+  addressLine2: "Bengaluru, Karnataka 560103, India",
+  email: "billing@xuniquelabs.com",
+  phone: "+91 (80) 4920-1100",
+  taxId: "29AABCU9603R1ZM",
+};
+
+const BRANDING_STORAGE_KEY = "xunique_app_branding";
+
+interface BrandingContextType {
+  branding: AppBranding;
+  updateBranding: (updates: Partial<AppBranding>) => void;
+  resetBranding: () => void;
+}
+
+const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
+
+export function BrandingProvider({ children }: { children: React.ReactNode }) {
+  const [branding, setBranding] = useState<AppBranding>(DEFAULT_BRANDING);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(BRANDING_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setBranding((prev) => ({ ...prev, ...parsed }));
+      }
+    } catch (e) {
+      console.warn("Failed to load custom branding from storage:", e);
+    }
+  }, []);
+
+  const updateBranding = (updates: Partial<AppBranding>) => {
+    setBranding((prev) => {
+      const next = { ...prev, ...updates };
+      try {
+        localStorage.setItem(BRANDING_STORAGE_KEY, JSON.stringify(next));
+      } catch (e) {
+        console.warn("Failed to save custom branding:", e);
+      }
+      return next;
+    });
+  };
+
+  const resetBranding = () => {
+    setBranding(DEFAULT_BRANDING);
+    try {
+      localStorage.removeItem(BRANDING_STORAGE_KEY);
+    } catch (e) {
+      console.warn("Failed to reset branding:", e);
+    }
+  };
+
+  return (
+    <BrandingContext.Provider value={{ branding, updateBranding, resetBranding }}>
+      {children}
+    </BrandingContext.Provider>
+  );
+}
+
+export function useBranding() {
+  const context = useContext(BrandingContext);
+  if (!context) {
+    throw new Error("useBranding must be used within a BrandingProvider");
+  }
+  return context;
+}

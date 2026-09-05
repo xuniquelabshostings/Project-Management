@@ -18,12 +18,14 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useRole } from "@/lib/hooks/useRole";
+import { useBranding } from "@/providers/BrandingProvider";
 import { Badge } from "@/components/ui/badge";
 
 export function Sidebar() {
   const pathname = usePathname();
   const { profile, signOut } = useAuth();
-  const { role, isAdmin, isAccountManager } = useRole();
+  const { role } = useRole();
+  const { branding } = useBranding();
 
   const navigation = [
     {
@@ -82,15 +84,23 @@ export function Sidebar() {
     <aside className="w-64 border-r border-border bg-surface flex flex-col h-screen select-none shrink-0">
       {/* Brand / Logo */}
       <div className="h-16 flex items-center px-6 border-b border-border/50 gap-3">
-        <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white shadow-xs">
-          <Building2 className="w-4 h-4" />
-        </div>
-        <div className="flex flex-col">
-          <span className="font-serif font-semibold text-base text-foreground tracking-tight">
-            Xunique Labs
+        {branding.logoUrl ? (
+          <img
+            src={branding.logoUrl}
+            alt={branding.companyName}
+            className="w-8 h-8 rounded-md object-contain border border-border bg-white p-0.5 shrink-0 shadow-xs"
+          />
+        ) : (
+          <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white shadow-xs shrink-0">
+            <Building2 className="w-4 h-4" />
+          </div>
+        )}
+        <div className="flex flex-col overflow-hidden">
+          <span className="font-serif font-semibold text-base text-foreground tracking-tight truncate">
+            {branding.companyName}
           </span>
-          <span className="text-[10px] uppercase font-mono tracking-wider text-muted">
-            Internal Portal
+          <span className="text-[10px] uppercase font-mono tracking-wider text-muted truncate">
+            {branding.tagline || "Administrator"}
           </span>
         </div>
       </div>

@@ -15,6 +15,7 @@ import {
 import { Invoice, InvoiceLineItem } from "@/types/database.types";
 import { formatINR } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useBranding } from "@/providers/BrandingProvider";
 
 interface InvoicePrintModalProps {
   isOpen: boolean;
@@ -24,6 +25,7 @@ interface InvoicePrintModalProps {
 
 export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  const { branding } = useBranding();
 
   if (!isOpen || !invoice) return null;
 
@@ -58,10 +60,10 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
   const clientName = invoice.client?.company_name || "Valued Client";
 
   const emailSubject = encodeURIComponent(
-    `Invoice ${invoice.invoice_number} from XUnique Labs`
+    `Invoice ${invoice.invoice_number} from ${branding.companyName}`
   );
   const emailBody = encodeURIComponent(
-    `Dear ${clientName},\n\nPlease find attached details for invoice ${invoice.invoice_number} for total amount ${formatINR(total)} due on ${new Date(invoice.due_date).toLocaleDateString()}.\n\nThank you for your business!\n\nBest regards,\nXUnique Labs Team`
+    `Dear ${clientName},\n\nPlease find attached details for invoice ${invoice.invoice_number} for total amount ${formatINR(total)} due on ${new Date(invoice.due_date).toLocaleDateString()}.\n\nThank you for your business!\n\nBest regards,\n${branding.companyName} Team`
   );
 
   return (
@@ -135,25 +137,35 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
             {/* Header: Company Info + Invoice Details */}
             <div className="flex flex-col sm:flex-row justify-between items-start gap-6 pb-8 border-b-2 border-slate-100">
               <div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold text-base font-serif">
-                    X
-                  </div>
+                <div className="flex items-center gap-3">
+                  {branding.logoUrl ? (
+                    <img
+                      src={branding.logoUrl}
+                      alt={branding.companyName}
+                      className="w-12 h-12 rounded-lg object-contain border border-slate-200 bg-white p-1 shrink-0 shadow-xs"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold text-lg font-serif shrink-0">
+                      {branding.companyName.charAt(0) || "X"}
+                    </div>
+                  )}
                   <div>
                     <h1 className="font-serif text-2xl font-bold tracking-tight text-slate-900">
-                      XUnique Labs
+                      {branding.companyName}
                     </h1>
                     <p className="text-xs text-slate-500 font-medium">
-                      Design &amp; Engineering Studio
+                      {branding.tagline}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-4 text-xs text-slate-500 space-y-0.5">
-                  <p>104 Tech Park Boulevard, Sector 5</p>
-                  <p>Bengaluru, Karnataka 560103, India</p>
-                  <p>billing@xuniquelabs.com &bull; +91 (80) 4920-1100</p>
-                  <p className="font-mono text-slate-600 pt-0.5">GSTIN: 29AABCU9603R1ZM</p>
+                  <p>{branding.addressLine1}</p>
+                  {branding.addressLine2 && <p>{branding.addressLine2}</p>}
+                  <p>{branding.email} &bull; {branding.phone}</p>
+                  {branding.taxId && (
+                    <p className="font-mono text-slate-600 pt-0.5">GSTIN / TAX: {branding.taxId}</p>
+                  )}
                 </div>
               </div>
 
@@ -323,7 +335,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                 <div className="space-y-1">
                   <p>
                     <span className="text-slate-400">Account Name:</span>{" "}
-                    <strong className="text-slate-800">XUnique Labs Private Limited</strong>
+                    <strong className="text-slate-800">{branding.companyName}</strong>
                   </p>
                   <p>
                     <span className="text-slate-400">Bank:</span>{" "}
@@ -369,7 +381,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                 <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
                   Authorized Signatory
                 </p>
-                <p className="text-[10px] text-slate-400">XUnique Labs Pvt. Ltd.</p>
+                <p className="text-[10px] text-slate-400">{branding.companyName}</p>
               </div>
             </div>
           </div>
