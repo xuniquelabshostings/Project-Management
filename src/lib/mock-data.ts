@@ -1,4 +1,4 @@
-import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile, Agreement } from "@/types/database.types";
+import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile, Agreement, BlogPost } from "@/types/database.types";
 
 export const MOCK_PROFILES: Profile[] = [
   {
@@ -759,4 +759,356 @@ export function getNextAgreementNumber(existingAgreements?: Agreement[]): string
   const padded = String(nextSeq).padStart(3, "0");
   return `AGR-${currentYear}-${padded}`;
 }
+
+export const MOCK_BLOG_POSTS: BlogPost[] = [
+  {
+    id: "blog-001",
+    title: "Why Next.js & React Server Components are the Gold Standard for Agency Platforms",
+    slug: "why-nextjs-server-components-gold-standard",
+    excerpt: "How eliminating bloated client JavaScript bundles and embracing streaming SSR enables sub-second page loads and superior Core Web Vitals for production client projects.",
+    content: `## The Modern Web Architecture Paradigm Shift
+
+For years, the standard approach to building modern web applications involved client-heavy Single Page Application (SPA) architectures. Frameworks like standard React or Vue shipped tens of megabytes of bundled JavaScript directly to user devices. While this delivered dynamic client interactions, it created major drawbacks: **sluggish First Contentful Paint (FCP)**, **severe layout shifts (CLS)**, and **subpar search engine indexing**.
+
+At **Xunique Labs**, we made an architectural commitment early on: every client website and application must load under 1 second and pass all Core Web Vitals thresholds out of the box. That is why Next.js with React Server Components (RSC) is our default framework.
+
+---
+
+### 1. Zero-Bundle-Size Server Components
+
+React Server Components execute entirely on the server. Their dependencies—whether large markdown parsers, syntax highlighters, or date-formatting libraries—never leave the server environment.
+
+\`\`\`tsx
+// This component runs strictly on the edge server.
+// No markdown libraries are ever transmitted to the user's browser!
+import { compileMarkdown } from "@/lib/markdown";
+
+export async function ArticleBody({ rawContent }: { rawContent: string }) {
+  const html = await compileMarkdown(rawContent);
+  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+}
+\`\`\`
+
+By offloading rendering logic to the server, we reduced average initial JavaScript payload sizes for our client builds from **1.4MB down to under 80KB**.
+
+---
+
+### 2. Streaming SSR and Progressive Hydration
+
+With traditional Server-Side Rendering, the server had to resolve every database query and third-party API request before sending a single byte of HTML back to the browser. If a payment gateway check or live stats query took 800ms, the entire screen remained blank.
+
+Next.js streaming solves this through React Suspense boundaries:
+
+* **Instant Skeleton shell:** The browser receives the navigation bar, layout, and document structure in under 50 milliseconds.
+* **Streamed chunks:** Heavy data widgets stream in progressively as their promises resolve.
+* **Selective Hydration:** Only interactive buttons and forms hydrate client-side event handlers, leaving static text and images completely unencumbered.
+
+---
+
+### 3. Native Technical SEO & OpenGraph Generation
+
+Search engine crawlers, especially Googlebot, prioritize pages that provide comprehensive pre-rendered semantic HTML. With Next.js dynamic metadata functions, our studio automatically generates:
+- Verified JSON-LD schema graphs
+- Dynamic OpenGraph and Twitter card previews with custom font overlays
+- Canonical URLs and automated XML sitemaps
+
+> "Software drawn to spec means building architectures that endure scale without degrading performance."
+
+When you partner with Xunique Labs, your platform isn't patched together with bloated third-party plugins. It is engineered with architectural rigor, ensuring blazing fast speeds that boost conversion rates and domain authority.`,
+    category: "Engineering",
+    tags: ["Next.js", "React", "Full-Stack", "Architecture", "Performance"],
+    cover_image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
+    author_name: "Sayyed Abdul Ali",
+    author_avatar: null,
+    status: "published",
+    read_time_minutes: 6,
+    views_count: 482,
+    featured: true,
+    created_at: "2026-08-20T10:00:00Z",
+    published_at: "2026-08-21T09:00:00Z",
+  },
+  {
+    id: "blog-002",
+    title: "From Spec to Production: Inside Our Blueprint Architecture Methodology",
+    slug: "from-spec-to-production-blueprint-methodology",
+    excerpt: "Why our studio treats software development like precision engineering — drafting rigorous architectural blueprints before laying a single line of production code.",
+    content: `## The Fallacy of "Move Fast and Break Things"
+
+In typical digital agencies, projects begin with excitement and vague wireframes, only to dissolve into scope creep, missed deadlines, and unmaintainable spaghetti code. 
+
+At **Xunique Labs**, we operate on a fundamentally different philosophy: **Software, drawn to spec — not shipped by guesswork.**
+
+Borrowing directly from architectural and civil engineering principles, we introduce a structured, five-stage delivery cadence that protects both timeline and capital.
+
+---
+
+### Stage 1: The Functional Specification Brief
+
+Before Figma files are opened or repositories initialized, we draft a comprehensive technical specification:
+1. **Entity-Relationship Diagrams (ERD):** Exactly how data models, relational keys, and constraints interact.
+2. **Access Control Matrix:** Defining administrative, manager, and developer permission boundaries using PostgreSQL Row-Level Security (RLS).
+3. **Third-Party Boundary Contracts:** Documenting payload schemas for payment gateways (Stripe, Razorpay), authentication webhooks, and transactional messaging.
+
+---
+
+### Stage 2: Low-Latency Wireframing & Design Tokens
+
+We don't build generic web pages. We create bespoke design systems backed by strict CSS design tokens:
+- Structured typography scales (Lora, Inter, IBM Plex Mono)
+- High-contrast terracotta accents and blueprint grid foundations
+- Native keyboard navigation and accessible focus management
+
+---
+
+### Stage 3: Modular Sprint Execution
+
+Our sprints are organized around working vertical slices. Instead of building "the database layer for 3 weeks" while stakeholders see nothing, every sprint produces a clickable, interactive deployment link where clients can verify actual business logic in real time.
+
+---
+
+### Stage 4: Strict Quality & Security Audits
+
+Before production cutover, every codebase undergoes:
+- **Lighthouse CI:** Enforcing a minimum 95+ score on Performance, Accessibility, Best Practices, and SEO.
+- **SQL RLS Verification:** Ensuring no client can query another tenant's financial or project records.
+- **Cross-Browser Layout Testing:** Testing across Safari iOS, Android Chrome, Chromium desktop, and Firefox.
+
+The result is predictable delivery, transparent milestones, and zero post-launch surprises.`,
+    category: "Architecture",
+    tags: ["Product Strategy", "System Design", "Agile", "Methodology"],
+    cover_image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=1200&q=80",
+    author_name: "Sayyed Abdul Ali",
+    author_avatar: null,
+    status: "published",
+    read_time_minutes: 5,
+    views_count: 310,
+    featured: false,
+    created_at: "2026-08-25T11:30:00Z",
+    published_at: "2026-08-26T12:00:00Z",
+  },
+  {
+    id: "blog-003",
+    title: "Mastering Core Web Vitals: Achieving 100/100 Lighthouse Performance",
+    slug: "mastering-core-web-vitals-100-lighthouse",
+    excerpt: "A practical, battle-tested guide to diagnosing layout shifts (CLS), reducing largest contentful paint (LCP), and minimizing interaction delays on high-traffic web platforms.",
+    content: `## Speed is a Feature, Not an Afterthought
+
+Every millisecond of delay directly erodes user engagement and search visibility. Google's ranking algorithms treat Core Web Vitals as critical ranking signals. If your website takes 3+ seconds to render on mobile 4G, over 50% of visitors abandon the page before reading your value proposition.
+
+Here is the exact playbook we use at **Xunique Labs** to reliably score 100/100 across Lighthouse metrics on client deployments.
+
+---
+
+### 1. Largest Contentful Paint (LCP) < 1.2s
+
+LCP measures when the main hero content or graphic is rendered on the screen.
+
+**How we optimize LCP:**
+- **Preload Critical Assets:** Mark hero images and primary font subsets with \`rel="preload"\` or Next.js \`priority\` attributes.
+- **Modern Formats:** Serve images exclusively in WebP and AVIF with appropriate resolution srcset.
+- **Edge CDN Caching:** Serve static assets from global Cloudflare or Vercel edge nodes located geographically close to the user.
+
+---
+
+### 2. Cumulative Layout Shift (CLS) = 0.000
+
+Nothing frustrates users more than attempting to click a button only for an unstyled banner or delayed image to suddenly push the layout downward.
+
+**How we guarantee zero CLS:**
+- Always define explicit \`aspect-ratio\` or \`width\` and \`height\` attributes on all image containers.
+- Use font-display: swap with matched font fallback metrics (\`size-adjust\`, \`ascent-override\`) to prevent layout jumping when custom web fonts finish downloading.
+- Reserve container heights for dynamic elements like live clocks or notification counters.
+
+---
+
+### 3. Interaction to Next Paint (INP) < 100ms
+
+Replacing First Input Delay (FID), INP evaluates overall responsiveness across every click, tap, and keyboard interaction on the page.
+
+**Our INP rules:**
+- Break up long-running JavaScript execution tasks using \`requestIdleCallback\` or web workers.
+- Avoid heavy React state recalculations inside high-frequency scroll or resize listeners; use native \`IntersectionObserver\` and CSS transforms instead.
+
+---
+
+### Summary Checklist
+
+| Metric | Target | Xunique Labs Average |
+| :--- | :--- | :--- |
+| **LCP** | < 2.5s | **0.8s - 1.1s** |
+| **CLS** | < 0.1 | **0.00** |
+| **INP** | < 200ms | **< 45ms** |
+| **FCP** | < 1.8s | **0.5s** |
+
+When your technical foundation is fast, your marketing spend works twice as hard.`,
+    category: "Performance",
+    tags: ["Core Web Vitals", "Lighthouse", "SEO", "Optimization", "CSS"],
+    cover_image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80",
+    author_name: "Sayyed Abdul Ali",
+    author_avatar: null,
+    status: "published",
+    read_time_minutes: 7,
+    views_count: 524,
+    featured: false,
+    created_at: "2026-08-28T14:00:00Z",
+    published_at: "2026-08-29T10:00:00Z",
+  },
+  {
+    id: "blog-004",
+    title: "Cross-Platform Mobile Engineering: Flutter vs. React Native in 2026",
+    slug: "flutter-vs-react-native-cross-platform-2026",
+    excerpt: "An architectural comparison between Flutter's compiled Impeller pipeline and React Native's new architecture with Hermes for commercial enterprise client projects.",
+    content: `## Choosing the Right Mobile Foundation
+
+When clients approach **Xunique Labs** for mobile application engineering, one of the earliest technical decisions is whether to build with **Flutter (Dart)** or **React Native (TypeScript)**.
+
+Both frameworks allow deploying to iOS and Android from a shared codebase, but their rendering philosophies and operational trade-offs differ significantly.
+
+---
+
+### 1. The Rendering Engine: Canvas vs. Native Host Components
+
+* **Flutter with Impeller:** Flutter bypasses native iOS UIKit and Android View widgets entirely. It paints every pixel directly onto a GPU canvas using its next-generation Impeller graphics engine. This guarantees 100% pixel-perfect uniformity across devices and operating system updates.
+* **React Native:** React Native acts as an orchestrator. Your JavaScript logic communicates over JSI (JavaScript Interface) with real native host UI components (e.g. \`UICollectionView\` on iOS, \`RecyclerView\` on Android).
+
+---
+
+### 2. Developer Velocity & Code Sharing
+
+If your project already features a complex Next.js or React web dashboard—like many of our SaaS client engagements—**React Native** offers unparalleled code reuse. Data fetching hooks, state management stores (Zustand, React Query), and TypeScript data models can be shared almost verbatim between web and mobile.
+
+Conversely, for applications requiring heavy custom animations, bespoke financial charts, or complex offline hardware synchronization, **Flutter** delivers superior rendering performance and rock-solid cross-platform fidelity.
+
+---
+
+### Decision Matrix
+
+| Requirement | Preferred Engine | Rationale |
+| :--- | :--- | :--- |
+| **SaaS Companion App** | React Native | Maximum shared TypeScript logic with existing web dashboard |
+| **High-Performance Consumer App** | Flutter | Direct GPU rendering with zero micro-stutter |
+| **Enterprise Internal Tools** | React Native | Seamless native biometric and MDM integrations |
+| **Custom Canvas / Graphic Apps** | Flutter | Consistent pixel reproduction across Android manufacturers |
+
+At Xunique Labs, our team is fluent in both ecosystems, architecting the exact solution tailored to your product goals and maintenance timeline.`,
+    category: "Mobile Development",
+    tags: ["Flutter", "React Native", "iOS", "Android", "Mobile"],
+    cover_image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=1200&q=80",
+    author_name: "Sayyed Abdul Ali",
+    author_avatar: null,
+    status: "published",
+    read_time_minutes: 8,
+    views_count: 673,
+    featured: false,
+    created_at: "2026-09-01T16:00:00Z",
+    published_at: "2026-09-02T11:00:00Z",
+  },
+];
+
+const LOCAL_STORAGE_BLOGS_KEY = "xunique_blog_posts";
+
+export function getLocalBlogPosts(): BlogPost[] {
+  if (typeof window === "undefined") return MOCK_BLOG_POSTS;
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_BLOGS_KEY);
+    if (!raw) {
+      localStorage.setItem(LOCAL_STORAGE_BLOGS_KEY, JSON.stringify(MOCK_BLOG_POSTS));
+      return MOCK_BLOG_POSTS;
+    }
+    return JSON.parse(raw) as BlogPost[];
+  } catch {
+    return MOCK_BLOG_POSTS;
+  }
+}
+
+export function getLocalBlogPostBySlug(slug: string): BlogPost | undefined {
+  const posts = getLocalBlogPosts();
+  return posts.find((p) => p.slug === slug);
+}
+
+export function saveLocalBlogPost(postData: Partial<BlogPost> & { title: string }): BlogPost {
+  const posts = getLocalBlogPosts();
+  const now = new Date().toISOString();
+
+  // Generate slug if not provided
+  const slug =
+    postData.slug?.trim() ||
+    postData.title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-")
+      .slice(0, 60);
+
+  // Auto calculate reading time based on content words
+  const wordCount = (postData.content || "").trim().split(/\s+/).length;
+  const calculatedReadTime = Math.max(1, Math.ceil(wordCount / 200));
+
+  if (postData.id) {
+    const existingIndex = posts.findIndex((p) => p.id === postData.id);
+    if (existingIndex >= 0) {
+      const updated: BlogPost = {
+        ...posts[existingIndex],
+        ...postData,
+        slug,
+        read_time_minutes: postData.read_time_minutes || calculatedReadTime,
+        updated_at: now,
+        published_at:
+          postData.status === "published" && !posts[existingIndex].published_at
+            ? now
+            : posts[existingIndex].published_at,
+      };
+      posts[existingIndex] = updated;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(LOCAL_STORAGE_BLOGS_KEY, JSON.stringify(posts));
+      }
+      return updated;
+    }
+  }
+
+  const newPost: BlogPost = {
+    id: postData.id || `blog-${Date.now()}`,
+    title: postData.title,
+    slug,
+    excerpt: postData.excerpt || "",
+    content: postData.content || "",
+    category: postData.category || "Engineering",
+    tags: postData.tags || ["Web Development"],
+    cover_image: postData.cover_image || null,
+    author_name: postData.author_name || "Sayyed Abdul Ali",
+    author_avatar: postData.author_avatar || null,
+    status: postData.status || "draft",
+    read_time_minutes: postData.read_time_minutes || calculatedReadTime,
+    views_count: postData.views_count || 0,
+    featured: postData.featured ?? false,
+    created_at: now,
+    published_at: postData.status === "published" ? now : null,
+    updated_at: now,
+  };
+
+  posts.unshift(newPost);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_BLOGS_KEY, JSON.stringify(posts));
+  }
+  return newPost;
+}
+
+export function deleteLocalBlogPost(id: string): void {
+  const posts = getLocalBlogPosts().filter((p) => p.id !== id);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_BLOGS_KEY, JSON.stringify(posts));
+  }
+}
+
+export function incrementLocalBlogPostViews(slug: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const posts = getLocalBlogPosts();
+    const post = posts.find((p) => p.slug === slug);
+    if (post) {
+      post.views_count = (post.views_count || 0) + 1;
+      localStorage.setItem(LOCAL_STORAGE_BLOGS_KEY, JSON.stringify(posts));
+    }
+  } catch {}
+}
+
 

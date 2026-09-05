@@ -224,6 +224,28 @@ export interface Agreement {
   client?: Client | null;
 }
 
+export type BlogStatus = "draft" | "published" | "archived";
+
+export interface BlogPost {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  content: string;
+  category: string;
+  tags: string[];
+  cover_image: string | null;
+  author_name: string;
+  author_avatar: string | null;
+  status: BlogStatus;
+  read_time_minutes: number;
+  views_count: number;
+  featured: boolean;
+  created_at: string;
+  published_at: string | null;
+  updated_at?: string;
+}
+
 export interface AppNotification {
   id: string;
   user_id: string;
@@ -333,6 +355,12 @@ export interface Database {
         Row: AppNotification;
         Insert: Partial<AppNotification> & { user_id: string; title: string; message: string };
         Update: Partial<AppNotification>;
+        Relationships: GenericRelationship[];
+      };
+      blog_posts: {
+        Row: BlogPost;
+        Insert: Partial<BlogPost> & { title: string; slug: string };
+        Update: Partial<BlogPost>;
         Relationships: GenericRelationship[];
       };
     };

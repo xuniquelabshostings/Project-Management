@@ -73,7 +73,9 @@ export function Header() {
     if (pathname.startsWith("/tasks")) return "Tasks & Kanban Board";
     if (pathname.startsWith("/invoices")) return "Financials & Invoicing";
     if (pathname.startsWith("/proposals")) return "Proposals & Contracts";
+    if (pathname.startsWith("/agreements")) return "Agreements & Contracts";
     if (pathname.startsWith("/documents")) return "Document Repository";
+    if (pathname.startsWith("/blogs")) return "Blog & Content Engine";
     if (pathname.startsWith("/team")) return "Team & User Access";
     if (pathname.startsWith("/settings")) return "Account Settings";
     return "Workspace";

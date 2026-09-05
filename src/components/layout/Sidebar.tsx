@@ -18,6 +18,7 @@ import {
   Building2,
   Globe,
   ExternalLink,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useRole } from "@/lib/hooks/useRole";
@@ -77,6 +78,12 @@ export function Sidebar() {
       name: "Documents",
       href: "/documents",
       icon: FolderOpen,
+      show: true,
+    },
+    {
+      name: "Blog Posts",
+      href: "/blogs",
+      icon: BookOpen,
       show: true,
     },
     {
