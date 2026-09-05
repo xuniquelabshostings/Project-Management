@@ -29,12 +29,58 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
 
   if (!isOpen || !invoice) return null;
 
+  // Ensure line items are present or fallback intelligently
+  const lineItems: InvoiceLineItem[] =
+    invoice.line_items && invoice.line_items.length > 0
+      ? invoice.line_items
+      : [
+          {
+            id: "default-item",
+            invoice_id: invoice.id,
+            description:
+              invoice.project?.name
+                ? `Professional Services - ${invoice.project.name} (${invoice.notes || "Milestone Deliverable"})`
+                : invoice.notes || "Professional Development & Consulting Services",
+            quantity: 1,
+            unit_price: Number(invoice.total_amount) || 0,
+            line_total: Number(invoice.total_amount) || 0,
+          },
+        ];
+
+  const subtotal = lineItems.reduce((acc, item) => acc + (Number(item.line_total) || 0), 0);
+  const total = Number(invoice.total_amount) || subtotal;
+  const clientEmail =
+    invoice.client?.contacts?.[0]?.email ||
+    (invoice.client as any)?.email ||
+    "client@example.com";
+  const clientName = invoice.client?.company_name || "Client";
+  const companyName = branding.companyName || "Xunique Labs";
+  const defaultPdfFileName = `${clientName}-Xunique Labs-Invoice`;
+
+  const emailSubject = encodeURIComponent(
+    `Invoice ${invoice.invoice_number} from ${branding.companyName}`
+  );
+  const emailBody = encodeURIComponent(
+    `Dear ${clientName},\n\nPlease find attached details for invoice ${invoice.invoice_number} for total amount ${formatINR(total)} due on ${new Date(invoice.due_date).toLocaleDateString()}.\n\nThank you for your business!\n\nBest regards,\n${branding.companyName} Team`
+  );
+
   const handlePrint = () => {
     const printContent = printRef.current;
     if (!printContent) {
       window.print();
       return;
     }
+
+    // Set document title so browsers use {client_name}-Xunique Labs-Invoice as default save filename
+    const originalDocumentTitle = document.title;
+    document.title = defaultPdfFileName;
+
+    const restoreTitle = () => {
+      document.title = originalDocumentTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+    window.addEventListener("afterprint", restoreTitle);
+    setTimeout(restoreTitle, 5000);
 
     // Clean up any previously attached print iframe
     const existingFrame = document.getElementById("invoice-print-frame");
@@ -73,7 +119,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
         <head>
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Invoice - ${invoice.invoice_number}</title>
+          <title>${defaultPdfFileName}</title>
           ${styles}
           <style>
             @page {
@@ -131,39 +177,6 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
       }
     }, 300);
   };
-
-  // Ensure line items are present or fallback intelligently
-  const lineItems: InvoiceLineItem[] =
-    invoice.line_items && invoice.line_items.length > 0
-      ? invoice.line_items
-      : [
-          {
-            id: "default-item",
-            invoice_id: invoice.id,
-            description:
-              invoice.project?.name
-                ? `Professional Services - ${invoice.project.name} (${invoice.notes || "Milestone Deliverable"})`
-                : invoice.notes || "Professional Development & Consulting Services",
-            quantity: 1,
-            unit_price: Number(invoice.total_amount) || 0,
-            line_total: Number(invoice.total_amount) || 0,
-          },
-        ];
-
-  const subtotal = lineItems.reduce((acc, item) => acc + (Number(item.line_total) || 0), 0);
-  const total = Number(invoice.total_amount) || subtotal;
-  const clientEmail =
-    invoice.client?.contacts?.[0]?.email ||
-    (invoice.client as any)?.email ||
-    "client@example.com";
-  const clientName = invoice.client?.company_name || "Valued Client";
-
-  const emailSubject = encodeURIComponent(
-    `Invoice ${invoice.invoice_number} from ${branding.companyName}`
-  );
-  const emailBody = encodeURIComponent(
-    `Dear ${clientName},\n\nPlease find attached details for invoice ${invoice.invoice_number} for total amount ${formatINR(total)} due on ${new Date(invoice.due_date).toLocaleDateString()}.\n\nThank you for your business!\n\nBest regards,\n${branding.companyName} Team`
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 md:p-6 overflow-y-auto bg-black/60 backdrop-blur-xs">
