@@ -10,6 +10,7 @@ import {
   CheckSquare,
   Receipt,
   FileText,
+  FileSignature,
   FolderOpen,
   UserCheck,
   Settings,
@@ -62,6 +63,12 @@ export function Sidebar() {
       name: "Proposals",
       href: "/proposals",
       icon: FileText,
+      show: true,
+    },
+    {
+      name: "Agreements",
+      href: "/agreements",
+      icon: FileSignature,
       show: true,
     },
     {

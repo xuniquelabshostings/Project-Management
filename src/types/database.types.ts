@@ -20,6 +20,7 @@ export type ProjectMemberRole = "lead" | "contributor" | "reviewer";
 export type TaskPriority = "low" | "medium" | "high" | "urgent";
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
 export type ProposalStatus = "draft" | "sent" | "viewed" | "accepted" | "rejected";
+export type AgreementStatus = "draft" | "sent" | "signed" | "active" | "completed";
 export type ActivityType =
   | "call"
   | "meeting"
@@ -202,6 +203,25 @@ export interface Document {
   is_sensitive: boolean;
   created_at: string;
   uploader?: Profile;
+}
+
+export interface Agreement {
+  id: string;
+  agreement_number: string;
+  client_id: string;
+  project_name: string;
+  title: string;
+  effective_date: string;
+  completion_date?: string;
+  total_fee: number;
+  payment_terms: string;
+  scope_of_work: string;
+  warranty_days: number;
+  special_terms?: string;
+  status: AgreementStatus;
+  created_at: string;
+  updated_at?: string;
+  client?: Client | null;
 }
 
 export interface AppNotification {

@@ -1,4 +1,4 @@
-import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile } from "@/types/database.types";
+import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile, Agreement } from "@/types/database.types";
 
 export const MOCK_PROFILES: Profile[] = [
   {
@@ -600,6 +600,93 @@ export function deleteLocalInvoice(invoiceId: string): Invoice[] {
     return updated;
   } catch {
     return MOCK_INVOICES.filter((i) => i.id !== invoiceId);
+  }
+}
+
+export const MOCK_AGREEMENTS: Agreement[] = [
+  {
+    id: "a0000000-0000-0000-0000-000000000001",
+    agreement_number: "AGR-2026-001",
+    client_id: "c0000000-0000-0000-0000-000000000001",
+    project_name: "FinTech Compliance & Core Portal Web App",
+    title: "Software Development & Architecture Master Agreement",
+    effective_date: "2026-08-15",
+    completion_date: "2026-11-30",
+    total_fee: 450000,
+    payment_terms: "50% upfront retainer prior to development kickoff, 50% upon final milestone inspection and code delivery.",
+    scope_of_work: "Full-stack React & Next.js frontend, secure REST APIs, automated transaction monitoring dashboard, and Supabase database architecture with strict Row Level Security.",
+    warranty_days: 14,
+    special_terms: "All cloud hosting and external infrastructure costs (AWS, Supabase, Vercel) to be directly billed to and managed by Client.",
+    status: "active",
+    created_at: "2026-08-15T10:00:00Z",
+    client: MOCK_CLIENTS[0],
+  },
+  {
+    id: "a0000000-0000-0000-0000-000000000002",
+    agreement_number: "AGR-2026-002",
+    client_id: "c0000000-0000-0000-0000-000000000002",
+    project_name: "Patient Analytics Dashboard & FHIR Sync",
+    title: "Healthcare Analytics Platform Engineering Agreement",
+    effective_date: "2026-08-20",
+    completion_date: "2026-12-15",
+    total_fee: 650000,
+    payment_terms: "40% advance retainer upon contract execution, 30% upon Milestone 1 (FHIR data pipeline), 30% upon final production deployment.",
+    scope_of_work: "Development of HIPAA-compliant analytics dashboard, secure practitioner authentication, patient cohort reporting modules, and synthetic data ingestion pipeline.",
+    warranty_days: 14,
+    special_terms: "Client holds exclusive responsibility for all clinical compliance, HIPAA/NABH patient consents, and medical data governance.",
+    status: "signed",
+    created_at: "2026-08-20T11:30:00Z",
+    client: MOCK_CLIENTS[1],
+  },
+];
+
+const LOCAL_AGREEMENTS_KEY = "xunique_custom_agreements";
+
+export function getLocalAgreements(): Agreement[] {
+  if (typeof window === "undefined") return MOCK_AGREEMENTS;
+  try {
+    const raw = localStorage.getItem(LOCAL_AGREEMENTS_KEY);
+    if (!raw) return MOCK_AGREEMENTS;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const customIds = new Set(parsed.map((a: Agreement) => a.id));
+      const remainingDefaults = MOCK_AGREEMENTS.filter((a) => !customIds.has(a.id));
+      return [...parsed, ...remainingDefaults];
+    }
+    return MOCK_AGREEMENTS;
+  } catch {
+    return MOCK_AGREEMENTS;
+  }
+}
+
+export function saveLocalAgreement(agreement: Agreement): Agreement[] {
+  if (typeof window === "undefined") return [agreement, ...MOCK_AGREEMENTS];
+  try {
+    const current = getLocalAgreements();
+    const existingIndex = current.findIndex((a) => a.id === agreement.id);
+    let updated: Agreement[];
+    if (existingIndex >= 0) {
+      updated = [...current];
+      updated[existingIndex] = agreement;
+    } else {
+      updated = [agreement, ...current];
+    }
+    localStorage.setItem(LOCAL_AGREEMENTS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [agreement, ...MOCK_AGREEMENTS];
+  }
+}
+
+export function deleteLocalAgreement(agreementId: string): Agreement[] {
+  if (typeof window === "undefined") return MOCK_AGREEMENTS.filter((a) => a.id !== agreementId);
+  try {
+    const current = getLocalAgreements();
+    const updated = current.filter((a) => a.id !== agreementId);
+    localStorage.setItem(LOCAL_AGREEMENTS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return MOCK_AGREEMENTS.filter((a) => a.id !== agreementId);
   }
 }
 
