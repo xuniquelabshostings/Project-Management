@@ -14,6 +14,7 @@ import {
   Shield,
   Send,
   Building2,
+  Printer,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -24,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { InvoiceStatusBadge } from "@/components/invoices/InvoiceStatusBadge";
 import { InvoiceModal } from "@/components/invoices/InvoiceModal";
+import { InvoicePrintModal } from "@/components/invoices/InvoicePrintModal";
 import { Invoice, InvoiceStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
@@ -38,6 +40,7 @@ export default function InvoicesPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
+  const [selectedInvoiceForPrint, setSelectedInvoiceForPrint] = useState<Invoice | null>(null);
 
   const fetchInvoices = async () => {
     try {
@@ -339,6 +342,17 @@ export default function InvoicesPage() {
                             )}
 
                             <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedInvoiceForPrint(inv)}
+                              className="text-[11px] h-7 px-2 flex items-center gap-1 hover:border-foreground/40"
+                              title="Print / Export PDF for client"
+                            >
+                              <Printer className="w-3 h-3 text-muted" />
+                              <span>Print / PDF</span>
+                            </Button>
+
+                            <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEdit(inv)}
@@ -361,6 +375,12 @@ export default function InvoicesPage() {
             onClose={() => setIsCreateModalOpen(false)}
             onSaved={() => fetchInvoices()}
             invoiceToEdit={editingInvoice}
+          />
+
+          <InvoicePrintModal
+            isOpen={!!selectedInvoiceForPrint}
+            onClose={() => setSelectedInvoiceForPrint(null)}
+            invoice={selectedInvoiceForPrint}
           />
         </div>
       </RoleGate>

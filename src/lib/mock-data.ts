@@ -229,6 +229,24 @@ export const MOCK_INVOICES: Invoice[] = [
     updated_at: "2026-09-01T15:00:00Z",
     client: MOCK_CLIENTS[0],
     project: MOCK_PROJECTS[0],
+    line_items: [
+      {
+        id: "li-001",
+        invoice_id: "i0000000-0000-0000-0000-000000000001",
+        description: "Phase 1: Architecture Blueprint & Tech Stack Setup",
+        quantity: 1,
+        unit_price: 10000,
+        line_total: 10000,
+      },
+      {
+        id: "li-002",
+        invoice_id: "i0000000-0000-0000-0000-000000000001",
+        description: "User Authentication & RBAC System Integration",
+        quantity: 1,
+        unit_price: 5000,
+        line_total: 5000,
+      },
+    ],
   },
   {
     id: "i0000000-0000-0000-0000-000000000002",
@@ -246,6 +264,24 @@ export const MOCK_INVOICES: Invoice[] = [
     updated_at: "2026-09-02T10:00:00Z",
     client: MOCK_CLIENTS[0],
     project: MOCK_PROJECTS[0],
+    line_items: [
+      {
+        id: "li-003",
+        invoice_id: "i0000000-0000-0000-0000-000000000002",
+        description: "Sprint 2: Kanban Drag-and-Drop Task Management Flow",
+        quantity: 1,
+        unit_price: 8000,
+        line_total: 8000,
+      },
+      {
+        id: "li-004",
+        invoice_id: "i0000000-0000-0000-0000-000000000002",
+        description: "Client Interaction Timeline & Audit Log Module",
+        quantity: 1,
+        unit_price: 4000,
+        line_total: 4000,
+      },
+    ],
   },
 ];
 
