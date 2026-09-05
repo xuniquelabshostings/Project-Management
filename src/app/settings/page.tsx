@@ -501,7 +501,7 @@ export default function SettingsPage() {
                     placeholder="29AABCU9603R1ZM"
                     className="text-sm font-mono uppercase"
                   />
-                  <p className="text-[11px] text-muted mt-1">Printed on all tax invoices and client receipts</p>
+                  <p className="text-[11px] text-muted mt-1">Optional business tax identifier (excluded from invoice bills)</p>
                 </div>
               </div>
 
@@ -539,7 +539,6 @@ export default function SettingsPage() {
                   <div className="text-right text-[11px] text-slate-500 space-y-0.5 hidden sm:block">
                     {brandingForm.addressLine1 && <p>{brandingForm.addressLine1}</p>}
                     {brandingForm.addressLine2 && <p>{brandingForm.addressLine2}</p>}
-                    {brandingForm.taxId && <p className="font-mono text-[10px]">GSTIN: {brandingForm.taxId}</p>}
                   </div>
                 </div>
               </div>

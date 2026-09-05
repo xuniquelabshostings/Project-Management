@@ -163,15 +163,12 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                   <p>{branding.addressLine1}</p>
                   {branding.addressLine2 && <p>{branding.addressLine2}</p>}
                   <p>{branding.email} &bull; {branding.phone}</p>
-                  {branding.taxId && (
-                    <p className="font-mono text-slate-600 pt-0.5">GSTIN / TAX: {branding.taxId}</p>
-                  )}
                 </div>
               </div>
 
               <div className="text-left sm:text-right">
                 <div className="inline-block px-3 py-1 rounded bg-slate-100 font-mono text-xs font-bold text-slate-800 tracking-wider uppercase mb-2">
-                  TAX INVOICE
+                  INVOICE
                 </div>
                 <div className="font-mono text-xl font-bold text-slate-900">
                   {invoice.invoice_number}
@@ -303,10 +300,6 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
                 <div className="flex justify-between text-slate-600">
                   <span>Subtotal:</span>
                   <span className="font-mono font-medium">{formatINR(subtotal)}</span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>GST / Tax (Included):</span>
-                  <span className="font-mono font-medium">₹0.00</span>
                 </div>
                 <div className="flex justify-between items-center pt-2 border-t-2 border-slate-900 text-sm font-bold text-slate-900">
                   <span>Grand Total:</span>
