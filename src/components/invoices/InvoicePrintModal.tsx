@@ -319,54 +319,12 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
               </div>
             </div>
 
-            {/* Bank Details & Payment Instructions */}
-            <div className="py-6 grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs text-slate-600 bg-slate-50/70 p-4 rounded-md my-4 border border-slate-100">
-              <div>
-                <p className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-1.5">
-                  Direct Bank Transfer (NEFT / RTGS)
-                </p>
-                <div className="space-y-1">
-                  <p>
-                    <span className="text-slate-400">Account Name:</span>{" "}
-                    <strong className="text-slate-800">{branding.companyName}</strong>
-                  </p>
-                  <p>
-                    <span className="text-slate-400">Bank:</span>{" "}
-                    <strong className="text-slate-800">HDFC Bank Ltd.</strong>
-                  </p>
-                  <p>
-                    <span className="text-slate-400">Account No:</span>{" "}
-                    <strong className="font-mono text-slate-900">5020 0012 3456 78</strong>
-                  </p>
-                  <p>
-                    <span className="text-slate-400">IFSC Code:</span>{" "}
-                    <strong className="font-mono text-slate-900">HDFC0001234</strong>
-                  </p>
-                </div>
-              </div>
-
-              <div>
-                <p className="font-bold text-slate-900 uppercase tracking-wider text-[10px] mb-1.5">
-                  UPI &amp; Instant Remittance
-                </p>
-                <div className="space-y-1">
-                  <p>
-                    <span className="text-slate-400">UPI ID:</span>{" "}
-                    <strong className="font-mono text-slate-900">xunique@upi</strong>
-                  </p>
-                  <p className="text-[11px] text-slate-500 pt-1">
-                    Please reference invoice number <span className="font-mono font-medium text-slate-800">{invoice.invoice_number}</span> in transaction remarks.
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* Footer / Terms */}
-            <div className="pt-4 flex flex-col sm:flex-row justify-between items-end gap-4 text-[11px] text-slate-400 border-t border-slate-100">
+            <div className="pt-6 flex flex-col sm:flex-row justify-between items-end gap-4 text-[11px] text-slate-400 border-t border-slate-100">
               <div>
                 <p className="font-medium text-slate-600">Terms &amp; Conditions</p>
                 <p>1. Payment is due within 15 days of invoice issue date.</p>
-                <p>2. Please quote invoice number in all wire remittances.</p>
+                <p>2. Please quote invoice number in all communications.</p>
               </div>
 
               <div className="text-right">
