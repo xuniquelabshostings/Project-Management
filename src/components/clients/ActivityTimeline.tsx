@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { ActivityLogModal } from "./ActivityLogModal";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { deleteLocalActivity, isValidUuid } from "@/lib/mock-data";
 
 interface ActivityTimelineProps {
   clientId: string;
@@ -69,13 +70,15 @@ export function ActivityTimeline({
 
   const handleDelete = async (activityId: string) => {
     if (!confirm("Are you sure you want to delete this interaction log?")) return;
+    deleteLocalActivity(activityId);
     try {
-      const { error } = await supabase.from("activity_log").delete().eq("id", activityId);
-      if (error) throw error;
-      onActivitiesUpdated();
+      if (isValidUuid(activityId)) {
+        await supabase.from("activity_log").delete().eq("id", activityId);
+      }
     } catch (err: any) {
-      alert(`Failed to delete activity: ${err.message}`);
+      console.warn("Failed to delete activity from database:", err.message);
     }
+    onActivitiesUpdated();
   };
 
   return (

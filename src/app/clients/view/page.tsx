@@ -32,7 +32,7 @@ import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, getLocalProjects, isValidUuid } from "@/lib/mock-data";
+import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, getLocalProjects, getLocalActivities, isValidUuid } from "@/lib/mock-data";
 
 function ClientDetailContent() {
   const searchParams = useSearchParams();
@@ -61,7 +61,7 @@ function ClientDetailContent() {
           MOCK_CLIENTS[0];
         setClient(fallback);
         setContacts(fallback.contacts || []);
-        setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
+        setActivities(getLocalActivities(fallback.id));
         setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
         setIsLoading(false);
         return;
@@ -83,7 +83,7 @@ function ClientDetailContent() {
         if (fallback) {
           setClient(fallback);
           setContacts(fallback.contacts || []);
-          setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
+          setActivities(getLocalActivities(fallback.id));
           setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
           return;
         }
@@ -92,23 +92,36 @@ function ClientDetailContent() {
       }
 
       // 3. Fetch contacts
+      const localClient = getLocalClients().find((c) => c.id === clientId);
+      const localContacts = localClient?.contacts || [];
       const { data: contactsData } = await supabase
         .from("contacts")
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: true });
       if (contactsData && contactsData.length > 0) {
-        setContacts(contactsData as Contact[]);
+        const customContacts = localContacts.filter((lc) => !contactsData.some((cd) => cd.id === lc.id));
+        setContacts([...customContacts, ...(contactsData as Contact[])]);
+      } else if (localContacts.length > 0) {
+        setContacts(localContacts);
       }
 
       // 4. Fetch activity log
+      const localActs = getLocalActivities(clientId);
       const { data: activitiesData } = await supabase
         .from("activity_log")
         .select("*, author:profiles(*)")
         .eq("client_id", clientId)
         .order("occurred_at", { ascending: false });
+
       if (activitiesData && activitiesData.length > 0) {
-        setActivities(activitiesData as ActivityLogEntry[]);
+        const customActs = localActs.filter((la) => !activitiesData.some((ad) => ad.id === la.id));
+        const combined = [...customActs, ...(activitiesData as ActivityLogEntry[])].sort(
+          (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
+        );
+        setActivities(combined);
+      } else {
+        setActivities(localActs);
       }
 
       // 5. Fetch linked projects
@@ -135,7 +148,7 @@ function ClientDetailContent() {
       if (fallback) {
         setClient(fallback);
         setContacts(fallback.contacts || []);
-        setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
+        setActivities(getLocalActivities(fallback.id));
         setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
       }
     } finally {

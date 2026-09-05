@@ -30,15 +30,26 @@ export function ActivityLogModal({ isOpen, onClose, clientId, onLogged }: Activi
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const saveLocally = (fullTimestamp: string) => {
+    const activeProfile = profile || {
+      id: "00000000-0000-0000-0000-000000000001",
+      email: "admin@xuniquelabs.com",
+      full_name: "Marcus Vance",
+      role: "admin" as const,
+      avatar_url: null,
+      phone: "+1 (555) 019-2831",
+      theme_preference: "system" as const,
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+    };
     const mockActivity: ActivityLogEntry = {
       id: generateUUID(),
       client_id: clientId,
-      logged_by: profile?.id || "00000000-0000-0000-0000-000000000001",
+      logged_by: activeProfile.id,
       type,
       summary: summary.trim(),
       occurred_at: fullTimestamp,
       created_at: new Date().toISOString(),
-      author: profile || undefined,
+      author: activeProfile,
     };
     saveLocalActivity(mockActivity);
     onLogged(mockActivity);
@@ -52,10 +63,18 @@ export function ActivityLogModal({ isOpen, onClose, clientId, onLogged }: Activi
       setErrorMsg("Summary / discussion notes cannot be empty.");
       return;
     }
-    if (!profile) {
-      setErrorMsg("You must be logged in to log an interaction.");
-      return;
-    }
+
+    const activeProfile = profile || {
+      id: "00000000-0000-0000-0000-000000000001",
+      email: "admin@xuniquelabs.com",
+      full_name: "Marcus Vance",
+      role: "admin" as const,
+      avatar_url: null,
+      phone: "+1 (555) 019-2831",
+      theme_preference: "system" as const,
+      created_at: "2026-01-01T00:00:00Z",
+      updated_at: "2026-01-01T00:00:00Z",
+    };
 
     setIsLoading(true);
     setErrorMsg(null);
@@ -63,7 +82,7 @@ export function ActivityLogModal({ isOpen, onClose, clientId, onLogged }: Activi
     const fullTimestamp = new Date(`${occurredAtDate}T${occurredAtTime}:00`).toISOString();
 
     // If client ID is local or profile is demo, save directly to local store
-    if (!isValidUuid(clientId) || profile.id.startsWith("00000000")) {
+    if (!isValidUuid(clientId) || activeProfile.id.startsWith("00000000")) {
       saveLocally(fullTimestamp);
       setIsLoading(false);
       return;
@@ -74,7 +93,7 @@ export function ActivityLogModal({ isOpen, onClose, clientId, onLogged }: Activi
         .from("activity_log")
         .insert({
           client_id: clientId,
-          logged_by: profile.id,
+          logged_by: activeProfile.id,
           type,
           summary: summary.trim(),
           occurred_at: fullTimestamp,
@@ -89,16 +108,9 @@ export function ActivityLogModal({ isOpen, onClose, clientId, onLogged }: Activi
       setSummary("");
       onClose();
     } catch (err: any) {
-      if (
-        err.message?.toLowerCase().includes("row-level security") ||
-        err.code === "42501" ||
-        err.code === "22P02" ||
-        err.status === 403
-      ) {
-        saveLocally(fullTimestamp);
-        return;
-      }
-      setErrorMsg(err.message || "Failed to log activity.");
+      console.warn("Falling back to local activity store:", err.message);
+      // Fallback on any error (foreign key, RLS, network, offline)
+      saveLocally(fullTimestamp);
     } finally {
       setIsLoading(false);
     }

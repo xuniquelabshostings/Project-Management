@@ -381,15 +381,18 @@ const LOCAL_ACTIVITIES_KEY = "xunique_custom_activities";
 
 export function getLocalActivities(clientId?: string): ActivityLogEntry[] {
   if (typeof window === "undefined") {
-    return clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
+    const list = clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
+    return list.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
   }
   try {
     const raw = localStorage.getItem(LOCAL_ACTIVITIES_KEY);
     const parsed: ActivityLogEntry[] = raw ? JSON.parse(raw) : [];
     const all = [...parsed, ...MOCK_ACTIVITIES];
-    return clientId ? all.filter((a: ActivityLogEntry) => a.client_id === clientId) : all;
+    const filtered = clientId ? all.filter((a: ActivityLogEntry) => a.client_id === clientId) : all;
+    return filtered.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
   } catch {
-    return clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
+    const list = clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
+    return list.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
   }
 }
 
@@ -402,6 +405,18 @@ export function saveLocalActivity(activity: ActivityLogEntry): void {
     localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify(updated));
   } catch (err) {
     console.warn("Failed to save local activity:", err);
+  }
+}
+
+export function deleteLocalActivity(activityId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = localStorage.getItem(LOCAL_ACTIVITIES_KEY);
+    const parsed: ActivityLogEntry[] = raw ? JSON.parse(raw) : [];
+    const updated = parsed.filter((a) => a.id !== activityId);
+    localStorage.setItem(LOCAL_ACTIVITIES_KEY, JSON.stringify(updated));
+  } catch (err) {
+    console.warn("Failed to delete local activity:", err);
   }
 }
 
