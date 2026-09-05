@@ -118,14 +118,14 @@ export default function SettingsPage() {
 
               <div>
                 <label className="block text-xs font-medium text-foreground mb-1.5">
-                  Assigned Internal Role
+                  Account Privilege Level
                 </label>
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs uppercase font-mono px-3 py-1">
-                    {profile?.role.replace("_", " ") || "Developer"}
+                  <Badge variant="outline" className="text-xs uppercase font-mono px-3 py-1 font-semibold text-accent border-accent/40 bg-accent/5">
+                    Administrator
                   </Badge>
                   <span className="text-[11px] text-muted">
-                    (Role is assigned and protected by administrator policies)
+                    (Single-user mode &bull; Full unrestricted administrative access)
                   </span>
                 </div>
               </div>

@@ -264,7 +264,6 @@ export default function ClientsPage() {
                       <TableHead>Company</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Lead Source</TableHead>
-                      <TableHead>Account Manager</TableHead>
                       <TableHead>Contacts</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -309,12 +308,6 @@ export default function ClientsPage() {
 
                         <TableCell className="text-xs text-muted capitalize font-mono">
                           {client.lead_source || "—"}
-                        </TableCell>
-
-                        <TableCell className="text-xs text-foreground">
-                          {client.account_manager?.full_name || (
-                            <span className="text-muted italic">Unassigned</span>
-                          )}
                         </TableCell>
 
                         <TableCell className="text-xs text-muted">

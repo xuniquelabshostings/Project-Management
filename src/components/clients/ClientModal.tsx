@@ -258,27 +258,6 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
 
         <div>
           <label className="block text-xs font-medium text-foreground mb-1.5">
-            Assigned Account Manager
-          </label>
-          <select
-            value={accountManagerId}
-            onChange={(e) => setAccountManagerId(e.target.value)}
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
-          >
-            <option value="">Unassigned</option>
-            {accountManagers.map((am) => (
-              <option key={am.id} value={am.id}>
-                {am.full_name || am.email} ({am.role})
-              </option>
-            ))}
-          </select>
-          <p className="text-[11px] text-muted mt-1">
-            The assigned account manager oversees client communication and deliverables.
-          </p>
-        </div>
-
-        <div>
-          <label className="block text-xs font-medium text-foreground mb-1.5">
             Tags (comma-separated)
           </label>
           <Input

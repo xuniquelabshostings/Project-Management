@@ -247,13 +247,6 @@ function ClientDetailContent() {
                     <Globe className="w-3.5 h-3.5" /> {client.website.replace(/^https?:\/\//, "")}
                   </a>
                 )}
-                <span className="flex items-center gap-1">
-                  <User className="w-3.5 h-3.5" />
-                  Account Manager:{" "}
-                  <strong className="text-foreground font-medium">
-                    {client.account_manager?.full_name || "Unassigned"}
-                  </strong>
-                </span>
               </div>
 
               {client.tags && client.tags.length > 0 && (

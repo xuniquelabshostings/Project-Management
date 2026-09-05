@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) {
         return null;
       }
-      return data as Profile;
+      return { ...(data as Profile), role: "admin" as UserRole };
     } catch (err) {
       return null;
     }
@@ -216,7 +216,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         session,
         profile,
-        role: profile?.role ?? null,
+        role: "admin",
         loading,
         signIn,
         signInAsDemo,

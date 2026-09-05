@@ -36,7 +36,7 @@ export function Sidebar() {
       name: "Clients",
       href: "/clients",
       icon: Users,
-      show: isAdmin || isAccountManager,
+      show: true,
     },
     {
       name: "Projects",
@@ -54,25 +54,19 @@ export function Sidebar() {
       name: "Invoices",
       href: "/invoices",
       icon: Receipt,
-      show: isAdmin || isAccountManager,
+      show: true,
     },
     {
       name: "Proposals",
       href: "/proposals",
       icon: FileText,
-      show: isAdmin || isAccountManager,
+      show: true,
     },
     {
       name: "Documents",
       href: "/documents",
       icon: FolderOpen,
       show: true,
-    },
-    {
-      name: "Team",
-      href: "/team",
-      icon: UserCheck,
-      show: isAdmin,
     },
     {
       name: "Settings",
@@ -82,18 +76,7 @@ export function Sidebar() {
     },
   ];
 
-  const formatRoleName = (r?: string | null) => {
-    switch (r) {
-      case "admin":
-        return "Admin";
-      case "account_manager":
-        return "Account Manager";
-      case "developer":
-        return "Developer";
-      default:
-        return "Team Member";
-    }
-  };
+  const formatRoleName = (_r?: string | null) => "Administrator";
 
   return (
     <aside className="w-64 border-r border-border bg-surface flex flex-col h-screen select-none shrink-0">

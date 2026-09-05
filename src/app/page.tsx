@@ -162,41 +162,26 @@ export default function DashboardPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-border/50">
           <div>
             <h1 className="font-serif text-2xl font-semibold text-foreground tracking-tight">
-              Welcome back, {profile?.full_name?.split(" ")[0] || "Team Member"}
+              Welcome back, {profile?.full_name?.split(" ")[0] || "Administrator"}
             </h1>
             <p className="text-sm text-muted mt-1">
-              Internal coordination & client management hub &bull; Role:{" "}
-              <span className="font-mono text-foreground capitalize">
-                {role?.replace("_", " ") || "Authenticating"}
-              </span>
+              Internal agency & client management hub &bull; Administrator
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            {(isAdmin || isAccountManager) && (
-              <>
-                <Link href="/clients">
-                  <Button variant="outline" size="sm">
-                    <Users className="w-3.5 h-3.5 mr-1.5" />
-                    Clients
-                  </Button>
-                </Link>
-                <Link href="/projects">
-                  <Button variant="primary" size="sm">
-                    <Plus className="w-3.5 h-3.5 mr-1" />
-                    New Project
-                  </Button>
-                </Link>
-              </>
-            )}
-            {isDeveloper && (
-              <Link href="/tasks">
-                <Button variant="primary" size="sm">
-                  <CheckSquare className="w-3.5 h-3.5 mr-1.5" />
-                  My Kanban Board
-                </Button>
-              </Link>
-            )}
+            <Link href="/clients">
+              <Button variant="outline" size="sm">
+                <Users className="w-3.5 h-3.5 mr-1.5" />
+                Clients
+              </Button>
+            </Link>
+            <Link href="/projects">
+              <Button variant="primary" size="sm">
+                <Plus className="w-3.5 h-3.5 mr-1" />
+                New Project
+              </Button>
+            </Link>
           </div>
         </div>
 

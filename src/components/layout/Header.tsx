@@ -102,11 +102,9 @@ export function Header() {
 
       <div className="flex items-center gap-3">
         {/* Role badge */}
-        {role && (
-          <Badge variant={getRoleBadgeVariant(role)} className="capitalize text-[11px] font-mono">
-            {role.replace("_", " ")}
-          </Badge>
-        )}
+        <Badge variant="danger" className="uppercase text-[10px] font-mono tracking-wider font-semibold">
+          Admin
+        </Badge>
 
         {/* Notification bell dropdown */}
         <div className="relative">

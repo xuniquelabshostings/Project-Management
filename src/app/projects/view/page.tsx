@@ -51,7 +51,7 @@ function ProjectWorkspaceContent() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [members, setMembers] = useState<ProjectMember[]>([]);
-  const [activeTab, setActiveTab] = useState<"kanban" | "milestones" | "team">("kanban");
+  const [activeTab, setActiveTab] = useState<"kanban" | "milestones">("kanban");
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
@@ -289,7 +289,7 @@ function ProjectWorkspaceContent() {
               )}
 
               <div className="flex flex-wrap items-center gap-4 text-xs text-muted pt-1">
-                {project.budget && (isAdmin || isAccountManager) && (
+                {project.budget && (
                   <span className="flex items-center gap-1">
                     <IndianRupee className="w-3.5 h-3.5 text-accent" />
                     Budget:{" "}
@@ -304,10 +304,6 @@ function ProjectWorkspaceContent() {
                     {project.start_date || "TBD"} &rarr; {project.end_date || "TBD"}
                   </span>
                 )}
-                <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-muted" />
-                  {members.length} team members
-                </span>
               </div>
 
               {project.tech_stack && project.tech_stack.length > 0 && (
@@ -332,15 +328,13 @@ function ProjectWorkspaceContent() {
               >
                 <Plus className="w-3.5 h-3.5 mr-1" /> New Task
               </Button>
-              {canCreateClients && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditModalOpen(true)}
-                >
-                  <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
-                </Button>
-              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditModalOpen(true)}
+              >
+                <Edit2 className="w-3.5 h-3.5 mr-1" /> Edit
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -371,18 +365,6 @@ function ProjectWorkspaceContent() {
           <Flag className="w-4 h-4" />
           Milestones ({milestones.length})
         </button>
-
-        <button
-          onClick={() => setActiveTab("team")}
-          className={`pb-3 border-b-2 font-medium flex items-center gap-2 transition-colors ${
-            activeTab === "team"
-              ? "border-accent text-accent"
-              : "border-transparent text-muted hover:text-foreground"
-          }`}
-        >
-          <Users className="w-4 h-4" />
-          Team ({members.length})
-        </button>
       </div>
 
       {/* Tab Panels */}
@@ -400,15 +382,6 @@ function ProjectWorkspaceContent() {
           projectId={projectId}
           milestones={milestones}
           onMilestonesUpdated={fetchProjectData}
-        />
-      )}
-
-      {activeTab === "team" && (
-        <ProjectTeamList
-          projectId={projectId}
-          members={members}
-          onMembersUpdated={fetchProjectData}
-          canManage={canCreateClients}
         />
       )}
 

@@ -10,16 +10,7 @@ interface RoleGateProps {
   fallback?: React.ReactNode;
 }
 
-export function RoleGate({ allowedRoles, children, fallback = null }: RoleGateProps) {
-  const { role, loading } = useRole();
-
-  if (loading) {
-    return null;
-  }
-
-  if (!role || !allowedRoles.includes(role)) {
-    return <>{fallback}</>;
-  }
-
+export function RoleGate({ children }: RoleGateProps) {
+  // Single-user workspace: operator has full administrative access across all modules
   return <>{children}</>;
 }
