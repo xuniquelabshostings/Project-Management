@@ -36,7 +36,7 @@ export default function TeamPage() {
               <Settings className="w-3.5 h-3.5 mr-1.5" /> Go to Account Settings
             </Button>
           </Link>
-          <Link href="/">
+          <Link href="/management">
             <Button variant="outline" size="sm">
               Dashboard <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
             </Button>

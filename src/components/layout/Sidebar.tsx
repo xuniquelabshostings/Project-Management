@@ -16,6 +16,8 @@ import {
   Settings,
   LogOut,
   Building2,
+  Globe,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useRole } from "@/lib/hooks/useRole";
@@ -31,7 +33,7 @@ export function Sidebar() {
   const navigation = [
     {
       name: "Dashboard",
-      href: "/",
+      href: "/management",
       icon: LayoutDashboard,
       show: true,
     },
@@ -118,8 +120,8 @@ export function Sidebar() {
           .filter((item) => item.show)
           .map((item) => {
             const isActive =
-              item.href === "/"
-                ? pathname === "/"
+              item.href === "/management"
+                ? pathname === "/management"
                 : pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
 
@@ -146,6 +148,20 @@ export function Sidebar() {
               </Link>
             );
           })}
+
+        <div className="pt-2 mt-2 border-t border-border/40">
+          <Link
+            href="/"
+            target="_blank"
+            className="group flex items-center justify-between px-3 py-2 rounded-md text-xs text-muted hover:text-foreground hover:bg-surface-elevated transition-colors"
+          >
+            <div className="flex items-center gap-2.5">
+              <Globe className="w-3.5 h-3.5 text-accent" />
+              <span>Visit Live Website</span>
+            </div>
+            <ExternalLink className="w-3 h-3 text-muted group-hover:text-foreground" />
+          </Link>
+        </div>
       </nav>
 
       {/* User profile footer */}

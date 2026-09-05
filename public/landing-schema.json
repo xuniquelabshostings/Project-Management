@@ -1,0 +1,163 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": ["ProfessionalService", "LocalBusiness"],
+      "@id": "https://xuniquelabs.com/#organization",
+      "name": "Xunique Labs",
+      "alternateName": ["XuniqueLabs", "Xunique Labs Delhi", "Website Developer in Delhi - Xunique Labs"],
+      "url": "https://xuniquelabs.com/",
+      "logo": "https://xuniquelabs.com/assets/logo-mark.png",
+      "image": "https://xuniquelabs.com/assets/logo-mark.png",
+      "description": "Xunique Labs is a leading website developer and mobile app development company based in Delhi, founded by Sayyed Abdul Ali. We engineer high-performance web applications, Flutter mobile apps, e-commerce stores, and custom software systems.",
+      "telephone": "+917458845252",
+      "email": "sayyednawababdulali@gmail.com",
+      "founder": {
+        "@type": "Person",
+        "@id": "https://xuniquelabs.com/#founder",
+        "name": "Sayyed Abdul Ali",
+        "alternateName": "Sayyed Nawab Abdul Ali",
+        "jobTitle": "Lead Software Engineer & Founder",
+        "url": "https://xuniquelabs.com/",
+        "knowsAbout": [
+          "Website Development",
+          "Mobile App Development",
+          "Full-Stack Web Engineering",
+          "React",
+          "Next.js",
+          "Flutter",
+          "Python",
+          "PostgreSQL",
+          "UI/UX Design",
+          "SEO Optimization"
+        ]
+      },
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Delhi",
+        "addressRegion": "Delhi",
+        "addressCountry": "IN"
+      },
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": 28.6139,
+        "longitude": 77.2090
+      },
+      "areaServed": [
+        { "@type": "City", "name": "Delhi" },
+        { "@type": "City", "name": "New Delhi" },
+        { "@type": "City", "name": "Noida" },
+        { "@type": "City", "name": "Gurugram" },
+        { "@type": "Country", "name": "India" }
+      ],
+      "priceRange": "₹1,999 - ₹50,000+",
+      "openingHoursSpecification": {
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+        "opens": "09:00",
+        "closes": "20:00"
+      },
+      "hasOfferCatalog": {
+        "@type": "OfferCatalog",
+        "name": "Web and Mobile App Development Services",
+        "itemListElement": [
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Website Development in Delhi",
+              "description": "High-performance responsive websites, business websites, landing pages, and Next.js platforms."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Mobile App Development",
+              "description": "Cross-platform iOS and Android mobile app development using Flutter and React Native."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "E-Commerce Website Development",
+              "description": "Custom e-commerce store setup, WooCommerce, payment gateways, and inventory catalogs."
+            }
+          },
+          {
+            "@type": "Offer",
+            "itemOffered": {
+              "@type": "Service",
+              "name": "Custom Software & MVP Engineering",
+              "description": "Full-stack web application development, scalable APIs, and startup MVP launches."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://xuniquelabs.com/#website",
+      "url": "https://xuniquelabs.com/",
+      "name": "Xunique Labs",
+      "description": "Website Developer in Delhi | Web & Mobile App Development Studio",
+      "publisher": { "@id": "https://xuniquelabs.com/#organization" },
+      "inLanguage": "en-IN"
+    },
+    {
+      "@type": "FAQPage",
+      "@id": "https://xuniquelabs.com/#faq",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Looking for a top website developer in Delhi? How does Xunique Labs deliver?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Xunique Labs is a Delhi-based software and website development studio. Unlike typical agencies that outsource or use bloated templates, we handcraft precision-engineered, responsive websites, Next.js web applications, and custom software designed to load under 1 second and rank high on search engines."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Why choose Xunique Labs over standard web development agencies?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "At Xunique Labs, your project is architected and built directly by senior engineers without intermediary account managers or bloated code. We deliver custom-coded solutions with zero unnecessary dependencies, guaranteed sub-second loading speeds, and full source code ownership."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What is the cost of website development in Delhi?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "We offer transparent, competitive pricing: Starter landing pages start at ₹1,999/- (1–2 days delivery), 5-page Business Websites are ₹7,999/-, and full-featured E-Commerce Stores are ₹9,999/-. For complex SaaS, web apps, and mobile applications, we provide custom milestone-based pricing."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Do you provide mobile app development alongside web development?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Xunique Labs specializes in both mobile, web, and app dev. We engineer cross-platform mobile apps for iOS and Android using Flutter and React Native, seamlessly synchronized with cloud backends (Firebase, Node.js, PostgreSQL, Supabase) and custom REST/GraphQL APIs."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How do you ensure websites and apps rank on Google?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Every website we build includes on-page SEO optimization: clean semantic HTML5, Schema.org JSON-LD structured data, Core Web Vitals optimization (100/100 Lighthouse performance), mobile responsiveness, Open Graph social tags, and automated XML sitemaps."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How can we start a project with Xunique Labs?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "You can reach out via our contact form on xuniquelabs.com, dispatch an email to support@xuniquelabs.com, or message us directly on WhatsApp at +91 74588 45252 for instant project scoping."
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -67,7 +67,7 @@ export function Header() {
   };
 
   const getPageTitle = () => {
-    if (pathname === "/") return "Overview & Dashboard";
+    if (pathname === "/management" || pathname === "/") return "Overview & Dashboard";
     if (pathname.startsWith("/clients")) return "Clients & Accounts";
     if (pathname.startsWith("/projects")) return "Projects & Milestones";
     if (pathname.startsWith("/tasks")) return "Tasks & Kanban Board";

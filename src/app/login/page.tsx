@@ -13,7 +13,8 @@ import { UserRole } from "@/types/database.types";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get("redirect") || "/";
+  const redirectParam = searchParams.get("redirect");
+  const redirectUrl = redirectParam && redirectParam !== "/" ? redirectParam : "/management";
 
   const { signIn, signInAsDemo, user } = useAuth();
   const [email, setEmail] = useState("");
