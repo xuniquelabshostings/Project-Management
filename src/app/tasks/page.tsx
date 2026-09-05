@@ -22,11 +22,13 @@ import { Input } from "@/components/ui/input";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { Task, TaskPriority, Project } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import { MOCK_TASKS, MOCK_PROJECTS } from "@/lib/mock-data";
+import { MOCK_TASKS, MOCK_PROJECTS, getLocalProjects } from "@/lib/mock-data";
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(() =>
+    typeof window !== "undefined" ? getLocalProjects() : []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState<string>("all");
@@ -53,15 +55,17 @@ export default function TasksPage() {
         setTasks(MOCK_TASKS);
       }
 
+      const localProjects = getLocalProjects();
       if (projectsRes.data && projectsRes.data.length > 0) {
-        setProjects(projectsRes.data as Project[]);
+        const custom = localProjects.filter((p) => !projectsRes.data!.some((d) => d.id === p.id));
+        setProjects([...custom, ...(projectsRes.data as Project[])]);
       } else {
-        setProjects(MOCK_PROJECTS);
+        setProjects(localProjects);
       }
     } catch (err: any) {
       console.warn("Failed to load tasks, using fallback:", err.message);
       setTasks(MOCK_TASKS);
-      setProjects(MOCK_PROJECTS);
+      setProjects(getLocalProjects());
     } finally {
       setIsLoading(false);
     }

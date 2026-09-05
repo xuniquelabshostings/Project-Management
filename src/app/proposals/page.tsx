@@ -24,10 +24,13 @@ import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { Proposal, ProposalStatus, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
+import { getLocalClients } from "@/lib/mock-data";
 
 export default function ProposalsPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<Client[]>(() =>
+    typeof window !== "undefined" ? getLocalClients() : []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -54,9 +57,16 @@ export default function ProposalsPage() {
       ]);
 
       if (pRes.data) setProposals(pRes.data as Proposal[]);
-      if (cRes.data) setClients(cRes.data as Client[]);
+      const localList = getLocalClients();
+      if (cRes.data && cRes.data.length > 0) {
+        const custom = localList.filter((c) => !cRes.data!.some((d) => d.id === c.id));
+        setClients([...custom, ...(cRes.data as Client[])]);
+      } else {
+        setClients(localList);
+      }
     } catch (err: any) {
       console.warn("Failed to load proposals:", err.message);
+      setClients(getLocalClients());
     } finally {
       setIsLoading(false);
     }

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Invoice, InvoiceStatus, Client, Project, Milestone } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import { isValidUuid, MOCK_PROJECTS } from "@/lib/mock-data";
+import { isValidUuid, MOCK_PROJECTS, getLocalClients, getLocalProjects } from "@/lib/mock-data";
 
 interface LineItemDraft {
   id?: string;
@@ -38,7 +38,9 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
     { description: "Sprint Milestone Delivery", quantity: 1, unit_price: 5000 },
   ]);
 
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<Client[]>(() =>
+    typeof window !== "undefined" ? getLocalClients() : []
+  );
   const [projects, setProjects] = useState<Project[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -46,11 +48,24 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
 
   useEffect(() => {
     async function loadClients() {
-      const { data } = await supabase
-        .from("clients")
-        .select("id, company_name")
-        .order("company_name", { ascending: true });
-      if (data) setClients(data as Client[]);
+      const localList = getLocalClients();
+      if (clients.length === 0 && localList.length > 0) {
+        setClients(localList);
+      }
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("id, company_name")
+          .order("company_name", { ascending: true });
+        if (data && data.length > 0) {
+          const custom = localList.filter((c) => !data.some((d) => d.id === c.id));
+          setClients([...custom, ...(data as Client[])]);
+        } else {
+          setClients(localList);
+        }
+      } catch {
+        setClients(localList);
+      }
     }
     if (isOpen) loadClients();
   }, [isOpen]);
@@ -62,19 +77,23 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
         setMilestones([]);
         return;
       }
+      const localProjs = getLocalProjects().filter((p) => p.client_id === clientId);
       if (!isValidUuid(clientId)) {
-        const localProjs = MOCK_PROJECTS.filter((p) => p.client_id === clientId);
         setProjects(localProjs);
         return;
       }
-      const { data } = await supabase
-        .from("projects")
-        .select("id, name")
-        .eq("client_id", clientId);
-      if (data && data.length > 0) {
-        setProjects(data as Project[]);
-      } else {
-        const localProjs = MOCK_PROJECTS.filter((p) => p.client_id === clientId);
+      try {
+        const { data } = await supabase
+          .from("projects")
+          .select("id, name")
+          .eq("client_id", clientId);
+        if (data && data.length > 0) {
+          const custom = localProjs.filter((lp) => !data.some((d) => d.id === lp.id));
+          setProjects([...custom, ...(data as Project[])]);
+        } else {
+          setProjects(localProjs);
+        }
+      } catch {
         setProjects(localProjs);
       }
     }

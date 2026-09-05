@@ -22,14 +22,16 @@ import { ProjectModal } from "@/components/projects/ProjectModal";
 import { Project, ProjectStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
-import { MOCK_PROJECTS } from "@/lib/mock-data";
+import { MOCK_PROJECTS, getLocalProjects, saveLocalProject } from "@/lib/mock-data";
 
 function ProjectsContent() {
   const searchParams = useSearchParams();
   const defaultClientId = searchParams.get("newClient") || undefined;
 
   const { canCreateClients } = useRole();
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<Project[]>(() =>
+    typeof window !== "undefined" ? getLocalProjects() : []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -43,17 +45,16 @@ function ProjectsContent() {
         .select("*, client:clients(*), members:project_members(*)")
         .order("created_at", { ascending: false });
 
+      const localProjects = getLocalProjects();
       if (data && data.length > 0) {
-        setProjects(data as Project[]);
+        const custom = localProjects.filter((lp) => !data.some((d) => d.id === lp.id));
+        setProjects([...custom, ...(data as Project[])]);
       } else {
-        const isDemo = typeof window !== "undefined" && localStorage.getItem("xunique_demo_session_role");
-        if (isDemo || !data || data.length === 0) {
-          setProjects(MOCK_PROJECTS);
-        }
+        setProjects(localProjects);
       }
     } catch (err: any) {
       console.warn("Failed to load projects, using fallback data:", err.message);
-      setProjects(MOCK_PROJECTS);
+      setProjects(getLocalProjects());
     } finally {
       setIsLoading(false);
     }
@@ -238,7 +239,10 @@ function ProjectsContent() {
       <ProjectModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSaved={() => fetchProjects()}
+        onSaved={(p) => {
+          saveLocalProject(p);
+          fetchProjects();
+        }}
         defaultClientId={defaultClientId}
       />
     </div>

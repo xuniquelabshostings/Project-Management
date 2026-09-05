@@ -26,6 +26,7 @@ import { DocumentUploadModal } from "@/components/documents/DocumentUploadModal"
 import { Document, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
+import { getLocalClients } from "@/lib/mock-data";
 
 function DocumentsContent() {
   const searchParams = useSearchParams();
@@ -33,7 +34,9 @@ function DocumentsContent() {
   const { profile } = useAuth();
 
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<Client[]>(() =>
+    typeof window !== "undefined" ? getLocalClients() : []
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<string>(filterClientId);
@@ -52,9 +55,16 @@ function DocumentsContent() {
       ]);
 
       if (docsRes.data) setDocuments(docsRes.data as Document[]);
-      if (clientsRes.data) setClients(clientsRes.data as Client[]);
+      const localList = getLocalClients();
+      if (clientsRes.data && clientsRes.data.length > 0) {
+        const custom = localList.filter((c) => !clientsRes.data!.some((d) => d.id === c.id));
+        setClients([...custom, ...(clientsRes.data as Client[])]);
+      } else {
+        setClients(localList);
+      }
     } catch (err: any) {
       console.warn("Failed to load documents:", err.message);
+      setClients(getLocalClients());
     } finally {
       setIsLoading(false);
     }

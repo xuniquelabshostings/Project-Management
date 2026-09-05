@@ -404,3 +404,53 @@ export function saveLocalActivity(activity: ActivityLogEntry): void {
     console.warn("Failed to save local activity:", err);
   }
 }
+
+const LOCAL_PROJECTS_KEY = "xunique_custom_projects";
+
+export function getLocalProjects(): Project[] {
+  if (typeof window === "undefined") return MOCK_PROJECTS;
+  try {
+    const raw = localStorage.getItem(LOCAL_PROJECTS_KEY);
+    if (!raw) return MOCK_PROJECTS;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const customIds = new Set(parsed.map((p: Project) => p.id));
+      const remainingDefaults = MOCK_PROJECTS.filter((p) => !customIds.has(p.id));
+      return [...parsed, ...remainingDefaults];
+    }
+    return MOCK_PROJECTS;
+  } catch {
+    return MOCK_PROJECTS;
+  }
+}
+
+export function saveLocalProject(project: Project): Project[] {
+  if (typeof window === "undefined") return [project, ...MOCK_PROJECTS];
+  try {
+    const current = getLocalProjects();
+    const existingIndex = current.findIndex((p) => p.id === project.id);
+    let updated: Project[];
+    if (existingIndex >= 0) {
+      updated = [...current];
+      updated[existingIndex] = project;
+    } else {
+      updated = [project, ...current];
+    }
+    localStorage.setItem(LOCAL_PROJECTS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [project, ...MOCK_PROJECTS];
+  }
+}
+
+export function deleteLocalProject(projectId: string): Project[] {
+  if (typeof window === "undefined") return MOCK_PROJECTS.filter((p) => p.id !== projectId);
+  try {
+    const current = getLocalProjects();
+    const updated = current.filter((p) => p.id !== projectId);
+    localStorage.setItem(LOCAL_PROJECTS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return MOCK_PROJECTS.filter((p) => p.id !== projectId);
+  }
+}

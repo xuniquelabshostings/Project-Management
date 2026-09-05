@@ -32,7 +32,7 @@ import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, isValidUuid } from "@/lib/mock-data";
+import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, getLocalProjects, isValidUuid } from "@/lib/mock-data";
 
 function ClientDetailContent() {
   const searchParams = useSearchParams();
@@ -62,7 +62,7 @@ function ClientDetailContent() {
         setClient(fallback);
         setContacts(fallback.contacts || []);
         setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
-        setProjects(MOCK_PROJECTS.filter((p) => p.client_id === fallback.id));
+        setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
         setIsLoading(false);
         return;
       }
@@ -84,7 +84,7 @@ function ClientDetailContent() {
           setClient(fallback);
           setContacts(fallback.contacts || []);
           setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
-          setProjects(MOCK_PROJECTS.filter((p) => p.client_id === fallback.id));
+          setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
           return;
         }
       } else {
@@ -117,8 +117,13 @@ function ClientDetailContent() {
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
+
+      const localProjects = getLocalProjects().filter((p) => p.client_id === clientId);
       if (projectsData && projectsData.length > 0) {
-        setProjects(projectsData as Project[]);
+        const customProjs = localProjects.filter((lp) => !projectsData.some((pd) => pd.id === lp.id));
+        setProjects([...customProjs, ...(projectsData as Project[])]);
+      } else {
+        setProjects(localProjects);
       }
     } catch (err: any) {
       console.warn("Error fetching client details, checking fallback:", err.message);
@@ -131,7 +136,7 @@ function ClientDetailContent() {
         setClient(fallback);
         setContacts(fallback.contacts || []);
         setActivities(MOCK_ACTIVITIES.filter((a) => a.client_id === fallback.id));
-        setProjects(MOCK_PROJECTS.filter((p) => p.client_id === fallback.id));
+        setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
       }
     } finally {
       setIsLoading(false);

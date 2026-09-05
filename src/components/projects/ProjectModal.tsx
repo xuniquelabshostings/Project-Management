@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Project, ProjectStatus, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
+import { getLocalClients, saveLocalProject, isValidUuid, generateUUID } from "@/lib/mock-data";
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -30,18 +31,34 @@ export function ProjectModal({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("active");
-  const [clients, setClients] = useState<Client[]>([]);
+  const [clients, setClients] = useState<Client[]>(() =>
+    typeof window !== "undefined" ? getLocalClients() : []
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadClients() {
-      const { data } = await supabase
-        .from("clients")
-        .select("id, company_name")
-        .order("company_name", { ascending: true });
-      if (data) {
-        setClients(data as Client[]);
+      // Ensure we immediately have local clients loaded
+      const localList = getLocalClients();
+      if (clients.length === 0 && localList.length > 0) {
+        setClients(localList);
+      }
+
+      try {
+        const { data } = await supabase
+          .from("clients")
+          .select("id, company_name")
+          .order("company_name", { ascending: true });
+
+        if (data && data.length > 0) {
+          const custom = localList.filter((c) => !data.some((d) => d.id === c.id));
+          setClients([...custom, ...(data as Client[])]);
+        } else {
+          setClients(localList);
+        }
+      } catch {
+        setClients(localList);
       }
     }
     if (isOpen) {
@@ -91,6 +108,39 @@ export function ProjectModal({
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
+    const selectedClient =
+      clients.find((c) => c.id === clientId) ||
+      getLocalClients().find((c) => c.id === clientId) ||
+      null;
+
+    const saveLocally = () => {
+      const mockProject: Project = {
+        id: projectToEdit?.id || generateUUID(),
+        client_id: clientId,
+        name: name.trim(),
+        description: description.trim() || null,
+        tech_stack: techArray,
+        budget: budget ? parseFloat(budget) : null,
+        start_date: startDate || null,
+        end_date: endDate || null,
+        status,
+        kanban_columns: ["To Do", "In Progress", "Review", "Done"],
+        created_at: projectToEdit?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        client: selectedClient || undefined,
+      };
+      saveLocalProject(mockProject);
+      onSaved(mockProject);
+      onClose();
+    };
+
+    // If client ID is local or not valid UUID, save directly locally
+    if (!isValidUuid(clientId)) {
+      saveLocally();
+      setIsLoading(false);
+      return;
+    }
+
     const payload = {
       name: name.trim(),
       client_id: clientId,
@@ -113,6 +163,7 @@ export function ProjectModal({
           .single();
 
         if (error) throw error;
+        saveLocalProject(data as Project);
         onSaved(data as Project);
       } else {
         const { data, error } = await supabase
@@ -126,10 +177,20 @@ export function ProjectModal({
           .single();
 
         if (error) throw error;
+        saveLocalProject(data as Project);
         onSaved(data as Project);
       }
       onClose();
     } catch (err: any) {
+      if (
+        err.message?.toLowerCase().includes("row-level security") ||
+        err.code === "42501" ||
+        err.code === "22P02" ||
+        err.status === 403
+      ) {
+        saveLocally();
+        return;
+      }
       setErrorMsg(err.message || "Failed to save project.");
     } finally {
       setIsLoading(false);
