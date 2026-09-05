@@ -30,7 +30,105 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
   if (!isOpen || !invoice) return null;
 
   const handlePrint = () => {
-    window.print();
+    const printContent = printRef.current;
+    if (!printContent) {
+      window.print();
+      return;
+    }
+
+    // Clean up any previously attached print iframe
+    const existingFrame = document.getElementById("invoice-print-frame");
+    if (existingFrame) {
+      existingFrame.remove();
+    }
+
+    // Create an isolated hidden iframe
+    const iframe = document.createElement("iframe");
+    iframe.id = "invoice-print-frame";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "0";
+    iframe.style.visibility = "hidden";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      window.print();
+      return;
+    }
+
+    // Collect all stylesheets and style rules from current page
+    const styles = Array.from(document.querySelectorAll("link[rel='stylesheet'], style"))
+      .map((node) => node.outerHTML)
+      .join("\n");
+
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <title>Invoice - ${invoice.invoice_number}</title>
+          ${styles}
+          <style>
+            @page {
+              size: A4 portrait;
+              margin: 12mm 15mm;
+            }
+            * {
+              -webkit-print-color-adjust: exact !important;
+              print-color-adjust: exact !important;
+              box-sizing: border-box;
+            }
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff !important;
+              color: #0f172a !important;
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+            }
+            .invoice-print-root {
+              width: 100% !important;
+              max-width: 100% !important;
+              padding: 0 !important;
+              margin: 0 !important;
+              background: #ffffff !important;
+              border: none !important;
+              box-shadow: none !important;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-print-root">
+            ${printContent.innerHTML}
+          </div>
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    // Give iframe time to apply styles and ensure all images are rendered
+    setTimeout(() => {
+      try {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      } catch (err) {
+        console.error("Iframe print error:", err);
+        window.print();
+      } finally {
+        setTimeout(() => {
+          iframe.remove();
+        }, 1500);
+      }
+    }, 300);
   };
 
   // Ensure line items are present or fallback intelligently
