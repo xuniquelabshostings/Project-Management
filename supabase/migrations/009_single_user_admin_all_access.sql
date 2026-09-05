@@ -1,6 +1,14 @@
 -- 009_single_user_admin_all_access.sql
 -- Reconfigures system to Single-User mode: All access granted as Admin across all tables.
 
+-- 0. Ensure user_role enum type exists if needed
+DO $$ 
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_role') THEN
+    CREATE TYPE public.user_role AS ENUM ('admin', 'account_manager', 'developer');
+  END IF;
+END $$;
+
 -- 1. Helper functions: Return true / 'admin' for full unconditional system access
 CREATE OR REPLACE FUNCTION public.is_admin()
 RETURNS BOOLEAN
@@ -32,21 +40,24 @@ AS $$
   SELECT true;
 $$;
 
+-- Drop prior function to avoid return type mismatch
+DROP FUNCTION IF EXISTS public.current_user_role();
+
 CREATE OR REPLACE FUNCTION public.current_user_role()
-RETURNS user_role
+RETURNS text
 LANGUAGE sql
 STABLE
 SECURITY DEFINER
 SET search_path = ''
 AS $$
-  SELECT 'admin'::user_role;
+  SELECT 'admin'::text;
 $$;
 
 -- 2. Update default role on profiles table to 'admin'
-ALTER TABLE public.profiles ALTER COLUMN role SET DEFAULT 'admin'::user_role;
+ALTER TABLE public.profiles ALTER COLUMN role SET DEFAULT 'admin';
 
 -- 3. Set all profiles to 'admin'
-UPDATE public.profiles SET role = 'admin'::user_role WHERE role != 'admin'::user_role;
+UPDATE public.profiles SET role = 'admin' WHERE role::text != 'admin';
 
 -- 4. Sync any auth.users into profiles as admin
 INSERT INTO public.profiles (id, email, full_name, role)
@@ -54,10 +65,10 @@ SELECT
     id, 
     email, 
     COALESCE(raw_user_meta_data->>'full_name', split_part(email, '@', 1), 'Admin'), 
-    'admin'::user_role
+    'admin'
 FROM auth.users
 ON CONFLICT (id) DO UPDATE 
-SET role = 'admin'::user_role;
+SET role = 'admin';
 
 -- 5. Full access RLS policies on all tables for authenticated administrator
 
