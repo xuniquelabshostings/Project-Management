@@ -388,6 +388,7 @@ export default function InvoicesPage() {
             onClose={() => setIsCreateModalOpen(false)}
             onSaved={() => fetchInvoices()}
             invoiceToEdit={editingInvoice}
+            existingInvoices={invoices}
           />
 
           <InvoicePrintModal

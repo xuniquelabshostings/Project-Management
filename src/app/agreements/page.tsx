@@ -391,6 +391,7 @@ export default function AgreementsPage() {
           onSave={handleSaveAgreement}
           clients={clients}
           initialData={editingAgreement}
+          existingAgreements={agreements}
         />
 
         {/* Print / PDF Document Modal */}

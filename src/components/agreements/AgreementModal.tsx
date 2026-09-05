@@ -12,12 +12,14 @@ import {
   Clock,
   AlertCircle,
   ChevronDown,
+  RotateCw,
 } from "lucide-react";
 import { Agreement, AgreementStatus, Client } from "@/types/database.types";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { cn, formatINR } from "@/lib/utils";
+import { getNextAgreementNumber } from "@/lib/mock-data";
 
 interface AgreementModalProps {
   isOpen: boolean;
@@ -25,6 +27,7 @@ interface AgreementModalProps {
   onSave: (agreement: Agreement) => void;
   clients: Client[];
   initialData?: Agreement | null;
+  existingAgreements?: Agreement[];
 }
 
 const SCOPE_PRESETS = [
@@ -77,8 +80,10 @@ export function AgreementModal({
   onSave,
   clients,
   initialData,
+  existingAgreements,
 }: AgreementModalProps) {
   const [clientId, setClientId] = useState("");
+  const [agreementNumber, setAgreementNumber] = useState("");
   const [projectName, setProjectName] = useState("");
   const [title, setTitle] = useState("Master Software Development & Services Agreement");
   const [effectiveDate, setEffectiveDate] = useState("");
@@ -95,6 +100,7 @@ export function AgreementModal({
   useEffect(() => {
     if (initialData) {
       setClientId(initialData.client_id || "");
+      setAgreementNumber(initialData.agreement_number || "");
       setProjectName(initialData.project_name || "");
       setTitle(initialData.title || "Master Software Development & Services Agreement");
       setEffectiveDate(initialData.effective_date || "");
@@ -107,6 +113,7 @@ export function AgreementModal({
       setStatus(initialData.status || "draft");
     } else {
       setClientId(clients[0]?.id || "");
+      setAgreementNumber(getNextAgreementNumber(existingAgreements));
       setProjectName("");
       setTitle("Master Software Development & Services Agreement");
       setEffectiveDate(new Date().toISOString().split("T")[0]);
@@ -119,7 +126,7 @@ export function AgreementModal({
       setStatus("draft");
     }
     setErrorMsg(null);
-  }, [initialData, clients, isOpen]);
+  }, [initialData, clients, isOpen, existingAgreements]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,13 +149,14 @@ export function AgreementModal({
 
     const selectedClientObj = clients.find((c) => c.id === clientId);
 
-    const agreementNumber =
+    const finalAgreementNumber =
+      agreementNumber.trim() ||
       initialData?.agreement_number ||
-      `AGR-${new Date().getFullYear()}-${Math.floor(100 + Math.random() * 900)}`;
+      getNextAgreementNumber(existingAgreements);
 
     const savedAgreement: Agreement = {
       id: initialData?.id || `agr-${Date.now()}`,
-      agreement_number: agreementNumber,
+      agreement_number: finalAgreementNumber,
       client_id: clientId,
       project_name: projectName.trim(),
       title: title.trim(),
@@ -221,9 +229,38 @@ export function AgreementModal({
           </div>
         </div>
 
-        {/* Agreement Title & Status */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-          <div className="sm:col-span-2">
+        {/* Agreement Ref #, Title & Status */}
+        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 sm:gap-4">
+          <div className="sm:col-span-4">
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-foreground">
+                Agreement Ref # *
+              </label>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-mono font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+                  Auto
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setAgreementNumber(getNextAgreementNumber(existingAgreements))}
+                  className="text-muted hover:text-accent p-0.5 rounded transition-colors"
+                  title="Generate next sequential number"
+                >
+                  <RotateCw className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
+            <Input
+              type="text"
+              required
+              value={agreementNumber}
+              onChange={(e) => setAgreementNumber(e.target.value)}
+              className="text-sm font-mono"
+              placeholder="e.g. AGR-2026-003"
+            />
+          </div>
+
+          <div className="sm:col-span-5">
             <label className="block text-xs font-medium text-foreground mb-1.5">
               Agreement Title
             </label>
@@ -237,7 +274,7 @@ export function AgreementModal({
             />
           </div>
 
-          <div>
+          <div className="sm:col-span-3">
             <label className="block text-xs font-medium text-foreground mb-1.5">
               Agreement Status
             </label>

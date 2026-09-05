@@ -1,13 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Trash2, IndianRupee } from "lucide-react";
+import { Plus, Trash2, IndianRupee, RotateCw } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Invoice, InvoiceLineItem, InvoiceStatus, Client, Project, Milestone } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import { isValidUuid, MOCK_PROJECTS, getLocalClients, getLocalProjects, saveLocalInvoice, generateUUID } from "@/lib/mock-data";
+import {
+  isValidUuid,
+  MOCK_PROJECTS,
+  getLocalClients,
+  getLocalProjects,
+  saveLocalInvoice,
+  generateUUID,
+  getNextInvoiceNumber,
+} from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -23,9 +31,16 @@ interface InvoiceModalProps {
   onClose: () => void;
   onSaved: () => void;
   invoiceToEdit?: Invoice | null;
+  existingInvoices?: Invoice[];
 }
 
-export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: InvoiceModalProps) {
+export function InvoiceModal({
+  isOpen,
+  onClose,
+  onSaved,
+  invoiceToEdit,
+  existingInvoices,
+}: InvoiceModalProps) {
   const { session, profile } = useAuth();
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
@@ -144,7 +159,7 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
       setClientId("");
       setProjectId("");
       setMilestoneId("");
-      setInvoiceNumber(`INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`);
+      setInvoiceNumber(getNextInvoiceNumber(existingInvoices));
       setStatus("draft");
       const in30Days = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
       setDueDate(in30Days);
@@ -154,7 +169,7 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
       setLineItems([{ description: "Sprint Deliverables", quantity: 1, unit_price: 3500 }]);
     }
     setErrorMsg(null);
-  }, [invoiceToEdit, isOpen]);
+  }, [invoiceToEdit, isOpen, existingInvoices]);
 
   const handleAddLineItem = () => {
     setLineItems((prev) => [
@@ -364,9 +379,24 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1">
-              Invoice Number *
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-medium text-foreground">
+                Invoice Number *
+              </label>
+              <div className="flex items-center gap-1">
+                <span className="text-[10px] font-mono font-medium text-accent bg-accent/10 px-1.5 py-0.5 rounded">
+                  Auto
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setInvoiceNumber(getNextInvoiceNumber(existingInvoices))}
+                  className="text-muted hover:text-accent p-0.5 rounded transition-colors"
+                  title="Generate next sequential number"
+                >
+                  <RotateCw className="w-3 h-3" />
+                </button>
+              </div>
+            </div>
             <Input
               required
               value={invoiceNumber}

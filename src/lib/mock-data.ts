@@ -702,3 +702,61 @@ export function deleteLocalAgreement(agreementId: string): Agreement[] {
   }
 }
 
+export function getNextInvoiceNumber(existingInvoices?: Invoice[]): string {
+  const list = existingInvoices && existingInvoices.length > 0 ? existingInvoices : getLocalInvoices();
+  const currentYear = new Date().getFullYear();
+
+  let maxSeq = 0;
+  for (const inv of list) {
+    if (!inv.invoice_number) continue;
+    const matchYear = inv.invoice_number.match(new RegExp(`^INV-${currentYear}-(\\d+)`, "i"));
+    if (matchYear) {
+      const num = parseInt(matchYear[1], 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
+      }
+    } else {
+      const matchAny = inv.invoice_number.match(/^INV-(?:.*-)?(\d+)$/i);
+      if (matchAny) {
+        const num = parseInt(matchAny[1], 10);
+        if (!isNaN(num) && num > maxSeq && num < 10000) {
+          maxSeq = num;
+        }
+      }
+    }
+  }
+
+  const nextSeq = maxSeq + 1;
+  const padded = String(nextSeq).padStart(3, "0");
+  return `INV-${currentYear}-${padded}`;
+}
+
+export function getNextAgreementNumber(existingAgreements?: Agreement[]): string {
+  const list = existingAgreements && existingAgreements.length > 0 ? existingAgreements : getLocalAgreements();
+  const currentYear = new Date().getFullYear();
+
+  let maxSeq = 0;
+  for (const agr of list) {
+    if (!agr.agreement_number) continue;
+    const matchYear = agr.agreement_number.match(new RegExp(`^AGR-${currentYear}-(\\d+)`, "i"));
+    if (matchYear) {
+      const num = parseInt(matchYear[1], 10);
+      if (!isNaN(num) && num > maxSeq) {
+        maxSeq = num;
+      }
+    } else {
+      const matchAny = agr.agreement_number.match(/^AGR-(?:.*-)?(\d+)$/i);
+      if (matchAny) {
+        const num = parseInt(matchAny[1], 10);
+        if (!isNaN(num) && num > maxSeq && num < 10000) {
+          maxSeq = num;
+        }
+      }
+    }
+  }
+
+  const nextSeq = maxSeq + 1;
+  const padded = String(nextSeq).padStart(3, "0");
+  return `AGR-${currentYear}-${padded}`;
+}
+
