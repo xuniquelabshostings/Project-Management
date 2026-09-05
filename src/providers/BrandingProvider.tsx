@@ -6,6 +6,8 @@ export interface AppBranding {
   companyName: string;
   tagline: string;
   logoUrl: string | null;
+  signatureUrl: string | null;
+  signatoryName: string;
   addressLine1: string;
   addressLine2: string;
   email: string;
@@ -17,6 +19,8 @@ export const DEFAULT_BRANDING: AppBranding = {
   companyName: "XUnique Labs",
   tagline: "Design & Engineering Studio",
   logoUrl: null,
+  signatureUrl: null,
+  signatoryName: "Authorized Signatory",
   addressLine1: "104 Tech Park Boulevard, Sector 5",
   addressLine2: "Bengaluru, Karnataka 560103, India",
   email: "billing@xuniquelabs.com",

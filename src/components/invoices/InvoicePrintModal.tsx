@@ -440,9 +440,20 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
               </div>
 
               <div className="text-right shrink-0">
-                <div className="h-10 border-b border-dashed border-slate-300 w-40 ml-auto mb-1"></div>
-                <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider">
-                  Authorized Signatory
+                {branding.signatureUrl ? (
+                  <div className="flex flex-col items-end mb-1">
+                    <img
+                      src={branding.signatureUrl}
+                      alt="Authorized Signature"
+                      className="h-12 max-w-[160px] object-contain"
+                    />
+                    <div className="border-b border-slate-300 w-40 mt-1"></div>
+                  </div>
+                ) : (
+                  <div className="h-10 border-b border-dashed border-slate-300 w-40 ml-auto mb-1"></div>
+                )}
+                <p className="text-[10px] font-medium text-slate-700 uppercase tracking-wider">
+                  {branding.signatoryName || "Authorized Signatory"}
                 </p>
                 <p className="text-[10px] text-slate-400">{branding.companyName}</p>
               </div>

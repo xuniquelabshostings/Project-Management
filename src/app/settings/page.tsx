@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Receipt,
   FileText,
+  PenTool,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -41,6 +42,8 @@ export default function SettingsPage() {
     companyName: branding.companyName,
     tagline: branding.tagline,
     logoUrl: branding.logoUrl || "",
+    signatureUrl: branding.signatureUrl || "",
+    signatoryName: branding.signatoryName || "Authorized Signatory",
     addressLine1: branding.addressLine1,
     addressLine2: branding.addressLine2,
     email: branding.email,
@@ -49,7 +52,9 @@ export default function SettingsPage() {
   });
   const [brandingSaved, setBrandingSaved] = useState(false);
   const [logoFileError, setLogoFileError] = useState<string | null>(null);
+  const [signatureFileError, setSignatureFileError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const signatureInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (profile) {
@@ -64,6 +69,8 @@ export default function SettingsPage() {
       companyName: branding.companyName,
       tagline: branding.tagline,
       logoUrl: branding.logoUrl || "",
+      signatureUrl: branding.signatureUrl || "",
+      signatoryName: branding.signatoryName || "Authorized Signatory",
       addressLine1: branding.addressLine1,
       addressLine2: branding.addressLine2,
       email: branding.email,
@@ -106,12 +113,48 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setSignatureFileError(null);
+
+    if (file.size > 2 * 1024 * 1024) {
+      setSignatureFileError("Signature image file size must be under 2MB.");
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setSignatureFileError("Selected file must be an image (PNG, JPG, SVG, WebP).");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      setBrandingForm((prev) => ({ ...prev, signatureUrl: result }));
+    };
+    reader.onerror = () => {
+      setSignatureFileError("Failed to read signature image file.");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleRemoveSignature = () => {
+    setBrandingForm((prev) => ({ ...prev, signatureUrl: "" }));
+    if (signatureInputRef.current) {
+      signatureInputRef.current.value = "";
+    }
+  };
+
   const handleSaveBranding = (e: React.FormEvent) => {
     e.preventDefault();
     updateBranding({
       companyName: brandingForm.companyName.trim() || "XUnique Labs",
       tagline: brandingForm.tagline.trim(),
       logoUrl: brandingForm.logoUrl.trim() || null,
+      signatureUrl: brandingForm.signatureUrl.trim() || null,
+      signatoryName: brandingForm.signatoryName.trim() || "Authorized Signatory",
       addressLine1: brandingForm.addressLine1.trim(),
       addressLine2: brandingForm.addressLine2.trim(),
       email: brandingForm.email.trim(),
@@ -123,10 +166,13 @@ export default function SettingsPage() {
   };
 
   const handleResetToDefault = () => {
-    if (window.confirm("Reset company branding, logo, and invoice details to defaults?")) {
+    if (window.confirm("Reset company branding, logo, signature, and invoice details to defaults?")) {
       resetBranding();
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
+      }
+      if (signatureInputRef.current) {
+        signatureInputRef.current.value = "";
       }
       setBrandingSaved(true);
       setTimeout(() => setBrandingSaved(false), 3000);
@@ -407,6 +453,116 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* Default Authorized Signatory & Signature Image Section */}
+              <div className="p-4 rounded-lg border border-border bg-surface-elevated/40 space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-semibold uppercase tracking-wider text-foreground flex items-center gap-1.5">
+                    <PenTool className="w-3.5 h-3.5 text-accent" />
+                    Default Authorized Signatory &amp; Signature
+                  </label>
+                  <span className="text-[11px] text-muted">Auto-placed on every client invoice bill</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  {/* Signature Preview Box */}
+                  <div className="relative group">
+                    {brandingForm.signatureUrl ? (
+                      <div className="w-36 h-20 rounded-lg border-2 border-border bg-white flex items-center justify-center p-2 shadow-sm overflow-hidden">
+                        <img
+                          src={brandingForm.signatureUrl}
+                          alt="Signature Preview"
+                          className="max-h-full max-w-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-36 h-20 rounded-lg border-2 border-dashed border-border bg-surface flex flex-col items-center justify-center text-muted gap-1">
+                        <PenTool className="w-5 h-5 opacity-60" />
+                        <span className="text-[9px] font-mono uppercase">No Signature</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2 flex-1">
+                    <input
+                      ref={signatureInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/svg+xml,image/webp"
+                      onChange={handleSignatureUpload}
+                      className="hidden"
+                      id="signature-file-upload"
+                    />
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => signatureInputRef.current?.click()}
+                        className="text-xs"
+                      >
+                        <Upload className="w-3.5 h-3.5 mr-1.5" />
+                        Upload Signature Image
+                      </Button>
+
+                      {brandingForm.signatureUrl && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveSignature}
+                          className="text-xs text-danger hover:bg-danger-bg/20"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1.5" />
+                          Remove
+                        </Button>
+                      )}
+                    </div>
+
+                    <p className="text-[11px] text-muted">
+                      Recommended: Transparent PNG, SVG, or JPG under 2MB. Placed right above the Authorized Signatory line on all invoice bills.
+                    </p>
+
+                    {signatureFileError && (
+                      <p className="text-xs text-danger font-medium flex items-center gap-1">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {signatureFileError}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Signatory Label & Direct Signature URL */}
+                <div className="pt-2 border-t border-border/40 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted mb-1">
+                      Signatory Title / Designatory Label
+                    </label>
+                    <Input
+                      type="text"
+                      placeholder="Authorized Signatory"
+                      value={brandingForm.signatoryName}
+                      onChange={(e) => setBrandingForm((prev) => ({ ...prev, signatoryName: e.target.value }))}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted mb-1">
+                      Or Enter Signature Image URL
+                    </label>
+                    <div className="relative">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/signature.png"
+                        value={brandingForm.signatureUrl.startsWith("data:") ? "" : brandingForm.signatureUrl}
+                        onChange={(e) => setBrandingForm((prev) => ({ ...prev, signatureUrl: e.target.value }))}
+                        className="pl-8 text-xs font-mono"
+                      />
+                      <ImageIcon className="w-3.5 h-3.5 text-muted absolute left-2.5 top-2.5 pointer-events-none" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Company & Letterhead Info */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -539,6 +695,31 @@ export default function SettingsPage() {
                   <div className="text-right text-[11px] text-slate-500 space-y-0.5 hidden sm:block">
                     {brandingForm.addressLine1 && <p>{brandingForm.addressLine1}</p>}
                     {brandingForm.addressLine2 && <p>{brandingForm.addressLine2}</p>}
+                  </div>
+                </div>
+
+                {/* Signatory Preview in Live Letterhead Box */}
+                <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-end">
+                  <span className="text-[10px] text-slate-400 font-mono">
+                    Authorized Signatory preview:
+                  </span>
+                  <div className="text-right">
+                    {brandingForm.signatureUrl ? (
+                      <div className="flex flex-col items-end mb-1">
+                        <img
+                          src={brandingForm.signatureUrl}
+                          alt="Signature"
+                          className="h-9 max-w-[130px] object-contain"
+                        />
+                        <div className="border-b border-slate-300 w-28 mt-0.5"></div>
+                      </div>
+                    ) : (
+                      <div className="h-6 border-b border-dashed border-slate-300 w-28 ml-auto mb-1"></div>
+                    )}
+                    <p className="text-[9px] font-medium text-slate-700 uppercase tracking-wider">
+                      {brandingForm.signatoryName || "Authorized Signatory"}
+                    </p>
+                    <p className="text-[9px] text-slate-400">{brandingForm.companyName || "Company"}</p>
                   </div>
                 </div>
               </div>
