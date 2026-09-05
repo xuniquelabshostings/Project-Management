@@ -5,10 +5,11 @@ import { Plus, Trash2, IndianRupee } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Invoice, InvoiceStatus, Client, Project, Milestone } from "@/types/database.types";
+import { Invoice, InvoiceLineItem, InvoiceStatus, Client, Project, Milestone } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import { isValidUuid, MOCK_PROJECTS, getLocalClients, getLocalProjects } from "@/lib/mock-data";
+import { isValidUuid, MOCK_PROJECTS, getLocalClients, getLocalProjects, saveLocalInvoice, generateUUID } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
+import { useAuth } from "@/providers/AuthProvider";
 
 interface LineItemDraft {
   id?: string;
@@ -25,6 +26,7 @@ interface InvoiceModalProps {
 }
 
 export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: InvoiceModalProps) {
+  const { session, profile } = useAuth();
   const [clientId, setClientId] = useState("");
   const [projectId, setProjectId] = useState("");
   const [milestoneId, setMilestoneId] = useState("");
@@ -181,6 +183,50 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
     0
   );
 
+  const saveLocally = () => {
+    const selectedClient =
+      clients.find((c) => c.id === clientId) ||
+      getLocalClients().find((c) => c.id === clientId) ||
+      undefined;
+    const selectedProject =
+      projects.find((p) => p.id === projectId) ||
+      getLocalProjects().find((p) => p.id === projectId) ||
+      undefined;
+
+    const invoiceId = invoiceToEdit?.id || generateUUID();
+    const localItems: InvoiceLineItem[] = lineItems.map((li, idx) => ({
+      id: li.id || `li-${Date.now()}-${idx}`,
+      invoice_id: invoiceId,
+      description: li.description.trim() || "Service Deliverable",
+      quantity: Number(li.quantity) || 1,
+      unit_price: Number(li.unit_price) || 0,
+      line_total: (Number(li.quantity) || 1) * (Number(li.unit_price) || 0),
+    }));
+
+    const mockInvoice: Invoice = {
+      id: invoiceId,
+      client_id: clientId,
+      project_id: projectId || null,
+      milestone_id: milestoneId || null,
+      invoice_number: invoiceNumber.trim(),
+      status,
+      total_amount: grandTotal,
+      due_date: dueDate,
+      is_recurring: isRecurring,
+      recurrence_interval: isRecurring ? recurrenceInterval : null,
+      notes: notes.trim() || null,
+      created_at: invoiceToEdit?.created_at || new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      client: selectedClient,
+      project: selectedProject,
+      line_items: localItems,
+    };
+
+    saveLocalInvoice(mockInvoice);
+    onSaved();
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId) {
@@ -198,6 +244,17 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
 
     setIsLoading(true);
     setErrorMsg(null);
+
+    const isDemo =
+      !session ||
+      (profile?.id && profile.id.startsWith("00000000")) ||
+      !isValidUuid(clientId);
+
+    if (isDemo) {
+      saveLocally();
+      setIsLoading(false);
+      return;
+    }
 
     try {
       const invoicePayload = {
@@ -260,7 +317,8 @@ export function InvoiceModal({ isOpen, onClose, onSaved, invoiceToEdit }: Invoic
       onSaved();
       onClose();
     } catch (err: any) {
-      setErrorMsg(err.message || "Failed to save invoice.");
+      console.warn("Supabase invoice operation blocked or failed, saving locally:", err.message);
+      saveLocally();
     } finally {
       setIsLoading(false);
     }

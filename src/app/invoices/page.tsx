@@ -29,7 +29,7 @@ import { InvoicePrintModal } from "@/components/invoices/InvoicePrintModal";
 import { Invoice, InvoiceStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_INVOICES } from "@/lib/mock-data";
+import { MOCK_INVOICES, getLocalInvoices, saveLocalInvoice, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 export default function InvoicesPage() {
@@ -51,14 +51,16 @@ export default function InvoicesPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
+      const localList = getLocalInvoices();
       if (data && data.length > 0) {
-        setInvoices(data as Invoice[]);
+        const customOnly = localList.filter((li) => !data.some((d) => d.id === li.id));
+        setInvoices([...customOnly, ...(data as Invoice[])]);
       } else {
-        setInvoices(MOCK_INVOICES);
+        setInvoices(localList);
       }
     } catch (err: any) {
       console.warn("Failed to load invoices, using fallback:", err.message);
-      setInvoices(MOCK_INVOICES);
+      setInvoices(getLocalInvoices());
     } finally {
       setIsLoading(false);
     }
@@ -101,18 +103,29 @@ export default function InvoicesPage() {
   }, [invoices]);
 
   const handleUpdateStatus = async (invoiceId: string, newStatus: InvoiceStatus) => {
-    try {
-      const { error } = await supabase
-        .from("invoices")
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-        .eq("id", invoiceId);
+    // 1. Optimistic update in UI and local storage
+    setInvoices((prev) =>
+      prev.map((i) => {
+        if (i.id === invoiceId) {
+          const updated = { ...i, status: newStatus, updated_at: new Date().toISOString() };
+          saveLocalInvoice(updated);
+          return updated;
+        }
+        return i;
+      })
+    );
 
-      if (error) throw error;
-      setInvoices((prev) =>
-        prev.map((i) => (i.id === invoiceId ? { ...i, status: newStatus } : i))
-      );
-    } catch (err: any) {
-      alert(`Failed to update status: ${err.message}`);
+    // 2. Sync to Supabase if valid UUID
+    if (isValidUuid(invoiceId)) {
+      try {
+        const { error } = await supabase
+          .from("invoices")
+          .update({ status: newStatus, updated_at: new Date().toISOString() })
+          .eq("id", invoiceId);
+        if (error) console.warn("Notice updating status in Supabase:", error.message);
+      } catch (err: any) {
+        console.warn("Failed to sync invoice status update to Supabase:", err.message);
+      }
     }
   };
 

@@ -553,3 +553,53 @@ export function deleteLocalTask(taskId: string): void {
   }
 }
 
+const LOCAL_INVOICES_KEY = "xunique_custom_invoices";
+
+export function getLocalInvoices(): Invoice[] {
+  if (typeof window === "undefined") return MOCK_INVOICES;
+  try {
+    const raw = localStorage.getItem(LOCAL_INVOICES_KEY);
+    if (!raw) return MOCK_INVOICES;
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      const customIds = new Set(parsed.map((i: Invoice) => i.id));
+      const remainingDefaults = MOCK_INVOICES.filter((i) => !customIds.has(i.id));
+      return [...parsed, ...remainingDefaults];
+    }
+    return MOCK_INVOICES;
+  } catch {
+    return MOCK_INVOICES;
+  }
+}
+
+export function saveLocalInvoice(invoice: Invoice): Invoice[] {
+  if (typeof window === "undefined") return [invoice, ...MOCK_INVOICES];
+  try {
+    const current = getLocalInvoices();
+    const existingIndex = current.findIndex((i) => i.id === invoice.id);
+    let updated: Invoice[];
+    if (existingIndex >= 0) {
+      updated = [...current];
+      updated[existingIndex] = invoice;
+    } else {
+      updated = [invoice, ...current];
+    }
+    localStorage.setItem(LOCAL_INVOICES_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [invoice, ...MOCK_INVOICES];
+  }
+}
+
+export function deleteLocalInvoice(invoiceId: string): Invoice[] {
+  if (typeof window === "undefined") return MOCK_INVOICES.filter((i) => i.id !== invoiceId);
+  try {
+    const current = getLocalInvoices();
+    const updated = current.filter((i) => i.id !== invoiceId);
+    localStorage.setItem(LOCAL_INVOICES_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return MOCK_INVOICES.filter((i) => i.id !== invoiceId);
+  }
+}
+
