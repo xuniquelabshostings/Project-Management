@@ -23,6 +23,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -37,6 +38,7 @@ import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
 import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, getLocalProjects, getLocalActivities, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
+import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
 function getRenewalStatus(renewDateStr?: string | null, alertDays = 30) {
   if (!renewDateStr) return null;
@@ -79,26 +81,6 @@ function getRenewalStatus(renewDateStr?: string | null, alertDays = 30) {
   };
 }
 
-const sendWhatsAppRenewalAlert = (client: Client, contacts: Contact[]) => {
-  const phone = contacts.find((c) => c.phone)?.phone || "";
-  const cleanPhone = phone.replace(/[^0-9]/g, "");
-  const name = client.client_name || client.company_name;
-
-  let msg = `Hello ${name},\n\nThis is a renewal alert from Xunique Labs regarding your online services:`;
-  if (client.domain_name) {
-    msg += `\n• Domain: ${client.domain_name} (Expires: ${client.domain_renew_at || "Soon"})`;
-  }
-  if (client.hosting_provider) {
-    msg += `\n• Hosting: ${client.hosting_provider} - ${client.hosting_plan || "Plan"} (Expires: ${client.hosting_renew_at || "Soon"})`;
-  }
-  msg += `\n\nPlease let us know if you would like us to process this renewal on your behalf.\n\nThank you,\nXunique Labs Team`;
-
-  const url = cleanPhone
-    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
-    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
-  window.open(url, "_blank");
-};
-
 function ClientDetailContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -110,7 +92,23 @@ function ClientDetailContent() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeTab, setActiveTab] = useState<"contacts" | "activity" | "projects" | "invoices">("contacts");
   const [isLoading, setIsLoading] = useState(true);
+  const [isAlertSending, setIsAlertSending] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const handleSendWhatsAppAlert = async () => {
+    if (!client) return;
+    setIsAlertSending(true);
+    try {
+      const res = await sendClientWhatsAppRenewalAlert(client, contacts, true);
+      if (res.updatedClient) {
+        setClient(res.updatedClient);
+      }
+    } catch (err: any) {
+      console.error("Failed to send WhatsApp alert:", err);
+    } finally {
+      setIsAlertSending(false);
+    }
+  };
 
   const fetchClientFullData = async () => {
     if (!clientId) return;
@@ -368,11 +366,17 @@ function ClientDetailContent() {
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-xs h-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium"
-                    onClick={() => sendWhatsAppRenewalAlert(client, contacts)}
-                    title="Send pre-filled renewal reminder to client via WhatsApp"
+                    disabled={isAlertSending}
+                    className="text-xs h-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium disabled:opacity-60"
+                    onClick={handleSendWhatsAppAlert}
+                    title="Automatically fetches client phone number, queries live WHOIS, and opens WhatsApp"
                   >
-                    <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-500" /> WhatsApp Renewal Alert
+                    {isAlertSending ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin text-emerald-500" />
+                    ) : (
+                      <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-500" />
+                    )}
+                    <span>{isAlertSending ? "Fetching WHOIS..." : "WhatsApp Renewal Alert"}</span>
                   </Button>
                 )}
                 <Button

@@ -16,6 +16,8 @@ import {
   Shield,
   Globe,
   AlertTriangle,
+  MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -30,6 +32,7 @@ import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { MOCK_CLIENTS, getLocalClients, saveLocalClient, isValidUuid } from "@/lib/mock-data";
+import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
 function getClientRenewalAlert(client: Client) {
   const alertDays = client.renewal_alert_days || 30;
@@ -62,6 +65,7 @@ export default function ClientsPage() {
   const [selectedLeadSource, setSelectedLeadSource] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"list" | "pipeline">("list");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [alertingClientId, setAlertingClientId] = useState<string | null>(null);
 
   const fetchClients = async () => {
     try {
@@ -374,11 +378,44 @@ export default function ClientsPage() {
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <Link href={`/clients/view?id=${client.id}`}>
-                            <Button variant="ghost" size="sm" className="text-xs h-7">
-                              Open Profile
-                            </Button>
-                          </Link>
+                          <div className="flex items-center justify-end gap-1.5">
+                            {renewalAlert && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={alertingClientId === client.id}
+                                className="text-xs h-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium px-2"
+                                onClick={async () => {
+                                  setAlertingClientId(client.id);
+                                  try {
+                                    const res = await sendClientWhatsAppRenewalAlert(client, client.contacts, true);
+                                    if (res.updatedClient) {
+                                      setClients((prev) =>
+                                        prev.map((c) => (c.id === client.id ? res.updatedClient! : c))
+                                      );
+                                    }
+                                  } finally {
+                                    setAlertingClientId(null);
+                                  }
+                                }}
+                                title="Auto-fetch phone & live WHOIS and send WhatsApp reminder"
+                              >
+                                {alertingClientId === client.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
+                                ) : (
+                                  <MessageCircle className="w-3 h-3 text-emerald-500" />
+                                )}
+                                <span className="hidden md:inline ml-1">
+                                  {alertingClientId === client.id ? "WHOIS..." : "WhatsApp"}
+                                </span>
+                              </Button>
+                            )}
+                            <Link href={`/clients/view?id=${client.id}`}>
+                              <Button variant="ghost" size="sm" className="text-xs h-7">
+                                Open Profile
+                              </Button>
+                            </Link>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
@@ -456,6 +493,36 @@ export default function ClientsPage() {
                               <p className="text-[11px] text-muted line-clamp-1">
                                 {c.industry}
                               </p>
+                            )}
+
+                            {alert && (
+                              <button
+                                type="button"
+                                disabled={alertingClientId === c.id}
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  setAlertingClientId(c.id);
+                                  try {
+                                    const res = await sendClientWhatsAppRenewalAlert(c, c.contacts, true);
+                                    if (res.updatedClient) {
+                                      setClients((prev) =>
+                                        prev.map((item) => (item.id === c.id ? res.updatedClient! : item))
+                                      );
+                                    }
+                                  } finally {
+                                    setAlertingClientId(null);
+                                  }
+                                }}
+                                className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-[10px] font-medium transition-colors disabled:opacity-60"
+                                title="Auto-fetch phone & live WHOIS and send WhatsApp reminder"
+                              >
+                                {alertingClientId === c.id ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <MessageCircle className="w-3 h-3" />
+                                )}
+                                <span>{alertingClientId === c.id ? "WHOIS..." : "WhatsApp Alert"}</span>
+                              </button>
                             )}
 
                             <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[10px]">

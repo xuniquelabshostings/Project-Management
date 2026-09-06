@@ -20,6 +20,7 @@ import {
   Globe,
   Server,
   MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/providers/AuthProvider";
@@ -39,6 +40,7 @@ import {
   getLocalClients,
 } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
+import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
 interface ExpiringRenewal {
   client: Client;
@@ -100,6 +102,7 @@ export default function DashboardPage() {
   const [pipelineValue, setPipelineValue] = useState<number>(0);
   const [recentActivities, setRecentActivities] = useState<ActivityLogEntry[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
+  const [alertingClientId, setAlertingClientId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -503,9 +506,32 @@ export default function DashboardPage() {
                           : `${item.diffDays} days left (${item.renewDate})`}
                       </span>
 
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={alertingClientId === item.client.id}
+                        className="h-6 text-[11px] px-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium"
+                        onClick={async () => {
+                          setAlertingClientId(item.client.id);
+                          try {
+                            await sendClientWhatsAppRenewalAlert(item.client, undefined, true);
+                          } finally {
+                            setAlertingClientId(null);
+                          }
+                        }}
+                        title="Automatically fetch client number, query live WHOIS, and send WhatsApp reminder"
+                      >
+                        {alertingClientId === item.client.id ? (
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin text-emerald-500" />
+                        ) : (
+                          <MessageCircle className="w-3 h-3 mr-1 text-emerald-500" />
+                        )}
+                        <span>{alertingClientId === item.client.id ? "WHOIS..." : "WhatsApp Alert"}</span>
+                      </Button>
+
                       <Link href={`/clients/view?id=${item.client.id}`}>
-                        <Button variant="outline" size="sm" className="h-6 text-[11px] px-2.5">
-                          Open & Alert &rarr;
+                        <Button variant="ghost" size="sm" className="h-6 text-[11px] px-2">
+                          View &rarr;
                         </Button>
                       </Link>
                     </div>
