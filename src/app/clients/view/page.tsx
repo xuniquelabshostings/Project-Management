@@ -468,7 +468,7 @@ function ClientDetailContent() {
                     {client.domain_price != null && (
                       <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs">
                         <span className="text-[10px] text-muted">Domain Cost:</span>
-                        <span className="font-semibold text-foreground">${client.domain_price} / yr</span>
+                        <span className="font-semibold text-foreground">{formatINR(client.domain_price)} / yr</span>
                       </div>
                     )}
                   </div>
@@ -526,7 +526,7 @@ function ClientDetailContent() {
                     {client.hosting_price != null && (
                       <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs">
                         <span className="text-[10px] text-muted">Hosting Cost:</span>
-                        <span className="font-semibold text-foreground">${client.hosting_price} / yr</span>
+                        <span className="font-semibold text-foreground">{formatINR(client.hosting_price)} / yr</span>
                       </div>
                     )}
                   </div>

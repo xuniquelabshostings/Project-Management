@@ -487,6 +487,22 @@ export default function DashboardPage() {
                         )}
                         {item.name}
                       </span>
+                      {item.type === "domain" && item.client.domain_price != null && (
+                        <>
+                          <span className="text-muted/40">&bull;</span>
+                          <span className="text-[11px] font-semibold text-foreground">
+                            {formatINR(item.client.domain_price)}/yr
+                          </span>
+                        </>
+                      )}
+                      {item.type === "hosting" && item.client.hosting_price != null && (
+                        <>
+                          <span className="text-muted/40">&bull;</span>
+                          <span className="text-[11px] font-semibold text-foreground">
+                            {formatINR(item.client.hosting_price)}/yr
+                          </span>
+                        </>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-3 shrink-0">

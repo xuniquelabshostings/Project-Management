@@ -2,6 +2,7 @@ import { Client, Contact, getClientName } from "@/types/database.types";
 import { lookupDomainWhois, DomainWhoisResult } from "@/lib/domain-whois";
 import { supabase } from "@/lib/supabase/client";
 import { getLocalClients, saveLocalClient } from "@/lib/mock-data";
+import { formatINR } from "@/lib/utils";
 
 export interface SendWhatsAppAlertResult {
   success: boolean;
@@ -182,7 +183,7 @@ export function buildWhatsAppRenewalMessage(
       msg += `• *Renewal / Expiry Date:* ${expiresAt} (${daysLeftText})\n`;
     }
     if (client.domain_price != null) {
-      msg += `• *Annual Domain Fee:* $${client.domain_price}\n`;
+      msg += `• *Annual Domain Fee:* ${formatINR(client.domain_price)} / yr\n`;
     }
     msg += `\n`;
   }
@@ -201,7 +202,7 @@ export function buildWhatsAppRenewalMessage(
       msg += `• *Hosting Renewal Date:* ${client.hosting_renew_at}\n`;
     }
     if (client.hosting_price != null) {
-      msg += `• *Hosting Fee:* $${client.hosting_price}\n`;
+      msg += `• *Hosting Fee:* ${formatINR(client.hosting_price)} / yr\n`;
     }
     msg += `\n`;
   }

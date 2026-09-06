@@ -524,12 +524,12 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Domain Cost ($/yr)
+                      Domain Cost (₹ INR/yr)
                     </label>
                     <Input
                       type="number"
-                      step="0.01"
-                      placeholder="15.00"
+                      step="1"
+                      placeholder="1000"
                       value={domainPrice}
                       onChange={(e) => setDomainPrice(e.target.value)}
                     />
@@ -593,12 +593,12 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
                   </div>
                   <div>
                     <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Hosting Cost ($/yr)
+                      Hosting Cost (₹ INR/yr)
                     </label>
                     <Input
                       type="number"
-                      step="0.01"
-                      placeholder="75.00"
+                      step="1"
+                      placeholder="5000"
                       value={hostingPrice}
                       onChange={(e) => setHostingPrice(e.target.value)}
                     />
