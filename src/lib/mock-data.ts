@@ -334,19 +334,39 @@ export const MOCK_ACTIVITIES: ActivityLogEntry[] = [
 ];
 
 const LOCAL_CLIENTS_KEY = "xunique_custom_clients";
+const DELETED_CLIENT_IDS_KEY = "xunique_deleted_client_ids";
+
+export function getDeletedClientIds(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = localStorage.getItem(DELETED_CLIENT_IDS_KEY);
+    if (!raw) return new Set();
+    const arr = JSON.parse(raw);
+    return new Set(Array.isArray(arr) ? arr : []);
+  } catch {
+    return new Set();
+  }
+}
+
+export function markClientDeleted(clientId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const set = getDeletedClientIds();
+    set.add(clientId);
+    localStorage.setItem(DELETED_CLIENT_IDS_KEY, JSON.stringify(Array.from(set)));
+  } catch {}
+}
 
 export function getLocalClients(): Client[] {
   if (typeof window === "undefined") return MOCK_CLIENTS;
   try {
+    const deleted = getDeletedClientIds();
     const raw = localStorage.getItem(LOCAL_CLIENTS_KEY);
-    if (!raw) return MOCK_CLIENTS;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      const customIds = new Set(parsed.map((c: Client) => c.id));
-      const remainingDefaults = MOCK_CLIENTS.filter((c) => !customIds.has(c.id));
-      return [...parsed, ...remainingDefaults];
-    }
-    return MOCK_CLIENTS;
+    const parsed = raw ? JSON.parse(raw) : [];
+    const customList = Array.isArray(parsed) ? parsed.filter((c: Client) => !deleted.has(c.id)) : [];
+    const customIds = new Set(customList.map((c: Client) => c.id));
+    const remainingDefaults = MOCK_CLIENTS.filter((c) => !customIds.has(c.id) && !deleted.has(c.id));
+    return [...customList, ...remainingDefaults];
   } catch {
     return MOCK_CLIENTS;
   }
@@ -377,6 +397,7 @@ export function saveLocalClient(client: Client): Client[] {
 }
 
 export function deleteLocalClient(clientId: string): Client[] {
+  markClientDeleted(clientId);
   if (typeof window === "undefined") return MOCK_CLIENTS.filter((c) => c.id !== clientId);
   try {
     const current = getLocalClients();

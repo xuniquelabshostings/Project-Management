@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Client, ClientStatus, LeadSource, Profile } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { saveLocalClient, generateUUID } from "@/lib/mock-data";
+import { saveLocalClient, generateUUID, deleteLocalClient, isValidUuid } from "@/lib/mock-data";
 import { lookupDomainWhois } from "@/lib/domain-whois";
 import {
   Globe,
@@ -19,16 +19,18 @@ import {
   CheckCircle2,
   AlertCircle,
   Calendar,
+  Trash2,
 } from "lucide-react";
 
 interface ClientModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSaved: (client: Client) => void;
+  onDeleted?: (clientId: string) => void;
   clientToEdit?: Client | null;
 }
 
-export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientModalProps) {
+export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit }: ClientModalProps) {
   const { profile: currentProfile, session } = useAuth();
   const [clientName, setClientName] = useState("");
   const [industry, setIndustry] = useState("");
@@ -295,6 +297,33 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDelete = async () => {
+    if (!clientToEdit) return;
+    const name = clientToEdit.client_name || clientToEdit.company_name || "this client";
+    if (
+      !confirm(
+        `Are you sure you want to delete "${name}"?\n\nThis will permanently remove the client and all associated projects, invoices, and contacts.`
+      )
+    ) {
+      return;
+    }
+
+    deleteLocalClient(clientToEdit.id);
+
+    if (isValidUuid(clientToEdit.id)) {
+      try {
+        await supabase.from("clients").delete().eq("id", clientToEdit.id);
+      } catch (err: any) {
+        console.warn("Could not delete client from Supabase:", err.message);
+      }
+    }
+
+    if (onDeleted) {
+      onDeleted(clientToEdit.id);
+    }
+    onClose();
   };
 
   return (
@@ -627,13 +656,29 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
           )}
         </div>
 
-        <div className="pt-3 border-t border-border/50 flex justify-end gap-2">
-          <Button type="button" variant="secondary" size="sm" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="primary" size="sm" isLoading={isLoading}>
-            {clientToEdit ? "Save Changes" : "Create Client"}
-          </Button>
+        <div className="pt-3 border-t border-border/50 flex items-center justify-between">
+          {clientToEdit ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="text-xs text-danger hover:bg-danger-bg hover:border-danger/40 border-border"
+              onClick={handleDelete}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Client
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          <div className="flex items-center gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="primary" size="sm" isLoading={isLoading}>
+              {clientToEdit ? "Save Changes" : "Create Client"}
+            </Button>
+          </div>
         </div>
       </form>
     </Modal>

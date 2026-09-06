@@ -24,6 +24,7 @@ import {
   CheckCircle2,
   MessageCircle,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -36,7 +37,17 @@ import { ContactsList } from "@/components/clients/ContactsList";
 import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
-import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, getLocalProjects, getLocalActivities, isValidUuid } from "@/lib/mock-data";
+import {
+  MOCK_CLIENTS,
+  MOCK_ACTIVITIES,
+  MOCK_PROJECTS,
+  getLocalClients,
+  saveLocalClient,
+  deleteLocalClient,
+  getLocalProjects,
+  getLocalActivities,
+  isValidUuid,
+} from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
@@ -219,9 +230,29 @@ function ClientDetailContent() {
     }
   };
 
-  useEffect(() => {
-    fetchClientFullData();
-  }, [clientId]);
+  const handleDeleteClient = async () => {
+    if (!client) return;
+    const name = client.client_name || client.company_name || "this client";
+    if (
+      !confirm(
+        `Are you sure you want to delete "${name}"?\n\nThis will permanently remove the client and all associated projects, invoices, and contacts.`
+      )
+    ) {
+      return;
+    }
+
+    deleteLocalClient(client.id);
+
+    if (isValidUuid(client.id)) {
+      try {
+        await supabase.from("clients").delete().eq("id", client.id);
+      } catch (err: any) {
+        console.warn("Could not delete client from Supabase:", err.message);
+      }
+    }
+
+    router.push("/clients");
+  };
 
   if (!clientId) {
     return (
@@ -328,6 +359,15 @@ function ClientDetailContent() {
             </div>
 
             <div className="flex items-center gap-2 shrink-0">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs text-danger hover:bg-danger-bg hover:border-danger/40 border-border"
+                onClick={handleDeleteClient}
+                title="Permanently delete this client"
+              >
+                <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete Client
+              </Button>
               <Button
                 variant="secondary"
                 size="sm"
@@ -669,6 +709,7 @@ function ClientDetailContent() {
           setClient(updated);
           fetchClientFullData();
         }}
+        onDeleted={() => router.push("/clients")}
       />
     </div>
   );

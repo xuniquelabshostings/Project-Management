@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   MessageCircle,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -31,7 +32,14 @@ import { ClientModal } from "@/components/clients/ClientModal";
 import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_CLIENTS, getLocalClients, saveLocalClient, isValidUuid } from "@/lib/mock-data";
+import {
+  MOCK_CLIENTS,
+  getLocalClients,
+  saveLocalClient,
+  deleteLocalClient,
+  getDeletedClientIds,
+  isValidUuid,
+} from "@/lib/mock-data";
 import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
 function getClientRenewalAlert(client: Client) {
@@ -75,11 +83,13 @@ export default function ClientsPage() {
         .select("*, account_manager:profiles(*), contacts(*)")
         .order("created_at", { ascending: false });
 
+      const deleted = getDeletedClientIds();
       if (data && data.length > 0) {
-        const localCustom = getLocalClients().filter((c) => c.id.includes("-local") || !isValidUuid(c.id));
+        const nonDeletedData = (data as Client[]).filter((c) => !deleted.has(c.id));
+        const localCustom = getLocalClients().filter((c) => (c.id.includes("-local") || !isValidUuid(c.id)) && !deleted.has(c.id));
         const combined = [
-          ...localCustom.filter((lc) => !data.some((d) => d.id === lc.id)),
-          ...(data as Client[]),
+          ...localCustom.filter((lc) => !nonDeletedData.some((d) => d.id === lc.id)),
+          ...nonDeletedData,
         ];
         setClients(combined);
       } else {
@@ -90,6 +100,32 @@ export default function ClientsPage() {
       setClients(getLocalClients());
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDeleteClient = async (
+    e: React.MouseEvent,
+    clientId: string,
+    clientName: string
+  ) => {
+    e.stopPropagation();
+    if (
+      !confirm(
+        `Are you sure you want to delete "${clientName}"?\n\nThis will permanently remove the client and all associated projects, invoices, and contacts.`
+      )
+    ) {
+      return;
+    }
+
+    deleteLocalClient(clientId);
+    setClients((prev) => prev.filter((c) => c.id !== clientId));
+
+    if (isValidUuid(clientId)) {
+      try {
+        await supabase.from("clients").delete().eq("id", clientId);
+      } catch (err: any) {
+        console.warn("Could not delete client from Supabase:", err.message);
+      }
     }
   };
 
@@ -415,6 +451,21 @@ export default function ClientsPage() {
                                 Open Profile
                               </Button>
                             </Link>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-7 text-muted hover:text-danger hover:bg-danger-bg px-2"
+                              onClick={(e) =>
+                                handleDeleteClient(
+                                  e,
+                                  client.id,
+                                  client.client_name || client.company_name || "Client"
+                                )
+                              }
+                              title="Delete client"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -530,20 +581,36 @@ export default function ClientsPage() {
                                 {c.account_manager?.full_name?.split(" ")[0] || "Unassigned"}
                               </span>
 
-                              {/* Quick Move Stage */}
-                              <select
-                                value={c.status}
-                                onChange={(e) =>
-                                  handleStatusChange(c.id, e.target.value as ClientStatus)
-                                }
-                                className="bg-surface-elevated border border-border rounded px-1 py-0.5 text-[10px] text-muted hover:text-foreground"
-                              >
-                                {pipelineStages.map((st) => (
-                                  <option key={st.id} value={st.id}>
-                                    Move: {st.label}
-                                  </option>
-                                ))}
-                              </select>
+                              <div className="flex items-center gap-1">
+                                {/* Quick Move Stage */}
+                                <select
+                                  value={c.status}
+                                  onChange={(e) =>
+                                    handleStatusChange(c.id, e.target.value as ClientStatus)
+                                  }
+                                  className="bg-surface-elevated border border-border rounded px-1 py-0.5 text-[10px] text-muted hover:text-foreground"
+                                >
+                                  {pipelineStages.map((st) => (
+                                    <option key={st.id} value={st.id}>
+                                      Move: {st.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="button"
+                                  onClick={(e) =>
+                                    handleDeleteClient(
+                                      e,
+                                      c.id,
+                                      c.client_name || c.company_name || "Client"
+                                    )
+                                  }
+                                  className="p-1 rounded text-muted hover:text-danger hover:bg-danger-bg transition-colors"
+                                  title="Delete Client"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
