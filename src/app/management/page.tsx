@@ -17,6 +17,9 @@ import {
   TrendingUp,
   AlertCircle,
   FileText,
+  Globe,
+  Server,
+  MessageCircle,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { useAuth } from "@/providers/AuthProvider";
@@ -33,8 +36,57 @@ import {
   MOCK_TASKS,
   MOCK_INVOICES,
   MOCK_ACTIVITIES,
+  getLocalClients,
 } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
+
+interface ExpiringRenewal {
+  client: Client;
+  type: "domain" | "hosting";
+  name: string;
+  renewDate: string;
+  diffDays: number;
+}
+
+function computeExpiringRenewals(clients: Client[]): ExpiringRenewal[] {
+  const expiring: ExpiringRenewal[] = [];
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  clients.forEach((c) => {
+    const alertDays = c.renewal_alert_days || 30;
+    if (c.domain_renew_at) {
+      const dDate = new Date(c.domain_renew_at);
+      dDate.setHours(0, 0, 0, 0);
+      const diff = Math.ceil((dDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff <= alertDays) {
+        expiring.push({
+          client: c,
+          type: "domain",
+          name: c.domain_name || "Domain",
+          renewDate: c.domain_renew_at,
+          diffDays: diff,
+        });
+      }
+    }
+    if (c.hosting_renew_at) {
+      const hDate = new Date(c.hosting_renew_at);
+      hDate.setHours(0, 0, 0, 0);
+      const diff = Math.ceil((hDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+      if (diff <= alertDays) {
+        expiring.push({
+          client: c,
+          type: "hosting",
+          name: `${c.hosting_provider || "Hosting"}${c.hosting_plan ? ` (${c.hosting_plan})` : ""}`,
+          renewDate: c.hosting_renew_at,
+          diffDays: diff,
+        });
+      }
+    }
+  });
+
+  return expiring.sort((a, b) => a.diffDays - b.diffDays);
+}
 
 export default function DashboardPage() {
   const { profile } = useAuth();
@@ -44,6 +96,7 @@ export default function DashboardPage() {
   const [projectsCount, setProjectsCount] = useState<number>(0);
   const [tasksCount, setTasksCount] = useState<number>(0);
   const [overdueInvoices, setOverdueInvoices] = useState<Invoice[]>([]);
+  const [expiringRenewals, setExpiringRenewals] = useState<ExpiringRenewal[]>([]);
   const [pipelineValue, setPipelineValue] = useState<number>(0);
   const [recentActivities, setRecentActivities] = useState<ActivityLogEntry[]>([]);
   const [upcomingTasks, setUpcomingTasks] = useState<Task[]>([]);
@@ -55,15 +108,21 @@ export default function DashboardPage() {
         setIsLoading(true);
 
         if (isAdmin || isAccountManager) {
-          const { count: cCount } = await supabase
+          const { count: cCount, data: clientsData } = await supabase
             .from("clients")
-            .select("*", { count: "exact", head: true });
+            .select("*", { count: "exact" });
           
           if (cCount !== null && cCount > 0) {
             setClientsCount(cCount);
           } else {
             setClientsCount(MOCK_CLIENTS.length);
           }
+
+          const clientList =
+            clientsData && clientsData.length > 0
+              ? (clientsData as Client[])
+              : getLocalClients();
+          setExpiringRenewals(computeExpiringRenewals(clientList));
 
           const { data: leadProjects } = await supabase
             .from("projects")
@@ -141,6 +200,7 @@ export default function DashboardPage() {
         setTasksCount(MOCK_TASKS.length);
         setPipelineValue(52000);
         setOverdueInvoices(MOCK_INVOICES.filter((i) => i.status === "overdue"));
+        setExpiringRenewals(computeExpiringRenewals(getLocalClients()));
         setUpcomingTasks(MOCK_TASKS);
         setRecentActivities(MOCK_ACTIVITIES);
       } finally {
@@ -380,6 +440,74 @@ export default function DashboardPage() {
                       <span className="text-muted font-mono text-[11px]">
                         Due: {new Date(inv.due_date).toLocaleDateString()}
                       </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Upcoming Infrastructure Renewals Section (Admin & AM) */}
+        {(isAdmin || isAccountManager) && expiringRenewals.length > 0 && (
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2 text-amber-500">
+                <Globe className="w-4 h-4 shrink-0" />
+                <CardTitle className="text-sm text-amber-500 font-semibold">
+                  Upcoming Domain & Hosting Renewals ({expiringRenewals.length})
+                </CardTitle>
+              </div>
+              <Link href="/clients">
+                <Button variant="ghost" size="sm" className="text-xs text-amber-500 hover:text-amber-400">
+                  Clients Directory &rarr;
+                </Button>
+              </Link>
+            </CardHeader>
+            <CardContent className="p-4 pt-0">
+              <div className="divide-y divide-amber-500/15">
+                {expiringRenewals.map((item, idx) => (
+                  <div key={idx} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Link
+                        href={`/clients/view?id=${item.client.id}`}
+                        className="font-semibold text-foreground hover:text-accent transition-colors"
+                      >
+                        {item.client.client_name || item.client.company_name}
+                      </Link>
+                      <span className="text-muted/40">&bull;</span>
+                      <span className="inline-flex items-center gap-1 font-mono text-[11px] text-muted">
+                        {item.type === "domain" ? (
+                          <Globe className="w-3 h-3 text-accent shrink-0" />
+                        ) : (
+                          <Server className="w-3 h-3 text-accent shrink-0" />
+                        )}
+                        {item.name}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-3 shrink-0">
+                      <span
+                        className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${
+                          item.diffDays < 0
+                            ? "bg-red-500/10 text-red-500 border-red-500/30"
+                            : item.diffDays === 0
+                            ? "bg-red-500/10 text-red-500 border-red-500/30"
+                            : "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                        }`}
+                      >
+                        {item.diffDays < 0
+                          ? `Expired ${Math.abs(item.diffDays)}d ago`
+                          : item.diffDays === 0
+                          ? "Expires Today"
+                          : `${item.diffDays} days left (${item.renewDate})`}
+                      </span>
+
+                      <Link href={`/clients/view?id=${item.client.id}`}>
+                        <Button variant="outline" size="sm" className="h-6 text-[11px] px-2.5">
+                          Open & Alert &rarr;
+                        </Button>
+                      </Link>
                     </div>
                   </div>
                 ))}

@@ -14,6 +14,8 @@ import {
   Tag,
   ArrowRight,
   Shield,
+  Globe,
+  AlertTriangle,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -28,6 +30,28 @@ import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { MOCK_CLIENTS, getLocalClients, saveLocalClient, isValidUuid } from "@/lib/mock-data";
+
+function getClientRenewalAlert(client: Client) {
+  const alertDays = client.renewal_alert_days || 30;
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+
+  const check = (dateStr: string | null | undefined, label: string) => {
+    if (!dateStr) return null;
+    const target = new Date(dateStr);
+    target.setHours(0, 0, 0, 0);
+    const diffDays = Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (diffDays < 0) {
+      return { text: `${label} expired`, expired: true };
+    }
+    if (diffDays <= alertDays) {
+      return { text: `${label} in ${diffDays}d`, expired: false };
+    }
+    return null;
+  };
+
+  return check(client.domain_renew_at, "Domain") || check(client.hosting_renew_at, "Hosting");
+}
 
 export default function ClientsPage() {
   const { profile } = useAuth();
@@ -270,18 +294,41 @@ export default function ClientsPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredClients.map((client) => (
+                    {filteredClients.map((client) => {
+                      const renewalAlert = getClientRenewalAlert(client);
+                      return (
                       <TableRow key={client.id}>
                         <TableCell>
                           <div>
-                            <Link
-                              href={`/clients/view?id=${client.id}`}
-                              className="font-medium text-foreground hover:text-accent flex items-center gap-1.5 transition-colors"
-                            >
-                              <span>{client.client_name || client.company_name}</span>
-                              <ArrowRight className="w-3 h-3 text-muted" />
-                            </Link>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2">
+                              <Link
+                                href={`/clients/view?id=${client.id}`}
+                                className="font-medium text-foreground hover:text-accent flex items-center gap-1.5 transition-colors"
+                              >
+                                <span>{client.client_name || client.company_name}</span>
+                                <ArrowRight className="w-3 h-3 text-muted" />
+                              </Link>
+                              {renewalAlert && (
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.2 rounded-full border ${
+                                    renewalAlert.expired
+                                      ? "bg-red-500/10 text-red-500 border-red-500/30"
+                                      : "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                  }`}
+                                  title={`Renewal Alert: ${renewalAlert.text}`}
+                                >
+                                  <AlertTriangle className="w-2.5 h-2.5" />
+                                  {renewalAlert.text}
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                              {client.domain_name && (
+                                <span className="text-[11px] text-muted flex items-center gap-1 font-mono">
+                                  <Globe className="w-2.5 h-2.5 text-accent" />
+                                  {client.domain_name}
+                                </span>
+                              )}
                               {client.industry && (
                                 <span className="text-xs text-muted">
                                   {client.industry}
@@ -334,7 +381,8 @@ export default function ClientsPage() {
                           </Link>
                         </TableCell>
                       </TableRow>
-                    ))}
+                    );
+                    })}
                   </TableBody>
                 </Table>
               </CardContent>
@@ -369,7 +417,9 @@ export default function ClientsPage() {
                           No clients in this stage
                         </div>
                       ) : (
-                        stageClients.map((c) => (
+                        stageClients.map((c) => {
+                          const alert = getClientRenewalAlert(c);
+                          return (
                           <div
                             key={c.id}
                             className="p-3 rounded-md border border-border bg-surface hover:border-accent/40 shadow-xs transition-colors space-y-2"
@@ -381,7 +431,26 @@ export default function ClientsPage() {
                               >
                                 {c.client_name || c.company_name}
                               </Link>
+                              {alert && (
+                                <span
+                                  className={`shrink-0 text-[9px] font-medium px-1.5 py-0.2 rounded-full border ${
+                                    alert.expired
+                                      ? "bg-red-500/10 text-red-500 border-red-500/30"
+                                      : "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                  }`}
+                                  title={alert.text}
+                                >
+                                  {alert.text}
+                                </span>
+                              )}
                             </div>
+
+                            {c.domain_name && (
+                              <p className="text-[10px] text-muted font-mono truncate flex items-center gap-1">
+                                <Globe className="w-2.5 h-2.5 text-accent shrink-0" />
+                                {c.domain_name}
+                              </p>
+                            )}
 
                             {c.industry && (
                               <p className="text-[11px] text-muted line-clamp-1">
@@ -410,7 +479,8 @@ export default function ClientsPage() {
                               </select>
                             </div>
                           </div>
-                        ))
+                        );
+                        })
                       )}
                     </div>
                   </div>

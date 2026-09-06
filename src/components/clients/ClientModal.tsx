@@ -8,6 +8,18 @@ import { Client, ClientStatus, LeadSource, Profile } from "@/types/database.type
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { saveLocalClient, generateUUID } from "@/lib/mock-data";
+import { lookupDomainWhois } from "@/lib/domain-whois";
+import {
+  Globe,
+  Server,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
+  Calendar,
+} from "lucide-react";
 
 interface ClientModalProps {
   isOpen: boolean;
@@ -28,6 +40,24 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
   const [accountManagers, setAccountManagers] = useState<Profile[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Domain & Hosting Lifecycle State
+  const [domainName, setDomainName] = useState("");
+  const [domainRegistrar, setDomainRegistrar] = useState("");
+  const [domainRegisteredAt, setDomainRegisteredAt] = useState("");
+  const [domainRenewAt, setDomainRenewAt] = useState("");
+  const [domainPrice, setDomainPrice] = useState("");
+  const [hostingProvider, setHostingProvider] = useState("");
+  const [hostingPlan, setHostingPlan] = useState("");
+  const [hostingActivatedAt, setHostingActivatedAt] = useState("");
+  const [hostingRenewAt, setHostingRenewAt] = useState("");
+  const [hostingPrice, setHostingPrice] = useState("");
+  const [renewalAlertDays, setRenewalAlertDays] = useState(30);
+
+  const [showInfraSection, setShowInfraSection] = useState(false);
+  const [isWhoisLoading, setIsWhoisLoading] = useState(false);
+  const [whoisSuccessMsg, setWhoisSuccessMsg] = useState<string | null>(null);
+  const [whoisErrorMsg, setWhoisErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadAccountManagers() {
@@ -53,6 +83,31 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       setLeadSource(clientToEdit.lead_source || "referral");
       setTagsInput(clientToEdit.tags ? clientToEdit.tags.join(", ") : "");
       setAccountManagerId(clientToEdit.account_manager_id || "");
+
+      // Populate domain & hosting
+      setDomainName(clientToEdit.domain_name || "");
+      setDomainRegistrar(clientToEdit.domain_registrar || "");
+      setDomainRegisteredAt(clientToEdit.domain_registered_at || "");
+      setDomainRenewAt(clientToEdit.domain_renew_at || "");
+      setDomainPrice(clientToEdit.domain_price != null ? String(clientToEdit.domain_price) : "");
+      setHostingProvider(clientToEdit.hosting_provider || "");
+      setHostingPlan(clientToEdit.hosting_plan || "");
+      setHostingActivatedAt(clientToEdit.hosting_activated_at || "");
+      setHostingRenewAt(clientToEdit.hosting_renew_at || "");
+      setHostingPrice(clientToEdit.hosting_price != null ? String(clientToEdit.hosting_price) : "");
+      setRenewalAlertDays(clientToEdit.renewal_alert_days ?? 30);
+
+      // Expand if client already has infra data
+      if (
+        clientToEdit.domain_name ||
+        clientToEdit.hosting_provider ||
+        clientToEdit.domain_renew_at ||
+        clientToEdit.hosting_renew_at
+      ) {
+        setShowInfraSection(true);
+      } else {
+        setShowInfraSection(false);
+      }
     } else {
       setClientName("");
       setIndustry("");
@@ -61,9 +116,76 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       setLeadSource("referral");
       setTagsInput("");
       setAccountManagerId(currentProfile?.id || "");
+
+      setDomainName("");
+      setDomainRegistrar("");
+      setDomainRegisteredAt("");
+      setDomainRenewAt("");
+      setDomainPrice("");
+      setHostingProvider("");
+      setHostingPlan("");
+      setHostingActivatedAt("");
+      setHostingRenewAt("");
+      setHostingPrice("");
+      setRenewalAlertDays(30);
+      setShowInfraSection(false);
     }
     setErrorMsg(null);
+    setWhoisErrorMsg(null);
+    setWhoisSuccessMsg(null);
   }, [clientToEdit, isOpen, currentProfile]);
+
+  const handleWhoisLookup = async () => {
+    const target = (domainName || website || "").trim();
+    if (!target) {
+      setWhoisErrorMsg("Please enter a Domain Name or Website URL first.");
+      return;
+    }
+    setIsWhoisLoading(true);
+    setWhoisErrorMsg(null);
+    setWhoisSuccessMsg(null);
+
+    try {
+      const data = await lookupDomainWhois(target);
+      if (!data.success) {
+        setWhoisErrorMsg(data.error || "Failed to lookup domain.");
+        return;
+      }
+
+      if (data.domain) {
+        setDomainName(data.domain);
+      }
+      if (data.registrar) {
+        setDomainRegistrar(data.registrar);
+      }
+      if (data.registeredAt) {
+        setDomainRegisteredAt(data.registeredAt);
+      }
+      if (data.expiresAt) {
+        setDomainRenewAt(data.expiresAt);
+      }
+      setWhoisSuccessMsg(`Fetched details for ${data.domain}! Check registration & renewal.`);
+      setShowInfraSection(true);
+    } catch (err: any) {
+      setWhoisErrorMsg(err.message || "Failed to contact domain lookup service.");
+    } finally {
+      setIsWhoisLoading(false);
+    }
+  };
+
+  const buildInfraPayload = () => ({
+    domain_name: domainName.trim() || null,
+    domain_registrar: domainRegistrar.trim() || null,
+    domain_registered_at: domainRegisteredAt || null,
+    domain_renew_at: domainRenewAt || null,
+    domain_price: domainPrice ? parseFloat(domainPrice) : null,
+    hosting_provider: hostingProvider.trim() || null,
+    hosting_plan: hostingPlan.trim() || null,
+    hosting_activated_at: hostingActivatedAt || null,
+    hosting_renew_at: hostingRenewAt || null,
+    hosting_price: hostingPrice ? parseFloat(hostingPrice) : null,
+    renewal_alert_days: Number(renewalAlertDays) || 30,
+  });
 
   const saveLocally = (tagsArray: string[], safeAMId: string | null) => {
     const trimmedName = clientName.trim();
@@ -80,6 +202,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       account_manager:
         accountManagers.find((am) => am.id === safeAMId) || currentProfile || null,
       contacts: clientToEdit?.contacts || [],
+      ...buildInfraPayload(),
       created_at: clientToEdit?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -127,6 +250,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       lead_source: leadSource,
       tags: tagsArray,
       account_manager_id: safeAccountManagerId,
+      ...buildInfraPayload(),
       updated_at: new Date().toISOString(),
     };
 
@@ -178,7 +302,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       isOpen={isOpen}
       onClose={onClose}
       title={clientToEdit ? "Edit Client Profile" : "Create New Client"}
-      description="Record client details and assign an internal Account Manager."
+      description="Record client details, hosting, domain lifecycle, and assigned Account Manager."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
@@ -211,14 +335,35 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-foreground mb-1.5">
-              Website URL
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-foreground">
+                Website URL
+              </label>
+              {website && !domainName && (
+                <button
+                  type="button"
+                  onClick={handleWhoisLookup}
+                  className="text-[10px] text-accent hover:underline flex items-center gap-1"
+                >
+                  <Sparkles className="h-2.5 w-2.5" />
+                  Auto-fill domain
+                </button>
+              )}
+            </div>
             <Input
               type="url"
               placeholder="https://example.com"
               value={website}
-              onChange={(e) => setWebsite(e.target.value)}
+              onChange={(e) => {
+                setWebsite(e.target.value);
+                if (!domainName && e.target.value.includes(".")) {
+                  const cleaned = e.target.value
+                    .replace(/^https?:\/\//, "")
+                    .replace(/^www\./, "")
+                    .split("/")[0];
+                  if (cleaned) setDomainName(cleaned);
+                }
+              }}
             />
           </div>
         </div>
@@ -269,6 +414,217 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
           />
+        </div>
+
+        {/* Collapsible Domain & Hosting Infrastructure Section */}
+        <div className="border border-border/80 rounded-lg overflow-hidden bg-surface-elevated/30">
+          <button
+            type="button"
+            onClick={() => setShowInfraSection(!showInfraSection)}
+            className="w-full flex items-center justify-between px-3.5 py-2.5 bg-surface hover:bg-surface-elevated/80 transition-colors text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-accent" />
+              <span className="text-xs font-semibold text-foreground">
+                Domain & Hosting Infrastructure
+              </span>
+              {(domainName || hostingProvider) && (
+                <span className="text-[10px] bg-accent/15 text-accent font-medium px-2 py-0.5 rounded-full">
+                  Configured
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span>{showInfraSection ? "Hide Details" : "Add / View Details"}</span>
+              {showInfraSection ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+            </div>
+          </button>
+
+          {showInfraSection && (
+            <div className="p-3.5 space-y-4 border-t border-border/60 bg-surface">
+              {/* WHOIS status messages */}
+              {whoisSuccessMsg && (
+                <div className="flex items-center gap-2 p-2.5 rounded-md bg-success-bg border border-success/30 text-success text-xs">
+                  <CheckCircle2 className="h-4 w-4 shrink-0" />
+                  <span>{whoisSuccessMsg}</span>
+                </div>
+              )}
+              {whoisErrorMsg && (
+                <div className="flex items-center gap-2 p-2.5 rounded-md bg-danger-bg border border-danger/30 text-danger text-xs">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{whoisErrorMsg}</span>
+                </div>
+              )}
+
+              {/* Domain Subsection */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                    <Globe className="h-3.5 w-3.5 text-accent" />
+                    <span>Domain Details</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleWhoisLookup}
+                    disabled={isWhoisLoading}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent/90 bg-accent/10 hover:bg-accent/20 px-2.5 py-1 rounded transition-colors disabled:opacity-50"
+                  >
+                    {isWhoisLoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3 w-3" />
+                    )}
+                    <span>{isWhoisLoading ? "Querying RDAP..." : "Auto-Fetch via WHOIS"}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Domain Name
+                    </label>
+                    <Input
+                      placeholder="e.g. example.com"
+                      value={domainName}
+                      onChange={(e) => setDomainName(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Registrar
+                    </label>
+                    <Input
+                      placeholder="e.g. GoDaddy, Namecheap"
+                      value={domainRegistrar}
+                      onChange={(e) => setDomainRegistrar(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Registered Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={domainRegisteredAt}
+                      onChange={(e) => setDomainRegisteredAt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Renewal / Expiry Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={domainRenewAt}
+                      onChange={(e) => setDomainRenewAt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Domain Cost ($/yr)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="15.00"
+                      value={domainPrice}
+                      onChange={(e) => setDomainPrice(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div className="border-t border-border/50" />
+
+              {/* Hosting Subsection */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                  <Server className="h-3.5 w-3.5 text-accent" />
+                  <span>Web Hosting & Server Details</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Hosting Provider
+                    </label>
+                    <Input
+                      placeholder="e.g. AWS, Vercel, Hostinger, GCP"
+                      value={hostingProvider}
+                      onChange={(e) => setHostingProvider(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Hosting Plan / Tier
+                    </label>
+                    <Input
+                      placeholder="e.g. Business Pro, VPS 4GB, Cloud Run"
+                      value={hostingPlan}
+                      onChange={(e) => setHostingPlan(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Activation Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={hostingActivatedAt}
+                      onChange={(e) => setHostingActivatedAt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Renewal Date
+                    </label>
+                    <Input
+                      type="date"
+                      value={hostingRenewAt}
+                      onChange={(e) => setHostingRenewAt(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
+                      Hosting Cost ($/yr)
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      placeholder="75.00"
+                      value={hostingPrice}
+                      onChange={(e) => setHostingPrice(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Alert Settings */}
+              <div className="pt-2 border-t border-border/50 flex items-center justify-between">
+                <label className="text-xs text-muted-foreground">
+                  Send renewal alerts prior to:
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="180"
+                    className="w-20 text-center text-xs py-1"
+                    value={renewalAlertDays}
+                    onChange={(e) => setRenewalAlertDays(Number(e.target.value))}
+                  />
+                  <span className="text-xs text-muted-foreground">days</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="pt-3 border-t border-border/50 flex justify-end gap-2">

@@ -19,6 +19,10 @@ import {
   Clock,
   Shield,
   PhoneCall,
+  Server,
+  AlertTriangle,
+  CheckCircle2,
+  MessageCircle,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -33,6 +37,67 @@ import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
 import { MOCK_CLIENTS, MOCK_ACTIVITIES, MOCK_PROJECTS, getLocalClients, getLocalProjects, getLocalActivities, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
+
+function getRenewalStatus(renewDateStr?: string | null, alertDays = 30) {
+  if (!renewDateStr) return null;
+  const target = new Date(renewDateStr);
+  const now = new Date();
+  target.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  const diffTime = target.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      status: "expired" as const,
+      label: `Expired ${Math.abs(diffDays)}d ago`,
+      diffDays,
+      badgeClass: "bg-red-500/10 text-red-500 border-red-500/30",
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      status: "due_today" as const,
+      label: "Expires Today",
+      diffDays: 0,
+      badgeClass: "bg-red-500/10 text-red-500 border-red-500/30",
+    };
+  }
+  if (diffDays <= alertDays) {
+    return {
+      status: "expiring_soon" as const,
+      label: `${diffDays} days left`,
+      diffDays,
+      badgeClass: "bg-amber-500/10 text-amber-500 border-amber-500/30",
+    };
+  }
+  return {
+    status: "active" as const,
+    label: `${diffDays} days left`,
+    diffDays,
+    badgeClass: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
+  };
+}
+
+const sendWhatsAppRenewalAlert = (client: Client, contacts: Contact[]) => {
+  const phone = contacts.find((c) => c.phone)?.phone || "";
+  const cleanPhone = phone.replace(/[^0-9]/g, "");
+  const name = client.client_name || client.company_name;
+
+  let msg = `Hello ${name},\n\nThis is a renewal alert from Xunique Labs regarding your online services:`;
+  if (client.domain_name) {
+    msg += `\n• Domain: ${client.domain_name} (Expires: ${client.domain_renew_at || "Soon"})`;
+  }
+  if (client.hosting_provider) {
+    msg += `\n• Hosting: ${client.hosting_provider} - ${client.hosting_plan || "Plan"} (Expires: ${client.hosting_renew_at || "Soon"})`;
+  }
+  msg += `\n\nPlease let us know if you would like us to process this renewal on your behalf.\n\nThank you,\nXunique Labs Team`;
+
+  const url = cleanPhone
+    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(msg)}`
+    : `https://wa.me/?text=${encodeURIComponent(msg)}`;
+  window.open(url, "_blank");
+};
 
 function ClientDetailContent() {
   const searchParams = useSearchParams();
@@ -276,6 +341,197 @@ function ClientDetailContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Infrastructure & Renewals Section */}
+      {(() => {
+        const domainStatus = getRenewalStatus(client.domain_renew_at, client.renewal_alert_days || 30);
+        const hostingStatus = getRenewalStatus(client.hosting_renew_at, client.renewal_alert_days || 30);
+        const hasAlert =
+          (domainStatus && (domainStatus.status === "expiring_soon" || domainStatus.status === "expired" || domainStatus.status === "due_today")) ||
+          (hostingStatus && (hostingStatus.status === "expiring_soon" || hostingStatus.status === "expired" || hostingStatus.status === "due_today"));
+        const hasInfra = Boolean(client.domain_name || client.hosting_provider || client.domain_renew_at || client.hosting_renew_at);
+
+        return (
+          <Card className="border-border bg-surface shadow-xs">
+            <CardHeader className="py-3 px-5 border-b border-border/60 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Globe className="w-4 h-4 text-accent" />
+                <CardTitle className="text-sm font-semibold">Infrastructure & Service Renewals</CardTitle>
+                {hasAlert && (
+                  <span className="flex items-center gap-1 text-[11px] font-medium bg-amber-500/15 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                    <AlertTriangle className="w-3 h-3" /> Renewal Alert
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {hasInfra && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs h-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium"
+                    onClick={() => sendWhatsAppRenewalAlert(client, contacts)}
+                    title="Send pre-filled renewal reminder to client via WhatsApp"
+                  >
+                    <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-500" /> WhatsApp Renewal Alert
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  <Edit2 className="w-3 h-3 mr-1" /> {hasInfra ? "Edit Infra" : "Setup Infra"}
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5">
+              {!hasInfra ? (
+                <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg bg-surface-elevated/40 border border-dashed border-border gap-3 text-center sm:text-left">
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">No domain or hosting infrastructure tracked</p>
+                    <p className="text-[11px] text-muted mt-0.5">
+                      Store domain registrar, expiration dates, hosting plans, and send automatic WhatsApp renewal reminders.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="text-xs shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Configure Domain & Hosting
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Domain Card */}
+                  <div className="p-4 rounded-lg border border-border/80 bg-surface-elevated/40 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-md bg-accent/10 text-accent">
+                            <Globe className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-semibold text-foreground">Domain Registration</h4>
+                            <p className="text-[10px] text-muted">
+                              {client.domain_registrar || "Registrar unrecorded"}
+                            </p>
+                          </div>
+                        </div>
+                        {domainStatus && (
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${domainStatus.badgeClass}`}
+                          >
+                            {domainStatus.label}
+                          </span>
+                        )}
+                      </div>
+
+                      {client.domain_name ? (
+                        <div className="my-2">
+                          <a
+                            href={`https://${client.domain_name.replace(/^https?:\/\//, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-mono font-medium text-accent hover:underline flex items-center gap-1.5"
+                          >
+                            {client.domain_name}
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted italic my-2">No domain name specified</p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                        <div>
+                          <span className="text-[10px] text-muted block">Registered</span>
+                          <span className="font-medium text-foreground">
+                            {client.domain_registered_at || "—"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted block">Renewal / Expiry</span>
+                          <span className="font-medium text-foreground">
+                            {client.domain_renew_at || "—"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {client.domain_price != null && (
+                      <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs">
+                        <span className="text-[10px] text-muted">Domain Cost:</span>
+                        <span className="font-semibold text-foreground">${client.domain_price} / yr</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hosting Card */}
+                  <div className="p-4 rounded-lg border border-border/80 bg-surface-elevated/40 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-md bg-accent/10 text-accent">
+                            <Server className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-semibold text-foreground">Web Hosting & Server</h4>
+                            <p className="text-[10px] text-muted">
+                              {client.hosting_provider || "Provider unrecorded"}
+                            </p>
+                          </div>
+                        </div>
+                        {hostingStatus && (
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${hostingStatus.badgeClass}`}
+                          >
+                            {hostingStatus.label}
+                          </span>
+                        )}
+                      </div>
+
+                      {client.hosting_plan ? (
+                        <div className="my-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {client.hosting_plan}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted italic my-2">No plan specified</p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                        <div>
+                          <span className="text-[10px] text-muted block">Activated On</span>
+                          <span className="font-medium text-foreground">
+                            {client.hosting_activated_at || "—"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted block">Renewal Date</span>
+                          <span className="font-medium text-foreground">
+                            {client.hosting_renew_at || "—"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {client.hosting_price != null && (
+                      <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs">
+                        <span className="text-[10px] text-muted">Hosting Cost:</span>
+                        <span className="font-semibold text-foreground">${client.hosting_price} / yr</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Section Tabs */}
       <div className="border-b border-border/60 flex items-center gap-6 text-sm">

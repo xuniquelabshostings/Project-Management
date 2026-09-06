@@ -57,6 +57,18 @@ export interface Client {
   account_manager?: Profile | null;
   contacts?: Contact[];
   projects?: Project[];
+  // Domain & Hosting Lifecycle
+  domain_name?: string | null;
+  domain_registrar?: string | null;
+  domain_registered_at?: string | null;
+  domain_renew_at?: string | null;
+  domain_price?: number | null;
+  hosting_provider?: string | null;
+  hosting_plan?: string | null;
+  hosting_activated_at?: string | null;
+  hosting_renew_at?: string | null;
+  hosting_price?: number | null;
+  renewal_alert_days?: number | null;
 }
 
 export function getClientName(client?: Partial<Client> | null): string {
