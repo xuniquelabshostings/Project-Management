@@ -53,7 +53,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
     invoice.client?.contacts?.[0]?.email ||
     (invoice.client as any)?.email ||
     "client@example.com";
-  const clientName = invoice.client?.company_name || "Client";
+  const clientName = invoice.client?.client_name || invoice.client?.company_name || "Client";
   const companyName = branding.companyName || "Xunique Labs";
   const defaultPdfFileName = `${clientName}-Xunique Labs-Invoice`;
 

@@ -217,7 +217,7 @@ function ClientDetailContent() {
             <div className="space-y-2">
               <div className="flex items-center gap-3 flex-wrap">
                 <h1 className="font-serif text-2xl font-bold text-foreground">
-                  {client.company_name}
+                  {client.client_name || client.company_name}
                 </h1>
                 <ClientStatusBadge status={client.status} />
                 {client.lead_source && (
@@ -346,7 +346,7 @@ function ClientDetailContent() {
           {projects.length === 0 ? (
             <div className="p-8 text-center border border-dashed border-border rounded-lg bg-surface-elevated/30">
               <Briefcase className="w-8 h-8 text-muted mx-auto mb-2 opacity-50" />
-              <p className="text-xs text-muted">No projects created yet for {client.company_name}.</p>
+              <p className="text-xs text-muted">No projects created yet for {client.client_name || client.company_name}.</p>
               <Link href={`/projects?newClient=${clientId}`}>
                 <Button variant="outline" size="sm" className="mt-3 text-xs">
                   Create Project

@@ -25,7 +25,8 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
 
   if (!isOpen || !agreement) return null;
 
-  const clientName = agreement.client?.company_name || "Client";
+  const clientName =
+    agreement.client?.client_name || agreement.client?.company_name || "Client";
   const clientEmail =
     agreement.client?.contacts?.[0]?.email ||
     (agreement.client as any)?.email ||

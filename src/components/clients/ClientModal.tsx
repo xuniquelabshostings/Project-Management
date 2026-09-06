@@ -18,7 +18,7 @@ interface ClientModalProps {
 
 export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientModalProps) {
   const { profile: currentProfile, session } = useAuth();
-  const [companyName, setCompanyName] = useState("");
+  const [clientName, setClientName] = useState("");
   const [industry, setIndustry] = useState("");
   const [website, setWebsite] = useState("");
   const [status, setStatus] = useState<ClientStatus>("lead");
@@ -46,7 +46,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
 
   useEffect(() => {
     if (clientToEdit) {
-      setCompanyName(clientToEdit.company_name);
+      setClientName(clientToEdit.client_name || clientToEdit.company_name || "");
       setIndustry(clientToEdit.industry || "");
       setWebsite(clientToEdit.website || "");
       setStatus(clientToEdit.status);
@@ -54,7 +54,7 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       setTagsInput(clientToEdit.tags ? clientToEdit.tags.join(", ") : "");
       setAccountManagerId(clientToEdit.account_manager_id || "");
     } else {
-      setCompanyName("");
+      setClientName("");
       setIndustry("");
       setWebsite("");
       setStatus("lead");
@@ -66,9 +66,11 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
   }, [clientToEdit, isOpen, currentProfile]);
 
   const saveLocally = (tagsArray: string[], safeAMId: string | null) => {
+    const trimmedName = clientName.trim();
     const mockClient: Client = {
       id: clientToEdit?.id || generateUUID(),
-      company_name: companyName.trim(),
+      client_name: trimmedName,
+      company_name: trimmedName,
       industry: industry.trim() || null,
       website: website.trim() || null,
       status,
@@ -88,8 +90,8 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!companyName.trim()) {
-      setErrorMsg("Company name is required.");
+    if (!clientName.trim()) {
+      setErrorMsg("Client name is required.");
       return;
     }
 
@@ -115,8 +117,10 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
       return;
     }
 
+    const trimmedName = clientName.trim();
     const payload = {
-      company_name: companyName.trim(),
+      client_name: trimmedName,
+      company_name: trimmedName,
       industry: industry.trim() || null,
       website: website.trim() || null,
       status,
@@ -185,13 +189,13 @@ export function ClientModal({ isOpen, onClose, onSaved, clientToEdit }: ClientMo
 
         <div>
           <label className="block text-xs font-medium text-foreground mb-1.5">
-            Company Name *
+            Client Name *
           </label>
           <Input
             required
-            placeholder="e.g. Acme Corporation"
-            value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
+            placeholder="e.g. Acme Corporation or John Doe"
+            value={clientName}
+            onChange={(e) => setClientName(e.target.value)}
           />
         </div>
 

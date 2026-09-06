@@ -371,7 +371,7 @@ export default function DashboardPage() {
                       <span className="font-mono font-semibold text-foreground">
                         {inv.invoice_number}
                       </span>
-                      <span className="text-muted ml-2">&bull; {inv.client?.company_name}</span>
+                      <span className="text-muted ml-2">&bull; {inv.client?.client_name || inv.client?.company_name}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-danger font-mono font-bold">

@@ -268,7 +268,7 @@ function ProjectWorkspaceContent() {
                     href={`/clients/view?id=${project.client.id}`}
                     className="hover:text-accent underline font-medium"
                   >
-                    {project.client.company_name}
+                    {project.client.client_name || project.client.company_name}
                   </Link>
                 ) : (
                   <span>Internal Project</span>

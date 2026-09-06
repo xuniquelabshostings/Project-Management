@@ -208,7 +208,7 @@ export function AgreementModal({
               <option value="">Select a client...</option>
               {clients.map((client) => (
                 <option key={client.id} value={client.id}>
-                  {client.company_name}
+                  {client.client_name || client.company_name}
                 </option>
               ))}
             </select>

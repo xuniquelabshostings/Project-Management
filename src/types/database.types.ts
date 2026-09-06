@@ -44,6 +44,7 @@ export interface Profile {
 
 export interface Client {
   id: string;
+  client_name?: string;
   company_name: string;
   industry: string | null;
   website: string | null;
@@ -56,6 +57,11 @@ export interface Client {
   account_manager?: Profile | null;
   contacts?: Contact[];
   projects?: Project[];
+}
+
+export function getClientName(client?: Partial<Client> | null): string {
+  if (!client) return "";
+  return client.client_name || client.company_name || "";
 }
 
 export interface Contact {

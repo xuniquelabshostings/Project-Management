@@ -135,7 +135,7 @@ function DocumentsContent() {
           <option value="all">All Clients</option>
           {clients.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.company_name}
+              {c.client_name || c.company_name}
             </option>
           ))}
         </select>

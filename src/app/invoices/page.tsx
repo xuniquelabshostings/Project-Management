@@ -72,10 +72,10 @@ export default function InvoicesPage() {
 
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
+      const clientName = inv.client?.client_name || inv.client?.company_name;
       const matchesSearch =
         inv.invoice_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (inv.client?.company_name &&
-          inv.client.company_name.toLowerCase().includes(searchQuery.toLowerCase()));
+        (clientName && clientName.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesStatus = statusFilter === "all" || inv.status === statusFilter;
 
@@ -307,7 +307,7 @@ export default function InvoicesPage() {
 
                         <TableCell>
                           <div className="text-sm font-medium text-foreground">
-                            {inv.client?.company_name || "Client"}
+                            {inv.client?.client_name || inv.client?.company_name || "Client"}
                           </div>
                           {inv.project && (
                             <div className="text-xs text-muted flex items-center gap-1">

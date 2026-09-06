@@ -71,8 +71,9 @@ export default function ClientsPage() {
 
   const filteredClients = useMemo(() => {
     return clients.filter((c) => {
+      const clientDisplayName = c.client_name || c.company_name || "";
       const matchesSearch =
-        c.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        clientDisplayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (c.industry && c.industry.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (c.tags && c.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
 
@@ -261,7 +262,7 @@ export default function ClientsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Company</TableHead>
+                      <TableHead>Client Name</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Lead Source</TableHead>
                       <TableHead>Contacts</TableHead>
@@ -277,7 +278,7 @@ export default function ClientsPage() {
                               href={`/clients/view?id=${client.id}`}
                               className="font-medium text-foreground hover:text-accent flex items-center gap-1.5 transition-colors"
                             >
-                              <span>{client.company_name}</span>
+                              <span>{client.client_name || client.company_name}</span>
                               <ArrowRight className="w-3 h-3 text-muted" />
                             </Link>
                             <div className="flex items-center gap-2 mt-1">
@@ -378,7 +379,7 @@ export default function ClientsPage() {
                                 href={`/clients/view?id=${c.id}`}
                                 className="text-xs font-semibold text-foreground hover:text-accent line-clamp-1"
                               >
-                                {c.company_name}
+                                {c.client_name || c.company_name}
                               </Link>
                             </div>
 

@@ -67,10 +67,10 @@ function ProjectsContent() {
 
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
+      const clientName = p.client?.client_name || p.client?.company_name;
       const matchesSearch =
         p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.client?.company_name &&
-          p.client.company_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (clientName && clientName.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (p.tech_stack &&
           p.tech_stack.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
 
@@ -181,7 +181,7 @@ function ProjectsContent() {
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <span className="text-xs text-muted flex items-center gap-1">
                     <Building2 className="w-3 h-3" />
-                    {project.client?.company_name || "Internal Project"}
+                    {project.client?.client_name || project.client?.company_name || "Internal Project"}
                   </span>
                   <ProjectStatusBadge status={project.status} />
                 </div>

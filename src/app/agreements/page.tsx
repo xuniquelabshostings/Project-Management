@@ -91,7 +91,8 @@ export default function AgreementsPage() {
         agr.agreement_number.toLowerCase().includes(q) ||
         agr.project_name.toLowerCase().includes(q) ||
         agr.title.toLowerCase().includes(q) ||
-        (agr.client?.company_name && agr.client.company_name.toLowerCase().includes(q));
+        ((agr.client?.client_name || agr.client?.company_name) &&
+          (agr.client.client_name || agr.client.company_name)!.toLowerCase().includes(q));
 
       const matchesStatus = statusFilter === "all" || agr.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -313,7 +314,7 @@ export default function AgreementsPage() {
                         </div>
                         <div className="text-[11px] text-muted flex items-center gap-1.5 mt-0.5">
                           <Building2 className="w-3 h-3 text-muted" />
-                          <span>{agr.client?.company_name || "Unassigned Client"}</span>
+                          <span>{agr.client?.client_name || agr.client?.company_name || "Unassigned Client"}</span>
                         </div>
                       </TableCell>
 

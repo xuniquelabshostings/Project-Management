@@ -78,10 +78,10 @@ export default function ProposalsPage() {
 
   const filteredProposals = useMemo(() => {
     return proposals.filter((p) => {
+      const clientName = p.client?.client_name || p.client?.company_name;
       const matchesSearch =
         p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (p.client?.company_name &&
-          p.client.company_name.toLowerCase().includes(searchQuery.toLowerCase()));
+        (clientName && clientName.toLowerCase().includes(searchQuery.toLowerCase()));
 
       const matchesStatus = statusFilter === "all" || p.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -275,7 +275,7 @@ export default function ProposalsPage() {
                         </TableCell>
 
                         <TableCell className="text-xs text-foreground font-medium">
-                          {p.client?.company_name || "Client"}
+                          {p.client?.client_name || p.client?.company_name || "Client"}
                         </TableCell>
 
                         <TableCell className="text-xs text-muted font-mono">
@@ -352,7 +352,7 @@ export default function ProposalsPage() {
                   <option value="">Select client...</option>
                   {clients.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.company_name}
+                      {c.client_name || c.company_name}
                     </option>
                   ))}
                 </select>

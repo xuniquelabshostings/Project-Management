@@ -39,6 +39,7 @@ export const MOCK_PROFILES: Profile[] = [
 export const MOCK_CLIENTS: Client[] = [
   {
     id: "c0000000-0000-0000-0000-000000000001",
+    client_name: "Acme FinTech Corp",
     company_name: "Acme FinTech Corp",
     industry: "Financial Services",
     website: "https://acmefin.example.com",
@@ -74,6 +75,7 @@ export const MOCK_CLIENTS: Client[] = [
   },
   {
     id: "c0000000-0000-0000-0000-000000000002",
+    client_name: "Lumina Health Labs",
     company_name: "Lumina Health Labs",
     industry: "Healthcare & Biotech",
     website: "https://luminahealth.example.com",
@@ -99,6 +101,7 @@ export const MOCK_CLIENTS: Client[] = [
   },
   {
     id: "c0000000-0000-0000-0000-000000000003",
+    client_name: "Apex Logistics",
     company_name: "Apex Logistics",
     industry: "Supply Chain",
     website: "https://apexlogistics.example.com",
@@ -328,21 +331,26 @@ export function getLocalClients(): Client[] {
 }
 
 export function saveLocalClient(client: Client): Client[] {
-  if (typeof window === "undefined") return [client, ...MOCK_CLIENTS];
+  const normalized: Client = {
+    ...client,
+    client_name: client.client_name || client.company_name,
+    company_name: client.company_name || client.client_name || "",
+  };
+  if (typeof window === "undefined") return [normalized, ...MOCK_CLIENTS];
   try {
     const current = getLocalClients();
-    const existingIndex = current.findIndex((c) => c.id === client.id);
+    const existingIndex = current.findIndex((c) => c.id === normalized.id);
     let updated: Client[];
     if (existingIndex >= 0) {
       updated = [...current];
-      updated[existingIndex] = client;
+      updated[existingIndex] = normalized;
     } else {
-      updated = [client, ...current];
+      updated = [normalized, ...current];
     }
     localStorage.setItem(LOCAL_CLIENTS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return [client, ...MOCK_CLIENTS];
+    return [normalized, ...MOCK_CLIENTS];
   }
 }
 
