@@ -27,6 +27,7 @@ export function KanbanBoard({
   const [modalColumn, setModalColumn] = useState<string>("To Do");
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [mobileActiveColumn, setMobileActiveColumn] = useState<string>("all");
 
   const handleOpenNewTask = (columnName: string) => {
     setSelectedTask(null);
@@ -84,12 +85,45 @@ export function KanbanBoard({
 
   return (
     <div className="space-y-4">
+      {/* Mobile Column Switcher (visible on < sm screens) */}
+      <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <button
+          onClick={() => setMobileActiveColumn("all")}
+          className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+            mobileActiveColumn === "all"
+              ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+              : "bg-surface border border-border text-muted hover:text-foreground"
+          }`}
+        >
+          All ({tasks.length})
+        </button>
+        {columns.map((col) => {
+          const count = tasks.filter((t) => t.kanban_column === col).length;
+          return (
+            <button
+              key={col}
+              onClick={() => setMobileActiveColumn(col)}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                mobileActiveColumn === col
+                  ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                  : "bg-surface border border-border text-muted hover:text-foreground"
+              }`}
+            >
+              <span>{col}</span>
+              <span className="font-mono text-[10px] opacity-80">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Kanban Columns Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
         {columns.map((columnName) => {
           const columnTasks = tasks.filter((t) => t.kanban_column === columnName);
 
           const isColumnDraggedOver = dragOverColumn === columnName;
+          const isHiddenOnMobile =
+            mobileActiveColumn !== "all" && mobileActiveColumn !== columnName;
 
           return (
             <div
@@ -117,7 +151,9 @@ export function KanbanBoard({
                 setDraggingTaskId(null);
                 setDragOverColumn(null);
               }}
-              className={`rounded-lg border transition-all duration-150 p-3 flex flex-col min-w-[260px] ${
+              className={`rounded-lg border transition-all duration-150 p-3 flex-col min-w-[260px] ${
+                isHiddenOnMobile ? "hidden sm:flex" : "flex"
+              } ${
                 isColumnDraggedOver
                   ? "border-accent bg-accent/10 ring-2 ring-accent/30 shadow-md scale-[1.01]"
                   : "border-border bg-surface-elevated/40"
@@ -183,7 +219,7 @@ export function KanbanBoard({
                       />
 
                       {/* Quick Move stage helper menu */}
-                      <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-surface/95 border border-border rounded p-0.5 shadow-xs">
+                      <div className="absolute right-2 bottom-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-surface/95 border border-border rounded p-0.5 shadow-xs">
                         <select
                           value={task.kanban_column}
                           onChange={(e) => {

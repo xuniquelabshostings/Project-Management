@@ -429,7 +429,7 @@ export default function DashboardPage() {
             <CardContent className="p-4 pt-0">
               <div className="divide-y divide-danger/20">
                 {overdueInvoices.map((inv) => (
-                  <div key={inv.id} className="py-2.5 flex items-center justify-between text-xs">
+                  <div key={inv.id} className="py-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-3 text-xs">
                     <div>
                       <span className="font-mono font-semibold text-foreground">
                         {inv.invoice_number}

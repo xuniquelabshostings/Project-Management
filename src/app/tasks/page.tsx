@@ -36,6 +36,7 @@ export default function TasksPage() {
   const [viewMode, setViewMode] = useState<"list" | "board">("board");
   const [draggingTaskId, setDraggingTaskId] = useState<string | null>(null);
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [mobileActiveColumn, setMobileActiveColumn] = useState<string>("all");
 
   const fetchTasksAndProjects = async () => {
     try {
@@ -216,45 +217,81 @@ export default function TasksPage() {
           </div>
         ) : viewMode === "board" ? (
           /* Cross-Project Board View */
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
-            {globalColumns.map((colName) => {
-              const colTasks = filteredTasks.filter(
-                (t) => t.kanban_column === colName
-              );
+          <div className="space-y-4">
+            {/* Mobile Column Switcher (visible on < sm screens) */}
+            <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                onClick={() => setMobileActiveColumn("all")}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                  mobileActiveColumn === "all"
+                    ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                    : "bg-surface border border-border text-muted hover:text-foreground"
+                }`}
+              >
+                All ({filteredTasks.length})
+              </button>
+              {globalColumns.map((col) => {
+                const count = filteredTasks.filter((t) => t.kanban_column === col).length;
+                return (
+                  <button
+                    key={col}
+                    onClick={() => setMobileActiveColumn(col)}
+                    className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                      mobileActiveColumn === col
+                        ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                        : "bg-surface border border-border text-muted hover:text-foreground"
+                    }`}
+                  >
+                    <span>{col}</span>
+                    <span className="font-mono text-[10px] opacity-80">({count})</span>
+                  </button>
+                );
+              })}
+            </div>
 
-              const isColumnDraggedOver = dragOverColumn === colName;
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-x-auto pb-4">
+              {globalColumns.map((colName) => {
+                const colTasks = filteredTasks.filter(
+                  (t) => t.kanban_column === colName
+                );
 
-              return (
-                <div
-                  key={colName}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.dataTransfer.dropEffect = "move";
-                    if (dragOverColumn !== colName) {
-                      setDragOverColumn(colName);
-                    }
-                  }}
-                  onDragLeave={(e) => {
-                    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                const isColumnDraggedOver = dragOverColumn === colName;
+                const isHiddenOnMobile =
+                  mobileActiveColumn !== "all" && mobileActiveColumn !== colName;
+
+                return (
+                  <div
+                    key={colName}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = "move";
+                      if (dragOverColumn !== colName) {
+                        setDragOverColumn(colName);
+                      }
+                    }}
+                    onDragLeave={(e) => {
+                      if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                        setDragOverColumn(null);
+                      }
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const droppedTaskId =
+                        e.dataTransfer.getData("text/plain") || draggingTaskId;
+                      if (droppedTaskId) {
+                        handleMoveColumn(droppedTaskId, colName);
+                      }
+                      setDraggingTaskId(null);
                       setDragOverColumn(null);
-                    }
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    const droppedTaskId =
-                      e.dataTransfer.getData("text/plain") || draggingTaskId;
-                    if (droppedTaskId) {
-                      handleMoveColumn(droppedTaskId, colName);
-                    }
-                    setDraggingTaskId(null);
-                    setDragOverColumn(null);
-                  }}
-                  className={`rounded-lg border transition-all duration-150 p-3 flex flex-col min-w-[260px] ${
-                    isColumnDraggedOver
-                      ? "border-accent bg-accent/10 ring-2 ring-accent/30 shadow-md scale-[1.01]"
-                      : "border-border bg-surface-elevated/40"
-                  }`}
-                >
+                    }}
+                    className={`rounded-lg border transition-all duration-150 p-3 flex-col min-w-[260px] ${
+                      isHiddenOnMobile ? "hidden sm:flex" : "flex"
+                    } ${
+                      isColumnDraggedOver
+                        ? "border-accent bg-accent/10 ring-2 ring-accent/30 shadow-md scale-[1.01]"
+                        : "border-border bg-surface-elevated/40"
+                    }`}
+                  >
                   <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
                     <span className="text-xs font-semibold text-foreground">
                       {colName}
@@ -308,7 +345,7 @@ export default function TasksPage() {
                           <TaskCard task={t} isDragging={draggingTaskId === t.id} />
 
                           {/* Quick stage switch fallback */}
-                          <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-surface/95 border border-border rounded p-0.5 shadow-xs">
+                          <div className="absolute right-2 bottom-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-surface/95 border border-border rounded p-0.5 shadow-xs">
                             <select
                               value={t.kanban_column}
                               onChange={(e) => handleMoveColumn(t.id, e.target.value)}
@@ -328,6 +365,7 @@ export default function TasksPage() {
                 </div>
               );
             })}
+            </div>
           </div>
         ) : (
           /* List / Deadlines View */

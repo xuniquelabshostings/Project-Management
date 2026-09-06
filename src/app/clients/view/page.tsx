@@ -358,7 +358,7 @@ function ClientDetailContent() {
               )}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Button
                 variant="outline"
                 size="sm"
@@ -578,7 +578,7 @@ function ClientDetailContent() {
       })()}
 
       {/* Section Tabs */}
-      <div className="border-b border-border/60 flex items-center gap-6 text-sm">
+      <div className="border-b border-border/60 flex items-center gap-4 sm:gap-6 text-sm overflow-x-auto whitespace-nowrap scrollbar-none pb-0.5">
         <button
           onClick={() => setActiveTab("contacts")}
           className={`pb-3 border-b-2 font-medium transition-colors ${

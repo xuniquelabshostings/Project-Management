@@ -17,6 +17,7 @@ import {
   MessageCircle,
   RefreshCw,
   Loader2,
+  Menu,
 } from "lucide-react";
 import { ThemeToggle } from "./ThemeToggle";
 import { useAuth } from "@/providers/AuthProvider";
@@ -31,7 +32,11 @@ import {
 import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 import { formatINR } from "@/lib/utils";
 
-export function Header() {
+interface HeaderProps {
+  onOpenMobileNav?: () => void;
+}
+
+export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, role } = useAuth();
@@ -186,16 +191,26 @@ export function Header() {
   };
 
   return (
-    <header className="h-16 border-b border-border/50 bg-surface/80 backdrop-blur-xs px-6 flex items-center justify-between sticky top-0 z-30">
-      <div>
-        <h1 className="font-serif text-lg font-semibold text-foreground tracking-tight">
+    <header className="h-16 border-b border-border/50 bg-surface/80 backdrop-blur-xs px-3.5 sm:px-6 flex items-center justify-between sticky top-0 z-30 shrink-0">
+      <div className="flex items-center gap-2.5 min-w-0">
+        {onOpenMobileNav && (
+          <button
+            onClick={onOpenMobileNav}
+            className="md:hidden p-1.5 -ml-1 rounded-md text-muted hover:text-foreground hover:bg-surface-elevated transition-colors shrink-0"
+            title="Open navigation menu"
+            aria-label="Open navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <h1 className="font-serif text-base sm:text-lg font-semibold text-foreground tracking-tight truncate">
           {getPageTitle()}
         </h1>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Role badge */}
-        <Badge variant="danger" className="uppercase text-[10px] font-mono tracking-wider font-semibold">
+        <Badge variant="danger" className="uppercase text-[10px] font-mono tracking-wider font-semibold hidden xs:inline-flex">
           Admin
         </Badge>
 
@@ -228,7 +243,7 @@ export function Header() {
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 mt-2 w-[380px] sm:w-[440px] rounded-lg border border-border bg-surface shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="fixed inset-x-2.5 top-16 sm:inset-x-auto sm:right-0 sm:top-auto sm:absolute sm:w-[440px] max-w-[calc(100vw-20px)] rounded-lg border border-border bg-surface shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               {/* Header */}
               <div className="p-3.5 border-b border-border/60 bg-surface-elevated/40 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -324,7 +339,7 @@ export function Header() {
               </div>
 
               {/* Alert List */}
-              <div className="max-h-[420px] overflow-y-auto divide-y divide-border/30 p-1.5 space-y-1">
+              <div className="max-h-[60vh] sm:max-h-[420px] overflow-y-auto divide-y divide-border/30 p-1.5 space-y-1">
                 {filteredAlerts.length === 0 ? (
                   <div className="p-8 text-center text-muted">
                     <CheckCheck className="w-8 h-8 mx-auto mb-2 opacity-40 text-success" />

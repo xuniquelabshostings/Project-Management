@@ -25,7 +25,12 @@ import { useRole } from "@/lib/hooks/useRole";
 import { useBranding } from "@/providers/BrandingProvider";
 import { Badge } from "@/components/ui/badge";
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const { profile, signOut } = useAuth();
   const { role } = useRole();
@@ -96,29 +101,42 @@ export function Sidebar() {
 
   const formatRoleName = (_r?: string | null) => "Administrator";
 
-  return (
-    <aside className="w-64 border-r border-border bg-surface flex flex-col h-screen select-none shrink-0">
+  const renderNavContent = () => (
+    <>
       {/* Brand / Logo */}
-      <div className="h-16 flex items-center px-6 border-b border-border/50 gap-3">
-        {branding.logoUrl ? (
-          <img
-            src={branding.logoUrl}
-            alt={branding.companyName}
-            className="w-8 h-8 rounded-md object-contain border border-border bg-white p-0.5 shrink-0 shadow-xs"
-          />
-        ) : (
-          <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white shadow-xs shrink-0">
-            <Building2 className="w-4 h-4" />
+      <div className="h-16 flex items-center justify-between px-5 border-b border-border/50 shrink-0">
+        <div className="flex items-center gap-3 overflow-hidden">
+          {branding.logoUrl ? (
+            <img
+              src={branding.logoUrl}
+              alt={branding.companyName}
+              className="w-8 h-8 rounded-md object-contain border border-border bg-white p-0.5 shrink-0 shadow-xs"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white shadow-xs shrink-0">
+              <Building2 className="w-4 h-4" />
+            </div>
+          )}
+          <div className="flex flex-col overflow-hidden">
+            <span className="font-serif font-semibold text-base text-foreground tracking-tight truncate">
+              {branding.companyName}
+            </span>
+            <span className="text-[10px] uppercase font-mono tracking-wider text-muted truncate">
+              {branding.tagline || "Administrator"}
+            </span>
           </div>
-        )}
-        <div className="flex flex-col overflow-hidden">
-          <span className="font-serif font-semibold text-base text-foreground tracking-tight truncate">
-            {branding.companyName}
-          </span>
-          <span className="text-[10px] uppercase font-mono tracking-wider text-muted truncate">
-            {branding.tagline || "Administrator"}
-          </span>
         </div>
+
+        {/* Mobile close button */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="md:hidden p-1.5 rounded-md text-muted hover:text-foreground hover:bg-surface-elevated transition-colors"
+            title="Close menu"
+          >
+            <span className="text-xl font-bold leading-none">&times;</span>
+          </button>
+        )}
       </div>
 
       {/* Navigation list */}
@@ -136,7 +154,8 @@ export function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className={`group flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors relative ${
+                onClick={onClose}
+                className={`group flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors relative ${
                   isActive
                     ? "text-accent font-medium bg-accent-light/50"
                     : "text-muted hover:text-foreground hover:bg-surface-elevated"
@@ -160,6 +179,7 @@ export function Sidebar() {
           <Link
             href="/"
             target="_blank"
+            onClick={onClose}
             className="group flex items-center justify-between px-3 py-2 rounded-md text-xs text-muted hover:text-foreground hover:bg-surface-elevated transition-colors"
           >
             <div className="flex items-center gap-2.5">
@@ -172,7 +192,7 @@ export function Sidebar() {
       </nav>
 
       {/* User profile footer */}
-      <div className="p-3 border-t border-border/50">
+      <div className="p-3 border-t border-border/50 shrink-0">
         <div className="flex items-center justify-between p-2 rounded-md hover:bg-surface-elevated transition-colors">
           <div className="flex items-center gap-2.5 overflow-hidden">
             <div className="w-8 h-8 rounded-full bg-surface-elevated border border-border flex items-center justify-center text-xs font-medium text-foreground shrink-0 uppercase">
@@ -188,7 +208,10 @@ export function Sidebar() {
             </div>
           </div>
           <button
-            onClick={() => signOut()}
+            onClick={() => {
+              signOut();
+              onClose?.();
+            }}
             title="Sign out"
             className="p-1.5 rounded text-muted hover:text-danger hover:bg-danger-bg transition-colors"
           >
@@ -196,6 +219,33 @@ export function Sidebar() {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <aside className="hidden md:flex w-64 border-r border-border bg-surface flex-col h-screen select-none shrink-0">
+        {renderNavContent()}
+      </aside>
+
+      {/* Mobile Drawer Backdrop */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-200"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Mobile Drawer Overlay */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 w-72 max-w-[85vw] bg-surface shadow-2xl flex flex-col md:hidden transition-transform duration-200 ease-in-out select-none border-r border-border ${
+          isOpen ? "translate-x-0" : "-translate-x-full pointer-events-none"
+        }`}
+      >
+        {renderNavContent()}
+      </aside>
+    </>
   );
 }
