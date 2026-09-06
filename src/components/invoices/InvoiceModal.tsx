@@ -9,7 +9,6 @@ import { Invoice, InvoiceLineItem, InvoiceStatus, Client, Project, Milestone } f
 import { supabase } from "@/lib/supabase/client";
 import {
   isValidUuid,
-  MOCK_PROJECTS,
   getLocalClients,
   getLocalProjects,
   saveLocalInvoice,

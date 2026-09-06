@@ -33,7 +33,6 @@ import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import {
-  MOCK_CLIENTS,
   getLocalClients,
   saveLocalClient,
   deleteLocalClient,

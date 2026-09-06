@@ -22,7 +22,7 @@ import { ProjectModal } from "@/components/projects/ProjectModal";
 import { Project, ProjectStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
-import { MOCK_PROJECTS, getLocalProjects, saveLocalProject, isValidUuid } from "@/lib/mock-data";
+import { getLocalProjects, saveLocalProject, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 function ProjectsContent() {

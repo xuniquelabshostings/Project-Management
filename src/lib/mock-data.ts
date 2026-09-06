@@ -4,334 +4,62 @@ export const MOCK_PROFILES: Profile[] = [
   {
     id: "00000000-0000-0000-0000-000000000001",
     email: "admin@xuniquelabs.com",
-    full_name: "Marcus Vance",
+    full_name: "Administrator",
     role: "admin",
     avatar_url: null,
-    phone: "+1 (555) 019-2831",
+    phone: "+91 (80) 4920-1100",
     theme_preference: "system",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   },
   {
     id: "00000000-0000-0000-0000-000000000002",
-    email: "alex.am@xuniquelabs.com",
-    full_name: "Alex Morgan",
+    email: "support@xuniquelabs.com",
+    full_name: "Account Manager",
     role: "account_manager",
     avatar_url: null,
-    phone: "+1 (555) 019-4829",
+    phone: "+91 (80) 4920-1100",
     theme_preference: "system",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   },
   {
     id: "00000000-0000-0000-0000-000000000003",
-    email: "sarah.dev@xuniquelabs.com",
-    full_name: "Sarah Chen",
+    email: "dev@xuniquelabs.com",
+    full_name: "Developer",
     role: "developer",
     avatar_url: null,
-    phone: "+1 (555) 019-9921",
+    phone: "+91 (80) 4920-1100",
     theme_preference: "system",
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
   },
 ];
 
-export const MOCK_CLIENTS: Client[] = [
-  {
-    id: "c0000000-0000-0000-0000-000000000001",
-    client_name: "Acme FinTech Corp",
-    company_name: "Acme FinTech Corp",
-    industry: "Financial Services",
-    website: "https://acmefin.example.com",
-    status: "active",
-    lead_source: "referral",
-    tags: ["Fintech", "React", "Cloud"],
-    account_manager_id: "00000000-0000-0000-0000-000000000001",
-    account_manager: MOCK_PROFILES[0],
-    domain_name: "acmefin.example.com",
-    domain_registrar: "Namecheap, Inc.",
-    domain_registered_at: "2024-05-12",
-    domain_renew_at: "2027-05-12",
-    domain_price: 1200,
-    hosting_provider: "AWS Cloud",
-    hosting_plan: "t4g.xlarge Production Cluster",
-    hosting_activated_at: "2024-06-01",
-    hosting_renew_at: "2027-06-01",
-    hosting_price: 9500,
-    renewal_alert_days: 30,
-    created_at: "2026-08-15T10:00:00Z",
-    updated_at: "2026-08-15T10:00:00Z",
-    contacts: [
-      {
-        id: "d0000000-0000-0000-0000-000000000001",
-        client_id: "c0000000-0000-0000-0000-000000000001",
-        name: "Sarah Jenkins",
-        role: "VP of Engineering",
-        email: "sarah@acmefin.example.com",
-        phone: "+1 (555) 234-5678",
-        preferred_channel: "whatsapp",
-        created_at: "2026-08-15T10:00:00Z",
-      },
-      {
-        id: "d0000000-0000-0000-0000-000000000002",
-        client_id: "c0000000-0000-0000-0000-000000000001",
-        name: "David Ross",
-        role: "Product Director",
-        email: "david@acmefin.example.com",
-        phone: "+1 (555) 234-5679",
-        preferred_channel: "email",
-        created_at: "2026-08-15T10:00:00Z",
-      },
-    ],
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000002",
-    client_name: "Lumina Health Labs",
-    company_name: "Lumina Health Labs",
-    industry: "Healthcare & Biotech",
-    website: "https://luminahealth.example.com",
-    status: "negotiation",
-    lead_source: "inbound",
-    tags: ["Healthcare", "HIPAA", "Mobile"],
-    account_manager_id: "00000000-0000-0000-0000-000000000002",
-    account_manager: MOCK_PROFILES[1],
-    domain_name: "luminahealth.example.com",
-    domain_registrar: "GoDaddy.com, LLC",
-    domain_registered_at: "2023-09-20",
-    domain_renew_at: "2026-09-20",
-    domain_price: 1500,
-    hosting_provider: "Vercel Enterprise",
-    hosting_plan: "Pro Team + Secure Edge",
-    hosting_activated_at: "2023-09-20",
-    hosting_renew_at: "2026-09-25",
-    hosting_price: 6500,
-    renewal_alert_days: 30,
-    created_at: "2026-08-20T14:30:00Z",
-    updated_at: "2026-08-20T14:30:00Z",
-    contacts: [
-      {
-        id: "d0000000-0000-0000-0000-000000000003",
-        client_id: "c0000000-0000-0000-0000-000000000002",
-        name: "Dr. Elena Vance",
-        role: "Chief Science Officer",
-        email: "elena@luminahealth.example.com",
-        phone: "+1 (555) 876-5432",
-        preferred_channel: "phone",
-        created_at: "2026-08-20T14:30:00Z",
-      },
-    ],
-  },
-  {
-    id: "c0000000-0000-0000-0000-000000000003",
-    client_name: "Apex Logistics",
-    company_name: "Apex Logistics",
-    industry: "Supply Chain",
-    website: "https://apexlogistics.example.com",
-    status: "lead",
-    lead_source: "linkedin",
-    tags: ["Enterprise", "Logistics"],
-    account_manager_id: null,
-    account_manager: null,
-    created_at: "2026-09-01T09:15:00Z",
-    updated_at: "2026-09-01T09:15:00Z",
-    contacts: [],
-  },
-];
+export function isMockId(str: string | null | undefined): boolean {
+  if (!str) return false;
+  return (
+    str.startsWith("c0000000-") ||
+    str.startsWith("e0000000-") ||
+    str.startsWith("f0000000-") ||
+    str.startsWith("i0000000-") ||
+    str.startsWith("a0000000-") ||
+    str.startsWith("ac000000-") ||
+    str.startsWith("d0000000-")
+  );
+}
 
-export const MOCK_PROJECTS: Project[] = [
-  {
-    id: "e0000000-0000-0000-0000-000000000001",
-    client_id: "c0000000-0000-0000-0000-000000000001",
-    name: "Merchant Portal Redesign",
-    description: "Revamp of the merchant settlement portal with real-time analytics",
-    tech_stack: ["Next.js", "PostgreSQL", "Tailwind"],
-    start_date: "2026-09-01",
-    end_date: "2026-11-30",
-    budget: 35000,
-    status: "active",
-    kanban_columns: ["To Do", "In Progress", "Review", "Done"],
-    created_at: "2026-09-01T10:00:00Z",
-    updated_at: "2026-09-01T10:00:00Z",
-    client: MOCK_CLIENTS[0],
-  },
-  {
-    id: "e0000000-0000-0000-0000-000000000002",
-    client_id: "c0000000-0000-0000-0000-000000000002",
-    name: "Clinical Data Dashboard",
-    description: "HIPAA compliant patient telemetry analytics pipeline",
-    tech_stack: ["Python", "React", "FastAPI"],
-    start_date: "2026-10-01",
-    end_date: "2027-01-15",
-    budget: 52000,
-    status: "planning",
-    kanban_columns: ["To Do", "In Progress", "Review", "Done"],
-    created_at: "2026-09-02T11:00:00Z",
-    updated_at: "2026-09-02T11:00:00Z",
-    client: MOCK_CLIENTS[1],
-  },
-];
+export const MOCK_CLIENTS: Client[] = [];
 
-export const MOCK_MILESTONES: Milestone[] = [
-  {
-    id: "f0000000-0000-0000-0000-000000000001",
-    project_id: "e0000000-0000-0000-0000-000000000001",
-    title: "Sprint 1: Architecture & SSO Setup",
-    description: "Base infrastructure, database schema, and authentication",
-    due_date: "2026-09-15",
-    completed: true,
-    created_at: "2026-09-01T10:00:00Z",
-  },
-  {
-    id: "f0000000-0000-0000-0000-000000000002",
-    project_id: "e0000000-0000-0000-0000-000000000001",
-    title: "Sprint 2: Settlement Tables UI",
-    description: "High-throughput data tables with filter and export",
-    due_date: "2026-10-01",
-    completed: false,
-    created_at: "2026-09-01T10:00:00Z",
-  },
-];
+export const MOCK_PROJECTS: Project[] = [];
 
-export const MOCK_TASKS: Task[] = [
-  {
-    id: "a0000000-0000-0000-0000-000000000001",
-    project_id: "e0000000-0000-0000-0000-000000000001",
-    title: "Implement Merchant Settlement Table with Virtual Scroll",
-    description: "Ensure performance with 50,000+ records using tanstack table virtualizer",
-    priority: "urgent",
-    kanban_column: "In Progress",
-    column_order: 0,
-    due_date: "2026-09-10",
-    created_by: "00000000-0000-0000-0000-000000000001",
-    created_at: "2026-09-02T12:00:00Z",
-    updated_at: "2026-09-02T12:00:00Z",
-    project: MOCK_PROJECTS[0],
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000002",
-    project_id: "e0000000-0000-0000-0000-000000000001",
-    title: "Set up Webhook endpoint for Stripe chargebacks",
-    description: "Handle disputes and sync status into audit database",
-    priority: "high",
-    kanban_column: "To Do",
-    column_order: 1,
-    due_date: "2026-09-18",
-    created_by: "00000000-0000-0000-0000-000000000001",
-    created_at: "2026-09-03T09:00:00Z",
-    updated_at: "2026-09-03T09:00:00Z",
-    project: MOCK_PROJECTS[0],
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000003",
-    project_id: "e0000000-0000-0000-0000-000000000001",
-    title: "QA audit on Mobile Responsive Navigation",
-    description: "Verify touch target sizes and slide-over menu performance",
-    priority: "medium",
-    kanban_column: "Review",
-    column_order: 2,
-    due_date: "2026-09-12",
-    created_by: "00000000-0000-0000-0000-000000000001",
-    created_at: "2026-09-03T11:00:00Z",
-    updated_at: "2026-09-03T11:00:00Z",
-    project: MOCK_PROJECTS[0],
-  },
-];
+export const MOCK_MILESTONES: Milestone[] = [];
 
-export const MOCK_INVOICES: Invoice[] = [
-  {
-    id: "i0000000-0000-0000-0000-000000000001",
-    client_id: "c0000000-0000-0000-0000-000000000001",
-    project_id: "e0000000-0000-0000-0000-000000000001",
-    milestone_id: "f0000000-0000-0000-0000-000000000001",
-    invoice_number: "INV-2026-001",
-    status: "paid",
-    total_amount: 15000,
-    due_date: "2026-09-01",
-    is_recurring: false,
-    recurrence_interval: null,
-    notes: "Sprint 1 kickoff invoice settled via Wire transfer",
-    created_at: "2026-08-25T10:00:00Z",
-    updated_at: "2026-09-01T15:00:00Z",
-    client: MOCK_CLIENTS[0],
-    project: MOCK_PROJECTS[0],
-    line_items: [
-      {
-        id: "li-001",
-        invoice_id: "i0000000-0000-0000-0000-000000000001",
-        description: "Phase 1: Architecture Blueprint & Tech Stack Setup",
-        quantity: 1,
-        unit_price: 10000,
-        line_total: 10000,
-      },
-      {
-        id: "li-002",
-        invoice_id: "i0000000-0000-0000-0000-000000000001",
-        description: "User Authentication & RBAC System Integration",
-        quantity: 1,
-        unit_price: 5000,
-        line_total: 5000,
-      },
-    ],
-  },
-  {
-    id: "i0000000-0000-0000-0000-000000000002",
-    client_id: "c0000000-0000-0000-0000-000000000001",
-    project_id: "e0000000-0000-0000-0000-000000000001",
-    milestone_id: "f0000000-0000-0000-0000-000000000002",
-    invoice_number: "INV-2026-002",
-    status: "overdue",
-    total_amount: 12000,
-    due_date: "2026-09-02",
-    is_recurring: false,
-    recurrence_interval: null,
-    notes: "Sprint 2 milestone deliverable",
-    created_at: "2026-08-28T10:00:00Z",
-    updated_at: "2026-09-02T10:00:00Z",
-    client: MOCK_CLIENTS[0],
-    project: MOCK_PROJECTS[0],
-    line_items: [
-      {
-        id: "li-003",
-        invoice_id: "i0000000-0000-0000-0000-000000000002",
-        description: "Sprint 2: Kanban Drag-and-Drop Task Management Flow",
-        quantity: 1,
-        unit_price: 8000,
-        line_total: 8000,
-      },
-      {
-        id: "li-004",
-        invoice_id: "i0000000-0000-0000-0000-000000000002",
-        description: "Client Interaction Timeline & Audit Log Module",
-        quantity: 1,
-        unit_price: 4000,
-        line_total: 4000,
-      },
-    ],
-  },
-];
+export const MOCK_TASKS: Task[] = [];
 
-export const MOCK_ACTIVITIES: ActivityLogEntry[] = [
-  {
-    id: "ac000000-0000-0000-0000-000000000001",
-    client_id: "c0000000-0000-0000-0000-000000000001",
-    logged_by: "00000000-0000-0000-0000-000000000001",
-    type: "call",
-    summary: "Reviewed Sprint 1 deliverables with Sarah Jenkins. Approved architecture diagram.",
-    occurred_at: "2026-09-04T15:30:00Z",
-    created_at: "2026-09-04T15:30:00Z",
-    author: MOCK_PROFILES[0],
-  },
-  {
-    id: "ac000000-0000-0000-0000-000000000002",
-    client_id: "c0000000-0000-0000-0000-000000000002",
-    logged_by: "00000000-0000-0000-0000-000000000002",
-    type: "whatsapp",
-    summary: "WhatsApp message exchange with Dr. Vance regarding HIPAA data retention policies.",
-    occurred_at: "2026-09-03T11:20:00Z",
-    created_at: "2026-09-03T11:20:00Z",
-    author: MOCK_PROFILES[1],
-  },
-];
+export const MOCK_INVOICES: Invoice[] = [];
+
+export const MOCK_ACTIVITIES: ActivityLogEntry[] = [];
 
 const LOCAL_CLIENTS_KEY = "xunique_custom_clients";
 const DELETED_CLIENT_IDS_KEY = "xunique_deleted_client_ids";
@@ -358,17 +86,17 @@ export function markClientDeleted(clientId: string): void {
 }
 
 export function getLocalClients(): Client[] {
-  if (typeof window === "undefined") return MOCK_CLIENTS;
+  if (typeof window === "undefined") return [];
   try {
     const deleted = getDeletedClientIds();
     const raw = localStorage.getItem(LOCAL_CLIENTS_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    const customList = Array.isArray(parsed) ? parsed.filter((c: Client) => !deleted.has(c.id)) : [];
-    const customIds = new Set(customList.map((c: Client) => c.id));
-    const remainingDefaults = MOCK_CLIENTS.filter((c) => !customIds.has(c.id) && !deleted.has(c.id));
-    return [...customList, ...remainingDefaults];
+    const customList = Array.isArray(parsed)
+      ? parsed.filter((c: Client) => !deleted.has(c.id) && !isMockId(c.id))
+      : [];
+    return customList;
   } catch {
-    return MOCK_CLIENTS;
+    return [];
   }
 }
 
@@ -378,7 +106,7 @@ export function saveLocalClient(client: Client): Client[] {
     client_name: client.client_name || client.company_name,
     company_name: client.company_name || client.client_name || "",
   };
-  if (typeof window === "undefined") return [normalized, ...MOCK_CLIENTS];
+  if (typeof window === "undefined") return [normalized];
   try {
     const current = getLocalClients();
     const existingIndex = current.findIndex((c) => c.id === normalized.id);
@@ -392,20 +120,20 @@ export function saveLocalClient(client: Client): Client[] {
     localStorage.setItem(LOCAL_CLIENTS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return [normalized, ...MOCK_CLIENTS];
+    return [normalized];
   }
 }
 
 export function deleteLocalClient(clientId: string): Client[] {
   markClientDeleted(clientId);
-  if (typeof window === "undefined") return MOCK_CLIENTS.filter((c) => c.id !== clientId);
+  if (typeof window === "undefined") return [];
   try {
     const current = getLocalClients();
     const updated = current.filter((c) => c.id !== clientId);
     localStorage.setItem(LOCAL_CLIENTS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return MOCK_CLIENTS.filter((c) => c.id !== clientId);
+    return [];
   }
 }
 
@@ -467,19 +195,15 @@ export function deleteLocalContact(clientId: string, contactId: string): void {
 const LOCAL_ACTIVITIES_KEY = "xunique_custom_activities";
 
 export function getLocalActivities(clientId?: string): ActivityLogEntry[] {
-  if (typeof window === "undefined") {
-    const list = clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
-    return list.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
-  }
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_ACTIVITIES_KEY);
     const parsed: ActivityLogEntry[] = raw ? JSON.parse(raw) : [];
-    const all = [...parsed, ...MOCK_ACTIVITIES];
-    const filtered = clientId ? all.filter((a: ActivityLogEntry) => a.client_id === clientId) : all;
+    const nonMock = Array.isArray(parsed) ? parsed.filter((a: ActivityLogEntry) => !isMockId(a.id)) : [];
+    const filtered = clientId ? nonMock.filter((a: ActivityLogEntry) => a.client_id === clientId) : nonMock;
     return filtered.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
   } catch {
-    const list = clientId ? MOCK_ACTIVITIES.filter((a) => a.client_id === clientId) : MOCK_ACTIVITIES;
-    return list.sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime());
+    return [];
   }
 }
 
@@ -510,24 +234,22 @@ export function deleteLocalActivity(activityId: string): void {
 const LOCAL_PROJECTS_KEY = "xunique_custom_projects";
 
 export function getLocalProjects(): Project[] {
-  if (typeof window === "undefined") return MOCK_PROJECTS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_PROJECTS_KEY);
-    if (!raw) return MOCK_PROJECTS;
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      const customIds = new Set(parsed.map((p: Project) => p.id));
-      const remainingDefaults = MOCK_PROJECTS.filter((p) => !customIds.has(p.id));
-      return [...parsed, ...remainingDefaults];
+    if (Array.isArray(parsed)) {
+      return parsed.filter((p: Project) => !isMockId(p.id));
     }
-    return MOCK_PROJECTS;
+    return [];
   } catch {
-    return MOCK_PROJECTS;
+    return [];
   }
 }
 
 export function saveLocalProject(project: Project): Project[] {
-  if (typeof window === "undefined") return [project, ...MOCK_PROJECTS];
+  if (typeof window === "undefined") return [project];
   try {
     const current = getLocalProjects();
     const existingIndex = current.findIndex((p) => p.id === project.id);
@@ -541,41 +263,38 @@ export function saveLocalProject(project: Project): Project[] {
     localStorage.setItem(LOCAL_PROJECTS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return [project, ...MOCK_PROJECTS];
+    return [project];
   }
 }
 
 export function deleteLocalProject(projectId: string): Project[] {
-  if (typeof window === "undefined") return MOCK_PROJECTS.filter((p) => p.id !== projectId);
+  if (typeof window === "undefined") return [];
   try {
     const current = getLocalProjects();
     const updated = current.filter((p) => p.id !== projectId);
     localStorage.setItem(LOCAL_PROJECTS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return MOCK_PROJECTS.filter((p) => p.id !== projectId);
+    return [];
   }
 }
 
 const LOCAL_TASKS_KEY = "xunique_custom_tasks";
 
 export function getLocalTasks(projectId?: string): Task[] {
-  if (typeof window === "undefined") {
-    return projectId ? MOCK_TASKS.filter((t) => t.project_id === projectId) : MOCK_TASKS;
-  }
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_TASKS_KEY);
     const parsed: Task[] = raw ? JSON.parse(raw) : [];
-    const customIds = new Set(parsed.map((t) => t.id));
-    const all = [...parsed, ...MOCK_TASKS.filter((t) => !customIds.has(t.id))];
-    return projectId ? all.filter((t) => t.project_id === projectId) : all;
+    const filtered = Array.isArray(parsed) ? parsed.filter((t: Task) => !isMockId(t.id)) : [];
+    return projectId ? filtered.filter((t) => t.project_id === projectId) : filtered;
   } catch {
-    return projectId ? MOCK_TASKS.filter((t) => t.project_id === projectId) : MOCK_TASKS;
+    return [];
   }
 }
 
 export function saveLocalTask(task: Task): Task[] {
-  if (typeof window === "undefined") return [task, ...MOCK_TASKS];
+  if (typeof window === "undefined") return [task];
   try {
     const current = getLocalTasks();
     const existingIndex = current.findIndex((t) => t.id === task.id);
@@ -589,7 +308,7 @@ export function saveLocalTask(task: Task): Task[] {
     localStorage.setItem(LOCAL_TASKS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return [task, ...MOCK_TASKS];
+    return [task];
   }
 }
 
@@ -607,24 +326,22 @@ export function deleteLocalTask(taskId: string): void {
 const LOCAL_INVOICES_KEY = "xunique_custom_invoices";
 
 export function getLocalInvoices(): Invoice[] {
-  if (typeof window === "undefined") return MOCK_INVOICES;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_INVOICES_KEY);
-    if (!raw) return MOCK_INVOICES;
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      const customIds = new Set(parsed.map((i: Invoice) => i.id));
-      const remainingDefaults = MOCK_INVOICES.filter((i) => !customIds.has(i.id));
-      return [...parsed, ...remainingDefaults];
+    if (Array.isArray(parsed)) {
+      return parsed.filter((i: Invoice) => !isMockId(i.id));
     }
-    return MOCK_INVOICES;
+    return [];
   } catch {
-    return MOCK_INVOICES;
+    return [];
   }
 }
 
 export function saveLocalInvoice(invoice: Invoice): Invoice[] {
-  if (typeof window === "undefined") return [invoice, ...MOCK_INVOICES];
+  if (typeof window === "undefined") return [invoice];
   try {
     const current = getLocalInvoices();
     const existingIndex = current.findIndex((i) => i.id === invoice.id);
@@ -638,92 +355,43 @@ export function saveLocalInvoice(invoice: Invoice): Invoice[] {
     localStorage.setItem(LOCAL_INVOICES_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return [invoice, ...MOCK_INVOICES];
+    return [invoice];
   }
 }
 
 export function deleteLocalInvoice(invoiceId: string): Invoice[] {
-  if (typeof window === "undefined") return MOCK_INVOICES.filter((i) => i.id !== invoiceId);
+  if (typeof window === "undefined") return [];
   try {
     const current = getLocalInvoices();
     const updated = current.filter((i) => i.id !== invoiceId);
     localStorage.setItem(LOCAL_INVOICES_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return MOCK_INVOICES.filter((i) => i.id !== invoiceId);
+    return [];
   }
 }
 
-export const MOCK_AGREEMENTS: Agreement[] = [
-  {
-    id: "a0000000-0000-0000-0000-000000000001",
-    agreement_number: "AGR-2026-001",
-    client_id: "c0000000-0000-0000-0000-000000000001",
-    project_name: "FinTech Compliance & Core Portal Web App",
-    title: "Software Development & Architecture Master Agreement",
-    effective_date: "2026-08-15",
-    completion_date: "2026-11-30",
-    total_fee: 450000,
-    payment_terms: "50% upfront retainer prior to development kickoff, 50% upon final milestone inspection and code delivery.",
-    scope_of_work: "Full-stack React & Next.js frontend, secure REST APIs, automated transaction monitoring dashboard, and Supabase database architecture with strict Row Level Security.",
-    warranty_days: 14,
-    special_terms: "All cloud hosting and external infrastructure costs to be directly billed to and managed by Client.",
-    status: "active",
-    created_at: "2026-08-15T10:00:00Z",
-    client: MOCK_CLIENTS[0],
-  },
-  {
-    id: "a0000000-0000-0000-0000-000000000002",
-    agreement_number: "AGR-2026-002",
-    client_id: "c0000000-0000-0000-0000-000000000002",
-    project_name: "Patient Analytics Dashboard & FHIR Sync",
-    title: "Healthcare Analytics Platform Engineering Agreement",
-    effective_date: "2026-08-20",
-    completion_date: "2026-12-15",
-    total_fee: 650000,
-    payment_terms: "40% advance retainer upon contract execution, 30% upon Milestone 1 (FHIR data pipeline), 30% upon final production deployment.",
-    scope_of_work: "Development of HIPAA-compliant analytics dashboard, secure practitioner authentication, patient cohort reporting modules, and synthetic data ingestion pipeline.",
-    warranty_days: 14,
-    special_terms: "Client holds exclusive responsibility for all clinical compliance, HIPAA/NABH patient consents, and medical data governance.",
-    status: "signed",
-    created_at: "2026-08-20T11:30:00Z",
-    client: MOCK_CLIENTS[1],
-  },
-];
+export const MOCK_AGREEMENTS: Agreement[] = [];
 
 const LOCAL_AGREEMENTS_KEY = "xunique_custom_agreements";
 
 export function getLocalAgreements(): Agreement[] {
-  if (typeof window === "undefined") return MOCK_AGREEMENTS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_AGREEMENTS_KEY);
-    if (!raw) return MOCK_AGREEMENTS;
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      const sanitized = parsed.map((a: Agreement) => {
-        if (a.special_terms && a.special_terms.includes("(AWS, Supabase, Vercel)")) {
-          return {
-            ...a,
-            special_terms: a.special_terms
-              .replace(/\s*\(AWS,\s*Supabase,\s*Vercel\):?/gi, "")
-              .replace(/AWS,\s*Supabase,\s*Vercel:?/gi, "")
-              .trim(),
-          };
-        }
-        return a;
-      });
-      const customIds = new Set(sanitized.map((a: Agreement) => a.id));
-      const remainingDefaults = MOCK_AGREEMENTS.filter((a) => !customIds.has(a.id));
-      return [...sanitized, ...remainingDefaults];
+    if (Array.isArray(parsed)) {
+      return parsed.filter((a: Agreement) => !isMockId(a.id));
     }
-    return MOCK_AGREEMENTS;
+    return [];
   } catch {
-    return MOCK_AGREEMENTS;
+    return [];
   }
 }
 
 export function saveLocalAgreement(agreement: Agreement): Agreement[] {
-  if (typeof window === "undefined") return [agreement, ...MOCK_AGREEMENTS];
+  if (typeof window === "undefined") return [agreement];
   try {
     const current = getLocalAgreements();
     const existingIndex = current.findIndex((a) => a.id === agreement.id);
@@ -737,19 +405,19 @@ export function saveLocalAgreement(agreement: Agreement): Agreement[] {
     localStorage.setItem(LOCAL_AGREEMENTS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return [agreement, ...MOCK_AGREEMENTS];
+    return [agreement];
   }
 }
 
 export function deleteLocalAgreement(agreementId: string): Agreement[] {
-  if (typeof window === "undefined") return MOCK_AGREEMENTS.filter((a) => a.id !== agreementId);
+  if (typeof window === "undefined") return [];
   try {
     const current = getLocalAgreements();
     const updated = current.filter((a) => a.id !== agreementId);
     localStorage.setItem(LOCAL_AGREEMENTS_KEY, JSON.stringify(updated));
     return updated;
   } catch {
-    return MOCK_AGREEMENTS.filter((a) => a.id !== agreementId);
+    return [];
   }
 }
 

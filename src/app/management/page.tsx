@@ -32,12 +32,11 @@ import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Project, Task, Invoice, ActivityLogEntry } from "@/types/database.types";
 import {
-  MOCK_CLIENTS,
-  MOCK_PROJECTS,
-  MOCK_TASKS,
-  MOCK_INVOICES,
-  MOCK_ACTIVITIES,
   getLocalClients,
+  getLocalProjects,
+  getLocalTasks,
+  getLocalInvoices,
+  getLocalActivities,
 } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
@@ -90,6 +89,26 @@ function computeExpiringRenewals(clients: Client[]): ExpiringRenewal[] {
   return expiring.sort((a, b) => a.diffDays - b.diffDays);
 }
 
+function computeMonthlyRevenue(invoices: Invoice[]): { month: string; amount: number }[] {
+  const paidInvoices = invoices.filter((i) => i.status === "paid");
+  if (paidInvoices.length === 0) return [];
+
+  const monthMap = new Map<string, number>();
+  const sorted = [...paidInvoices].sort(
+    (a, b) => new Date(a.due_date || a.created_at).getTime() - new Date(b.due_date || b.created_at).getTime()
+  );
+
+  sorted.forEach((inv) => {
+    const d = new Date(inv.due_date || inv.created_at);
+    if (!isNaN(d.getTime())) {
+      const monthStr = d.toLocaleString("default", { month: "short" });
+      monthMap.set(monthStr, (monthMap.get(monthStr) || 0) + (Number(inv.total_amount) || 0));
+    }
+  });
+
+  return Array.from(monthMap.entries()).map(([month, amount]) => ({ month, amount }));
+}
+
 export default function DashboardPage() {
   const { profile } = useAuth();
   const { role, isAdmin, isAccountManager, isDeveloper } = useRole();
@@ -98,6 +117,7 @@ export default function DashboardPage() {
   const [projectsCount, setProjectsCount] = useState<number>(0);
   const [tasksCount, setTasksCount] = useState<number>(0);
   const [overdueInvoices, setOverdueInvoices] = useState<Invoice[]>([]);
+  const [revenueData, setRevenueData] = useState<{ month: string; amount: number }[]>([]);
   const [expiringRenewals, setExpiringRenewals] = useState<ExpiringRenewal[]>([]);
   const [pipelineValue, setPipelineValue] = useState<number>(0);
   const [recentActivities, setRecentActivities] = useState<ActivityLogEntry[]>([]);
@@ -110,21 +130,23 @@ export default function DashboardPage() {
       try {
         setIsLoading(true);
 
+        const localClients = getLocalClients();
+        const localProjects = getLocalProjects();
+        const localInvoices = getLocalInvoices();
+        const localTasks = getLocalTasks();
+        const localActivities = getLocalActivities();
+
         if (isAdmin || isAccountManager) {
           const { count: cCount, data: clientsData } = await supabase
             .from("clients")
             .select("*", { count: "exact" });
           
-          if (cCount !== null && cCount > 0) {
-            setClientsCount(cCount);
-          } else {
-            setClientsCount(MOCK_CLIENTS.length);
-          }
-
           const clientList =
             clientsData && clientsData.length > 0
               ? (clientsData as Client[])
-              : getLocalClients();
+              : localClients;
+
+          setClientsCount(cCount !== null && cCount > 0 ? cCount : clientList.length);
           setExpiringRenewals(computeExpiringRenewals(clientList));
 
           const { data: leadProjects } = await supabase
@@ -132,40 +154,50 @@ export default function DashboardPage() {
             .select("budget, status")
             .in("status", ["planning"]);
 
-          if (leadProjects && leadProjects.length > 0) {
-            const sum = (leadProjects as Array<{ budget: number | null }>).reduce(
-              (acc, p) => acc + (p.budget || 0),
-              0
-            );
-            setPipelineValue(sum);
-          } else {
-            const mockSum = MOCK_PROJECTS.filter((p) => p.status === "planning").reduce(
-              (acc, p) => acc + (p.budget || 0),
-              0
-            );
-            setPipelineValue(mockSum || 52000);
-          }
+          const planningProjects =
+            leadProjects && leadProjects.length > 0
+              ? (leadProjects as Array<{ budget: number | null }>)
+              : localProjects.filter((p) => p.status === "planning");
+
+          const sum = planningProjects.reduce(
+            (acc, p) => acc + (Number(p.budget) || 0),
+            0
+          );
+          setPipelineValue(sum);
 
           const { data: overdue } = await supabase
             .from("invoices")
             .select("*, client:clients(*)")
             .eq("status", "overdue")
             .limit(4);
+
           if (overdue && overdue.length > 0) {
             setOverdueInvoices(overdue as Invoice[]);
           } else {
-            setOverdueInvoices(MOCK_INVOICES.filter((i) => i.status === "overdue"));
+            setOverdueInvoices(localInvoices.filter((i) => i.status === "overdue"));
           }
+
+          const { data: allInvs } = await supabase
+            .from("invoices")
+            .select("*");
+
+          const invList =
+            allInvs && allInvs.length > 0
+              ? (allInvs as Invoice[])
+              : localInvoices;
+
+          setRevenueData(computeMonthlyRevenue(invList));
 
           const { data: acts } = await supabase
             .from("activity_log")
             .select("*, author:profiles(*)")
             .order("occurred_at", { ascending: false })
             .limit(5);
+
           if (acts && acts.length > 0) {
             setRecentActivities(acts as ActivityLogEntry[]);
           } else {
-            setRecentActivities(MOCK_ACTIVITIES);
+            setRecentActivities(localActivities);
           }
         }
 
@@ -173,10 +205,11 @@ export default function DashboardPage() {
           .from("projects")
           .select("*", { count: "exact", head: true })
           .eq("status", "active");
+
         if (pCount !== null && pCount > 0) {
           setProjectsCount(pCount);
         } else {
-          setProjectsCount(MOCK_PROJECTS.filter((p) => p.status === "active").length || 2);
+          setProjectsCount(localProjects.filter((p) => p.status === "active").length);
         }
 
         const { data: tasks, count: tCount } = await supabase
@@ -187,25 +220,30 @@ export default function DashboardPage() {
 
         if (tCount !== null && tCount > 0) {
           setTasksCount(tCount);
-        } else {
-          setTasksCount(MOCK_TASKS.length);
-        }
-
-        if (tasks && tasks.length > 0) {
           setUpcomingTasks(tasks as Task[]);
         } else {
-          setUpcomingTasks(MOCK_TASKS);
+          setTasksCount(localTasks.length);
+          setUpcomingTasks(localTasks.slice(0, 5));
         }
       } catch (err) {
-        console.warn("Error loading dashboard data, using fallback:", err);
-        setClientsCount(MOCK_CLIENTS.length);
-        setProjectsCount(MOCK_PROJECTS.filter((p) => p.status === "active").length);
-        setTasksCount(MOCK_TASKS.length);
-        setPipelineValue(52000);
-        setOverdueInvoices(MOCK_INVOICES.filter((i) => i.status === "overdue"));
-        setExpiringRenewals(computeExpiringRenewals(getLocalClients()));
-        setUpcomingTasks(MOCK_TASKS);
-        setRecentActivities(MOCK_ACTIVITIES);
+        console.warn("Notice loading dashboard data, using actual local store:", err);
+        const lClients = getLocalClients();
+        const lProjects = getLocalProjects();
+        const lTasks = getLocalTasks();
+        const lInvoices = getLocalInvoices();
+        setClientsCount(lClients.length);
+        setProjectsCount(lProjects.filter((p) => p.status === "active").length);
+        setTasksCount(lTasks.length);
+        setPipelineValue(
+          lProjects
+            .filter((p) => p.status === "planning")
+            .reduce((acc, p) => acc + (Number(p.budget) || 0), 0)
+        );
+        setOverdueInvoices(lInvoices.filter((i) => i.status === "overdue"));
+        setRevenueData(computeMonthlyRevenue(lInvoices));
+        setExpiringRenewals(computeExpiringRenewals(lClients));
+        setUpcomingTasks(lTasks.slice(0, 5));
+        setRecentActivities(getLocalActivities());
       } finally {
         setIsLoading(false);
       }
@@ -405,7 +443,7 @@ export default function DashboardPage() {
               </Link>
             </CardHeader>
             <CardContent className="p-6 pt-2">
-              <RevenueChart data={[]} />
+              <RevenueChart data={revenueData} />
             </CardContent>
           </Card>
         )}

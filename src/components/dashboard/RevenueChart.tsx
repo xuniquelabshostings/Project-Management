@@ -16,17 +16,20 @@ interface RevenueChartProps {
 }
 
 export function RevenueChart({ data }: RevenueChartProps) {
-  const chartData =
-    data.length > 0
-      ? data
-      : [
-          { month: "Apr", amount: 14000 },
-          { month: "May", amount: 22000 },
-          { month: "Jun", amount: 19000 },
-          { month: "Jul", amount: 28000 },
-          { month: "Aug", amount: 35000 },
-          { month: "Sep", amount: 42000 },
-        ];
+  if (!data || data.length === 0) {
+    return (
+      <div className="h-64 w-full flex flex-col items-center justify-center border border-dashed rounded-lg text-center p-6" style={{ borderColor: "var(--border)" }}>
+        <p className="text-sm font-medium" style={{ color: "var(--muted)" }}>
+          No revenue recorded yet
+        </p>
+        <p className="text-xs mt-1 max-w-xs" style={{ color: "var(--muted)", opacity: 0.8 }}>
+          Revenue metrics and trends will automatically display once client invoices are settled.
+        </p>
+      </div>
+    );
+  }
+
+  const chartData = data;
 
   return (
     <div className="h-64 w-full">

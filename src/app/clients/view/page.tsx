@@ -38,9 +38,6 @@ import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
 import {
-  MOCK_CLIENTS,
-  MOCK_ACTIVITIES,
-  MOCK_PROJECTS,
   getLocalClients,
   saveLocalClient,
   deleteLocalClient,
@@ -129,14 +126,15 @@ function ClientDetailContent() {
       // 1. If not a valid UUID (e.g. legacy test ID), load directly from local store
       if (!isValidUuid(clientId)) {
         const localList = getLocalClients();
-        const fallback =
-          localList.find((c) => c.id === clientId) ||
-          MOCK_CLIENTS.find((c) => c.id === clientId) ||
-          MOCK_CLIENTS[0];
-        setClient(fallback);
-        setContacts(fallback.contacts || []);
-        setActivities(getLocalActivities(fallback.id));
-        setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
+        const fallback = localList.find((c) => c.id === clientId) || null;
+        if (fallback) {
+          setClient(fallback);
+          setContacts(fallback.contacts || []);
+          setActivities(getLocalActivities(fallback.id));
+          setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
+        } else {
+          setClient(null);
+        }
         setIsLoading(false);
         return;
       }
@@ -150,15 +148,16 @@ function ClientDetailContent() {
 
       if (clientErr || !clientData) {
         const localList = getLocalClients();
-        const fallback =
-          localList.find((c) => c.id === clientId) ||
-          MOCK_CLIENTS.find((c) => c.id === clientId) ||
-          MOCK_CLIENTS[0];
+        const fallback = localList.find((c) => c.id === clientId) || null;
         if (fallback) {
           setClient(fallback);
           setContacts(fallback.contacts || []);
           setActivities(getLocalActivities(fallback.id));
           setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
+          return;
+        } else {
+          setClient(null);
+          setIsLoading(false);
           return;
         }
       } else {
@@ -215,15 +214,14 @@ function ClientDetailContent() {
     } catch (err: any) {
       console.warn("Error fetching client details, checking fallback:", err.message);
       const localList = getLocalClients();
-      const fallback =
-        localList.find((c) => c.id === clientId) ||
-        MOCK_CLIENTS.find((c) => c.id === clientId) ||
-        MOCK_CLIENTS[0];
+      const fallback = localList.find((c) => c.id === clientId) || null;
       if (fallback) {
         setClient(fallback);
         setContacts(fallback.contacts || []);
         setActivities(getLocalActivities(fallback.id));
         setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
+      } else {
+        setClient(null);
       }
     } finally {
       setIsLoading(false);

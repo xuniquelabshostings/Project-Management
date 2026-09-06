@@ -31,11 +31,6 @@ import { Project, Task, Milestone, ProjectMember, ProjectStatus } from "@/types/
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
 import {
-  MOCK_PROJECTS,
-  MOCK_CLIENTS,
-  MOCK_TASKS,
-  MOCK_MILESTONES,
-  MOCK_PROFILES,
   getLocalProjects,
   saveLocalProject,
   getLocalClients,
@@ -65,9 +60,7 @@ function ProjectWorkspaceContent() {
 
       const localProjects = getLocalProjects();
       const localClients = getLocalClients();
-      const fallbackProj =
-        localProjects.find((p) => p.id === projectId) ||
-        MOCK_PROJECTS.find((p) => p.id === projectId);
+      const fallbackProj = localProjects.find((p) => p.id === projectId) || null;
 
       // 1. Fetch project info from Supabase if valid UUID
       let activeProj: Project | null = null;
@@ -105,9 +98,7 @@ function ProjectWorkspaceContent() {
       if (activeProj) {
         if (!activeProj.client && activeProj.client_id) {
           activeProj.client =
-            localClients.find((c) => c.id === activeProj!.client_id) ||
-            MOCK_CLIENTS.find((c) => c.id === activeProj!.client_id) ||
-            MOCK_CLIENTS[0];
+            localClients.find((c) => c.id === activeProj!.client_id) || undefined;
         }
         setProject(activeProj);
       } else {
@@ -140,7 +131,6 @@ function ProjectWorkspaceContent() {
       }
 
       // 3. Fetch milestones
-      const mockMilestones = MOCK_MILESTONES.filter((m) => m.project_id === projectId);
       let fetchedMilestones: Milestone[] = [];
       if (isValidUuid(projectId)) {
         try {
@@ -155,13 +145,7 @@ function ProjectWorkspaceContent() {
           }
         } catch {}
       }
-
-      if (fetchedMilestones.length > 0) {
-        const customM = mockMilestones.filter((mm) => !fetchedMilestones.some((fm) => fm.id === mm.id));
-        setMilestones([...fetchedMilestones, ...customM]);
-      } else {
-        setMilestones(mockMilestones);
-      }
+      setMilestones(fetchedMilestones);
 
       // 4. Fetch team members
       let fetchedMembers: ProjectMember[] = [];
@@ -177,36 +161,14 @@ function ProjectWorkspaceContent() {
           }
         } catch {}
       }
-
-      if (fetchedMembers.length > 0) {
-        setMembers(fetchedMembers);
-      } else {
-        const defaultMembers: ProjectMember[] = [
-          {
-            id: `mem-${projectId}-1`,
-            project_id: projectId,
-            user_id: MOCK_PROFILES[0].id,
-            project_role: "lead",
-            created_at: new Date().toISOString(),
-            user: MOCK_PROFILES[0],
-          },
-          {
-            id: `mem-${projectId}-2`,
-            project_id: projectId,
-            user_id: MOCK_PROFILES[2].id,
-            project_role: "contributor",
-            created_at: new Date().toISOString(),
-            user: MOCK_PROFILES[2],
-          },
-        ];
-        setMembers(defaultMembers);
-      }
+      setMembers(fetchedMembers);
     } catch (err: any) {
       console.warn("Failed to fetch project workspace data:", err.message);
-      const fallbackProj = getLocalProjects().find((p) => p.id === projectId) || MOCK_PROJECTS[0];
+      const fallbackProj = getLocalProjects().find((p) => p.id === projectId) || null;
       setProject(fallbackProj);
       setTasks(getLocalTasks(projectId));
-      setMilestones(MOCK_MILESTONES.filter((m) => m.project_id === projectId));
+      setMilestones([]);
+      setMembers([]);
     } finally {
       setIsLoading(false);
     }

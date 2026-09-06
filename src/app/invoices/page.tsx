@@ -29,7 +29,7 @@ import { InvoicePrintModal } from "@/components/invoices/InvoicePrintModal";
 import { Invoice, InvoiceStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { MOCK_INVOICES, getLocalInvoices, saveLocalInvoice, isValidUuid } from "@/lib/mock-data";
+import { getLocalInvoices, saveLocalInvoice, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 export default function InvoicesPage() {

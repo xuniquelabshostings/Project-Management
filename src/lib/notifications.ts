@@ -1,6 +1,6 @@
 import { Client, Invoice, Task, AppNotification, getClientName } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import { getLocalClients, MOCK_INVOICES, MOCK_TASKS } from "@/lib/mock-data";
+import { getLocalClients, getLocalInvoices, getLocalTasks } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 export type AlertCategory = "all" | "infrastructure" | "invoices" | "tasks" | "general";
@@ -180,7 +180,7 @@ export async function fetchUnifiedAlerts(userId?: string): Promise<UnifiedAlert[
     if (dbInvoices && dbInvoices.length > 0) {
       invoices = dbInvoices as Invoice[];
     } else {
-      invoices = MOCK_INVOICES.filter((i) => i.status === "overdue");
+      invoices = getLocalInvoices().filter((i) => i.status === "overdue");
     }
 
     invoices.forEach((inv) => {
@@ -227,7 +227,7 @@ export async function fetchUnifiedAlerts(userId?: string): Promise<UnifiedAlert[
     if (dbTasks && dbTasks.length > 0) {
       tasks = dbTasks as Task[];
     } else {
-      tasks = MOCK_TASKS.filter((t) => (t.priority === "urgent" || t.priority === "high") && t.kanban_column !== "Done");
+      tasks = getLocalTasks().filter((t) => (t.priority === "urgent" || t.priority === "high") && t.kanban_column !== "Done");
     }
 
     tasks.forEach((t) => {
