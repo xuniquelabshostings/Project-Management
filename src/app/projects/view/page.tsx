@@ -27,7 +27,7 @@ import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { MilestonesList } from "@/components/projects/MilestonesList";
 import { ProjectTeamList } from "@/components/projects/ProjectTeamList";
 import { TaskModal } from "@/components/tasks/TaskModal";
-import { Project, Task, Milestone, ProjectMember } from "@/types/database.types";
+import { Project, Task, Milestone, ProjectMember, ProjectStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
 import {
@@ -37,6 +37,7 @@ import {
   MOCK_MILESTONES,
   MOCK_PROFILES,
   getLocalProjects,
+  saveLocalProject,
   getLocalClients,
   getLocalTasks,
   isValidUuid,
@@ -86,8 +87,19 @@ function ProjectWorkspaceContent() {
         }
       }
 
-      if (!activeProj && fallbackProj) {
-        activeProj = { ...fallbackProj };
+      if (fallbackProj) {
+        if (!activeProj) {
+          activeProj = { ...fallbackProj };
+        } else if (fallbackProj.updated_at && activeProj.updated_at) {
+          // If local copy was edited more recently, keep the latest local status & edits!
+          if (new Date(fallbackProj.updated_at).getTime() >= new Date(activeProj.updated_at).getTime()) {
+            activeProj = {
+              ...activeProj,
+              ...fallbackProj,
+              client: activeProj.client || fallbackProj.client,
+            };
+          }
+        }
       }
 
       if (activeProj) {
@@ -204,6 +216,32 @@ function ProjectWorkspaceContent() {
     fetchProjectData();
   }, [projectId]);
 
+  const handleStatusChange = async (newStatus: ProjectStatus) => {
+    if (!project) return;
+    const nowIso = new Date().toISOString();
+    const updated: Project = {
+      ...project,
+      status: newStatus,
+      updated_at: nowIso,
+    };
+
+    // 1. Instant local update
+    setProject(updated);
+    saveLocalProject(updated);
+
+    // 2. Persist to Supabase if valid UUID
+    if (isValidUuid(project.id)) {
+      try {
+        await supabase
+          .from("projects")
+          .update({ status: newStatus, updated_at: nowIso })
+          .eq("id", project.id);
+      } catch (err) {
+        console.warn("Could not sync project status to Supabase:", err);
+      }
+    }
+  };
+
   if (!projectId) {
     return (
       <div className="p-8 text-center text-sm text-muted">
@@ -279,7 +317,20 @@ function ProjectWorkspaceContent() {
                 <h1 className="font-serif text-2xl font-bold text-foreground">
                   {project.name}
                 </h1>
-                <ProjectStatusBadge status={project.status} />
+                <div className="relative inline-flex items-center">
+                  <select
+                    value={project.status}
+                    onChange={(e) => handleStatusChange(e.target.value as ProjectStatus)}
+                    className="text-xs font-semibold rounded-md border border-border bg-surface px-2.5 py-1 text-foreground shadow-xs cursor-pointer hover:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                    title="Change Project Status"
+                  >
+                    <option value="planning">📋 Planning</option>
+                    <option value="active">⚡ Active</option>
+                    <option value="on_hold">⏸️ On Hold</option>
+                    <option value="completed">✅ Completed</option>
+                    <option value="cancelled">❌ Cancelled</option>
+                  </select>
+                </div>
               </div>
 
               {project.description && (
@@ -390,7 +441,10 @@ function ProjectWorkspaceContent() {
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
         projectToEdit={project}
-        onSaved={() => fetchProjectData()}
+        onSaved={(updatedProj) => {
+          setProject(updatedProj);
+          fetchProjectData();
+        }}
       />
 
       {/* Quick Add Task Modal */}

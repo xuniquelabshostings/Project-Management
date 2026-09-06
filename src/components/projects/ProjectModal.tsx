@@ -155,43 +155,57 @@ export function ProjectModal({
 
     try {
       if (projectToEdit) {
-        const { data, error } = await supabase
-          .from("projects")
-          .update(payload)
-          .eq("id", projectToEdit.id)
-          .select("*, client:clients(*)")
-          .single();
+        // If it has valid UUIDs, attempt remote Supabase update
+        if (isValidUuid(projectToEdit.id) && isValidUuid(clientId)) {
+          try {
+            const { data, error } = await supabase
+              .from("projects")
+              .update(payload)
+              .eq("id", projectToEdit.id)
+              .select("*, client:clients(*)")
+              .maybeSingle();
 
-        if (error) throw error;
-        saveLocalProject(data as Project);
-        onSaved(data as Project);
-      } else {
-        const { data, error } = await supabase
-          .from("projects")
-          .insert({
-            ...payload,
-            kanban_columns: ["To Do", "In Progress", "Review", "Done"],
-            created_at: new Date().toISOString(),
-          })
-          .select("*, client:clients(*)")
-          .single();
-
-        if (error) throw error;
-        saveLocalProject(data as Project);
-        onSaved(data as Project);
-      }
-      onClose();
-    } catch (err: any) {
-      if (
-        err.message?.toLowerCase().includes("row-level security") ||
-        err.code === "42501" ||
-        err.code === "22P02" ||
-        err.status === 403
-      ) {
+            if (!error && data) {
+              const saved = data as Project;
+              saveLocalProject(saved);
+              onSaved(saved);
+              onClose();
+              return;
+            }
+          } catch (dbErr) {
+            console.warn("Supabase project update failed, saving locally:", dbErr);
+          }
+        }
+        // Fallback to local save for mock/offline projects or when remote update returns no rows
         saveLocally();
-        return;
+      } else {
+        if (isValidUuid(clientId)) {
+          try {
+            const { data, error } = await supabase
+              .from("projects")
+              .insert({
+                ...payload,
+                kanban_columns: ["To Do", "In Progress", "Review", "Done"],
+                created_at: new Date().toISOString(),
+              })
+              .select("*, client:clients(*)")
+              .maybeSingle();
+
+            if (!error && data) {
+              const saved = data as Project;
+              saveLocalProject(saved);
+              onSaved(saved);
+              onClose();
+              return;
+            }
+          } catch (dbErr) {
+            console.warn("Supabase project insert failed, saving locally:", dbErr);
+          }
+        }
+        saveLocally();
       }
-      setErrorMsg(err.message || "Failed to save project.");
+    } catch (err: any) {
+      saveLocally();
     } finally {
       setIsLoading(false);
     }

@@ -22,7 +22,7 @@ import { ProjectModal } from "@/components/projects/ProjectModal";
 import { Project, ProjectStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
-import { MOCK_PROJECTS, getLocalProjects, saveLocalProject } from "@/lib/mock-data";
+import { MOCK_PROJECTS, getLocalProjects, saveLocalProject, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 function ProjectsContent() {
@@ -48,8 +48,22 @@ function ProjectsContent() {
 
       const localProjects = getLocalProjects();
       if (data && data.length > 0) {
+        // Merge remote with local using latest updated_at
+        const merged = (data as Project[]).map((remote) => {
+          const local = localProjects.find((lp) => lp.id === remote.id);
+          if (
+            local &&
+            local.updated_at &&
+            (!remote.updated_at ||
+              new Date(local.updated_at).getTime() >= new Date(remote.updated_at).getTime())
+          ) {
+            return { ...remote, ...local };
+          }
+          return remote;
+        });
+
         const custom = localProjects.filter((lp) => !data.some((d) => d.id === lp.id));
-        setProjects([...custom, ...(data as Project[])]);
+        setProjects([...custom, ...merged]);
       } else {
         setProjects(localProjects);
       }
@@ -58,6 +72,36 @@ function ProjectsContent() {
       setProjects(getLocalProjects());
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleProjectCardStatusChange = async (
+    e: React.ChangeEvent<HTMLSelectElement>,
+    project: Project,
+    newStatus: ProjectStatus
+  ) => {
+    e.stopPropagation();
+    const nowIso = new Date().toISOString();
+    const updated: Project = {
+      ...project,
+      status: newStatus,
+      updated_at: nowIso,
+    };
+
+    // 1. Instant local UI update
+    setProjects((prev) => prev.map((p) => (p.id === project.id ? updated : p)));
+    saveLocalProject(updated);
+
+    // 2. Persist to Supabase if valid UUID
+    if (isValidUuid(project.id)) {
+      try {
+        await supabase
+          .from("projects")
+          .update({ status: newStatus, updated_at: nowIso })
+          .eq("id", project.id);
+      } catch (err) {
+        console.warn("Could not sync project status to Supabase:", err);
+      }
     }
   };
 
@@ -183,7 +227,24 @@ function ProjectsContent() {
                     <Building2 className="w-3 h-3" />
                     {project.client?.client_name || project.client?.company_name || "Internal Project"}
                   </span>
-                  <ProjectStatusBadge status={project.status} />
+                  <select
+                    value={project.status}
+                    onChange={(e) =>
+                      handleProjectCardStatusChange(
+                        e,
+                        project,
+                        e.target.value as ProjectStatus
+                      )
+                    }
+                    className="text-[11px] font-semibold rounded-md border border-border bg-surface px-2 py-0.5 text-foreground shadow-xs cursor-pointer hover:border-accent focus:outline-none focus:ring-1 focus:ring-accent transition-colors"
+                    title="Change Project Status"
+                  >
+                    <option value="planning">📋 Planning</option>
+                    <option value="active">⚡ Active</option>
+                    <option value="on_hold">⏸️ On Hold</option>
+                    <option value="completed">✅ Completed</option>
+                    <option value="cancelled">❌ Cancelled</option>
+                  </select>
                 </div>
 
                 <Link
