@@ -47,9 +47,10 @@ export const LANDING_SCHEMA = `{
       },
       "geo": {
         "@type": "GeoCoordinates",
-        "latitude": 28.6139,
-        "longitude": 77.2090
+        "latitude": 28.5662016,
+        "longitude": 77.2708634
       },
+      "hasMap": "https://maps.app.goo.gl/QW1TKXBxYsGVq1t28",
       "areaServed": [
         { "@type": "City", "name": "Delhi" },
         { "@type": "City", "name": "New Delhi" },
@@ -823,6 +824,16 @@ export const LANDING_HTML = `<header>
                   <span class="channel-value mono">+91 74588 45252</span>
                 </div>
               </a>
+
+              <a href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28" target="_blank" rel="noopener noreferrer" class="channel-item">
+                <div class="channel-icon" style="color:var(--brass);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </div>
+                <div class="channel-text">
+                  <span class="channel-title">Studio Location</span>
+                  <span class="channel-value mono">Delhi Studio (Google Maps) ↗</span>
+                </div>
+              </a>
             </div>
 
             <div class="contact-meta-strip">
@@ -830,6 +841,35 @@ export const LANDING_HTML = `<header>
                 <span class="meta-dot"></span>
                 <span>Guaranteed Initial Response: &lt; 24 Hours</span>
               </div>
+            </div>
+          </div>
+
+          <!-- Studio Location & Interactive Google Map Card -->
+          <div class="contact-card contact-map-card">
+            <div class="map-card-header">
+              <div>
+                <span class="mono contact-card-label">STUDIO LOCATION</span>
+                <h4 class="map-title">Xunique Labs — Delhi HQ</h4>
+              </div>
+              <a href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28" target="_blank" rel="noopener noreferrer" class="map-link-badge mono" title="Open in Google Maps">
+                <span>View on Maps ↗</span>
+              </a>
+            </div>
+            <div class="map-embed-frame">
+              <iframe
+                src="https://maps.google.com/maps?q=28.5662016,77.2708634&amp;t=&amp;z=15&amp;ie=UTF8&amp;iwloc=&amp;output=embed"
+                width="100%"
+                height="210"
+                style="border:0; border-radius:4px; display:block;"
+                allowfullscreen=""
+                loading="lazy"
+                referrerpolicy="no-referrer-when-downgrade"
+                title="Xunique Labs Google Maps Location"
+              ></iframe>
+            </div>
+            <div class="map-card-footer">
+              <span class="mono text-muted text-[11px]">📍 Delhi 110025, India • Coords: 28.5662° N, 77.2709° E</span>
+              <a href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28" target="_blank" rel="noopener noreferrer" class="mono text-[11px] text-accent hover:underline">Directions ↗</a>
             </div>
           </div>
         </div>
@@ -941,6 +981,7 @@ export const LANDING_HTML = `<header>
         <li><a href="mailto:xuniquelabs@gmail.com">xuniquelabs@gmail.com</a></li>
         <li><a href="mailto:sayyednawababdulali@gmail.com">sayyednawababdulali@gmail.com</a></li>
         <li><a href="https://wa.me/917458845252?text=Hi%20Xunique%20Labs,%20I%20have%20an%20inquiry%20regarding%20customer%20support%20and%20services." target="_blank" rel="noopener">WhatsApp — +91 74588 45252</a></li>
+        <li><a href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28" target="_blank" rel="noopener noreferrer" style="color:var(--brass); text-decoration:underline;">📍 Google Maps — Delhi Studio ↗</a></li>
       </ul>
     </div>
      

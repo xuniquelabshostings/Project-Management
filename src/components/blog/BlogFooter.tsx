@@ -34,6 +34,17 @@ export function BlogFooter() {
                   xuniquelabs@gmail.com
                 </a>
               </div>
+              <div>
+                <span>Studio Location: </span>
+                <a
+                  href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline inline-flex items-center gap-0.5"
+                >
+                  <span>Delhi, India (Google Maps ↗)</span>
+                </a>
+              </div>
             </div>
           </div>
 
