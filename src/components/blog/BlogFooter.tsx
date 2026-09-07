@@ -51,7 +51,7 @@ export function BlogFooter() {
               <li><Link href="/blog" className="text-accent font-medium hover:underline">Engineering Blog</Link></li>
               <li><Link href="/#pricing" className="hover:text-foreground transition-colors">Pricing & Packages</Link></li>
               <li><Link href="/#work" className="hover:text-foreground transition-colors">Selected Case Files</Link></li>
-              <li><Link href="/management" className="hover:text-foreground transition-colors">Management Portal ↗</Link></li>
+              <li><Link href="/#contact" className="hover:text-foreground transition-colors">Contact Studio</Link></li>
             </ul>
           </div>
         </div>
