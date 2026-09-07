@@ -5,13 +5,11 @@ import { Sun, Moon, Laptop } from "lucide-react";
 import { useTheme } from "@/providers/ThemeProvider";
 
 export function ThemeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    setMounted(true);
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -30,13 +28,8 @@ export function ThemeToggle() {
         aria-label="Toggle theme"
         suppressHydrationWarning
       >
-        {!mounted ? (
-          <span className="h-4 w-4 block" />
-        ) : resolvedTheme === "dark" ? (
-          <Moon className="h-4 w-4 text-accent" />
-        ) : (
-          <Sun className="h-4 w-4 text-accent" />
-        )}
+        <Sun className="h-4 w-4 text-accent dark:hidden" />
+        <Moon className="h-4 w-4 text-accent hidden dark:block" />
       </button>
 
       {isOpen && (

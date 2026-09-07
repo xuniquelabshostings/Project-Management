@@ -1,21 +1,23 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowUpRight, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function BlogNavbar() {
-  const [localTime, setLocalTime] = useState<string>("");
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
+    const timeEl = document.getElementById("blogStudioTime");
+    if (!timeEl) return;
+
     const update = () => {
       const now = new Date();
-      setLocalTime(
-        now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true })
-      );
+      timeEl.textContent = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      });
     };
     update();
     const interval = setInterval(update, 1000);
@@ -33,8 +35,8 @@ export function BlogNavbar() {
         <div className="hidden sm:flex items-center gap-4" suppressHydrationWarning>
           <div className="flex items-center gap-1.5" suppressHydrationWarning>
             <Clock className="w-3 h-3 text-accent" />
-            <span suppressHydrationWarning>
-              Studio Time: {mounted && localTime ? localTime : "--:--:--"}
+            <span>
+              Studio Time: <span id="blogStudioTime" suppressHydrationWarning>--:--:--</span>
             </span>
           </div>
           <a
