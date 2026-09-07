@@ -21,11 +21,19 @@ export function BlogFooter() {
             <p className="text-xs text-muted leading-relaxed max-w-md font-sans">
               A premier software and website development studio in Delhi. We engineer high-performance web applications, cross-platform mobile apps, and custom digital platforms drawn to spec.
             </p>
-            <div className="text-[11px] font-mono text-muted/80 pt-2">
-              <span>Primary Support: </span>
-              <a href="mailto:support@xuniquelabs.com" className="text-accent hover:underline">
-                support@xuniquelabs.com
-              </a>
+            <div className="text-[11px] font-mono text-muted/80 pt-2 space-y-1">
+              <div>
+                <span>Primary Support: </span>
+                <a href="mailto:support@xuniquelabs.com" className="text-accent hover:underline">
+                  support@xuniquelabs.com
+                </a>
+              </div>
+              <div>
+                <span>Direct Studio: </span>
+                <a href="mailto:xuniquelabs@gmail.com" className="text-accent hover:underline">
+                  xuniquelabs@gmail.com
+                </a>
+              </div>
             </div>
           </div>
 

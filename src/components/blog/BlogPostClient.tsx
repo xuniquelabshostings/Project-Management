@@ -244,7 +244,7 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
             <p className="text-xs text-muted font-sans leading-relaxed">
               Founder and technical architect at Xunique Labs. Specializes in scalable cloud systems, high-performance Next.js architectures, cross-platform mobile apps (Flutter), and production PostgreSQL design.
             </p>
-            <div className="pt-2 flex items-center gap-4 text-xs font-mono">
+            <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-mono">
               <a
                 href="https://wa.me/917458845252"
                 target="_blank"
@@ -254,7 +254,14 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
                 <span>Direct WhatsApp Scoping</span>
                 <ArrowUpRight className="w-3 h-3" />
               </a>
-              <span className="text-border">•</span>
+              <span className="text-border hidden sm:inline">•</span>
+              <a
+                href="mailto:xuniquelabs@gmail.com"
+                className="text-muted hover:text-foreground hover:underline"
+              >
+                xuniquelabs@gmail.com
+              </a>
+              <span className="text-border hidden sm:inline">•</span>
               <a
                 href="mailto:support@xuniquelabs.com"
                 className="text-muted hover:text-foreground hover:underline"
