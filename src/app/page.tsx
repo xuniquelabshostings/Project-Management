@@ -3,24 +3,45 @@ import { LandingPage } from "@/components/site/LandingPage";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://xuniquelabs.com"),
-  title: "Xunique Labs — Website Developer in Delhi | Web & Mobile App Development Studio",
+  title: "Website Development Services in Delhi | Web Design & App Development — Xunique Labs",
   description:
-    "Xunique Labs is a leading website developer & mobile app development company in Delhi. We engineer high-performance web applications, Flutter mobile apps, e-commerce stores, and custom software systems.",
+    "Xunique Labs delivers premier website development services in Delhi, bespoke web design, and mobile app development in Delhi. Top website developers building fast Next.js & Flutter apps.",
   keywords: [
-    "Website Developer in Delhi",
-    "Web Development Company Delhi",
-    "Mobile App Development Delhi",
-    "Flutter App Developer",
-    "React Next.js Developer Delhi",
-    "E-commerce Website Development",
-    "Custom Software Studio Delhi",
-    "Sayyed Abdul Ali",
+    "website development services in delhi",
+    "web design",
+    "app development in delhi",
+    "website developers in delhi",
+    "mobile app development in delhi",
+    "web design company in delhi",
+    "best website development services in delhi",
+    "custom software development delhi",
+    "e-commerce website development delhi",
+    "flutter app developer delhi",
+    "react nextjs developers in delhi",
+    "full stack web development delhi",
+    "UI UX design studio delhi",
+    "top website developers in delhi",
     "Xunique Labs",
+    "Sayyed Abdul Ali",
   ],
+  authors: [{ name: "Sayyed Abdul Ali", url: "https://xuniquelabs.com" }],
+  creator: "Xunique Labs",
+  publisher: "Xunique Labs",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
-    title: "Xunique Labs — Website Developer in Delhi | Web & Mobile App Development Studio",
+    title: "Website Development Services in Delhi | Web Design & App Development — Xunique Labs",
     description:
-      "Software drawn to spec, not shipped by guesswork. High-performance web applications, Flutter mobile apps, and custom digital platforms.",
+      "Premier website development services in Delhi, bespoke web design, and cross-platform mobile app development. Engineered to spec by senior website developers in Delhi.",
     url: "https://xuniquelabs.com",
     siteName: "Xunique Labs",
     images: [
@@ -28,7 +49,7 @@ export const metadata: Metadata = {
         url: "/assets/logo-mark.png",
         width: 1200,
         height: 630,
-        alt: "Xunique Labs — Website Developer in Delhi",
+        alt: "Website Development Services in Delhi — Xunique Labs",
       },
     ],
     locale: "en_IN",
@@ -36,8 +57,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Xunique Labs — Website Developer in Delhi",
-    description: "Website & Mobile App Development Studio in Delhi.",
+    title: "Website Development Services in Delhi | Web Design & App Development — Xunique Labs",
+    description:
+      "Premier website development services in Delhi, custom web design, and mobile app development. Handcrafted by senior website developers in Delhi.",
     images: ["/assets/logo-mark.png"],
   },
   alternates: {
