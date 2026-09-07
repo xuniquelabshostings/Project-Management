@@ -191,26 +191,26 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
   };
 
   return (
-    <header className="h-16 border-b border-border/50 bg-surface/80 backdrop-blur-xs px-3.5 sm:px-6 flex items-center justify-between sticky top-0 z-30 shrink-0">
-      <div className="flex items-center gap-2.5 min-w-0">
+    <header className="h-14 sm:h-16 border-b border-border/50 bg-surface/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 mr-2">
         {onOpenMobileNav && (
           <button
             onClick={onOpenMobileNav}
-            className="md:hidden p-1.5 -ml-1 rounded-md text-muted hover:text-foreground hover:bg-surface-elevated transition-colors shrink-0"
+            className="md:hidden p-2 -ml-1.5 rounded-md text-muted hover:text-foreground hover:bg-surface-elevated transition-colors shrink-0"
             title="Open navigation menu"
             aria-label="Open navigation menu"
           >
             <Menu className="w-5 h-5" />
           </button>
         )}
-        <h1 className="font-serif text-base sm:text-lg font-semibold text-foreground tracking-tight truncate">
+        <h1 className="font-serif text-sm sm:text-lg font-semibold text-foreground tracking-tight truncate">
           {getPageTitle()}
         </h1>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         {/* Role badge */}
-        <Badge variant="danger" className="uppercase text-[10px] font-mono tracking-wider font-semibold hidden xs:inline-flex">
+        <Badge variant="danger" className="uppercase text-[10px] font-mono tracking-wider font-semibold hidden sm:inline-flex">
           Admin
         </Badge>
 
@@ -218,7 +218,7 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setShowNotifications(!showNotifications)}
-            className={`flex h-8 w-8 items-center justify-center rounded-md border transition-colors relative ${
+            className={`flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-md border transition-colors relative ${
               showNotifications
                 ? "border-accent bg-surface-elevated text-foreground"
                 : "border-border bg-surface text-muted hover:text-foreground hover:bg-surface-elevated"
@@ -243,9 +243,9 @@ export function Header({ onOpenMobileNav }: HeaderProps = {}) {
           </button>
 
           {showNotifications && (
-            <div className="fixed inset-x-2.5 top-16 sm:inset-x-auto sm:right-0 sm:top-auto sm:absolute sm:w-[440px] max-w-[calc(100vw-20px)] rounded-lg border border-border bg-surface shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="fixed inset-x-2 top-14 sm:inset-x-auto sm:right-0 sm:top-auto sm:absolute sm:w-[420px] max-w-[calc(100vw-16px)] max-h-[82vh] flex flex-col rounded-lg border border-border bg-surface shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
               {/* Header */}
-              <div className="p-3.5 border-b border-border/60 bg-surface-elevated/40 flex items-center justify-between">
+              <div className="p-3 sm:p-3.5 border-b border-border/60 bg-surface-elevated/40 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-foreground text-sm">
                     Notifications & Alerts
