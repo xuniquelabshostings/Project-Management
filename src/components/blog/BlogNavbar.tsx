@@ -23,20 +23,20 @@ export function BlogNavbar() {
   }, []);
 
   return (
-    <header className="border-b border-border bg-surface/90 backdrop-blur-md sticky top-0 z-40 transition-colors">
+    <header className="border-b border-border bg-surface/90 backdrop-blur-md sticky top-0 z-40 transition-colors" suppressHydrationWarning>
       {/* Top micro strip */}
-      <div className="border-b border-border/40 bg-surface-elevated/40 text-[11px] font-mono text-muted py-1 px-4 sm:px-8 flex justify-between items-center">
+      <div className="border-b border-border/40 bg-surface-elevated/40 text-[11px] font-mono text-muted py-1 px-4 sm:px-8 flex justify-between items-center" suppressHydrationWarning>
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
           <span>Xunique Labs • Technical Publishing & Architecture Journal</span>
         </div>
-        <div className="hidden sm:flex items-center gap-4">
-          {mounted && localTime ? (
-            <div className="flex items-center gap-1.5" suppressHydrationWarning>
-              <Clock className="w-3 h-3 text-accent" />
-              <span suppressHydrationWarning>Studio Time: {localTime}</span>
-            </div>
-          ) : null}
+        <div className="hidden sm:flex items-center gap-4" suppressHydrationWarning>
+          <div className="flex items-center gap-1.5" suppressHydrationWarning>
+            <Clock className="w-3 h-3 text-accent" />
+            <span suppressHydrationWarning>
+              Studio Time: {mounted && localTime ? localTime : "--:--:--"}
+            </span>
+          </div>
           <a
             href="tel:+917458845252"
             className="hover:text-foreground transition-colors"
@@ -47,7 +47,7 @@ export function BlogNavbar() {
       </div>
 
       {/* Main navigation */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between" suppressHydrationWarning>
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-3 group">
             <img
@@ -76,7 +76,7 @@ export function BlogNavbar() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4" suppressHydrationWarning>
           <Link
             href="/blog"
             className="text-xs font-mono font-medium text-accent bg-accent/10 px-2.5 py-1 rounded border border-accent/20"

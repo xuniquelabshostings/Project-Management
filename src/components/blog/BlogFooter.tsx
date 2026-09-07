@@ -65,7 +65,7 @@ export function BlogFooter() {
         </div>
 
         <div className="pt-8 border-t border-border/60 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] font-mono text-muted">
-          <div>© {new Date().getFullYear()} XUNIQUE LABS. ALL RIGHTS RESERVED.</div>
+          <div suppressHydrationWarning>© {new Date().getFullYear()} XUNIQUE LABS. ALL RIGHTS RESERVED.</div>
           <div className="flex items-center gap-4">
             <span>SCALE: 1:1 SPECIFICATION</span>
             <span>DELHI, INDIA</span>
