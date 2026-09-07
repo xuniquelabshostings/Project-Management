@@ -242,7 +242,7 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
               About the Author: {post.author_name}
             </h3>
             <p className="text-xs text-muted font-sans leading-relaxed">
-              Founder and technical architect at Xunique Labs. Specializes in scalable cloud systems, high-performance Next.js architectures, cross-platform mobile apps (Flutter), and production PostgreSQL design.
+              Founder and technical architect at Xunique Labs. Specializes in scalable cloud systems, high-performance web architectures, cross-platform mobile applications, and resilient database design.
             </p>
             <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4 text-xs font-mono">
               <a
