@@ -256,6 +256,16 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
               </a>
               <span className="text-border hidden sm:inline">•</span>
               <a
+                href="https://www.instagram.com/xuniquelabs"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-accent hover:underline inline-flex items-center gap-1"
+              >
+                <span>Instagram: @xuniquelabs</span>
+                <ArrowUpRight className="w-3 h-3" />
+              </a>
+              <span className="text-border hidden sm:inline">•</span>
+              <a
                 href="mailto:xuniquelabs@gmail.com"
                 className="text-muted hover:text-foreground hover:underline"
               >

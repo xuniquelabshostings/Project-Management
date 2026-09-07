@@ -51,6 +51,9 @@ export const LANDING_SCHEMA = `{
         "longitude": 77.2708634
       },
       "hasMap": "https://maps.app.goo.gl/QW1TKXBxYsGVq1t28",
+      "sameAs": [
+        "https://www.instagram.com/xuniquelabs"
+      ],
       "areaServed": [
         { "@type": "City", "name": "Delhi" },
         { "@type": "City", "name": "New Delhi" },
@@ -834,6 +837,16 @@ export const LANDING_HTML = `<header>
                   <span class="channel-value mono">Delhi Studio (Google Maps) ↗</span>
                 </div>
               </a>
+
+              <a href="https://www.instagram.com/xuniquelabs" target="_blank" rel="noopener noreferrer" class="channel-item">
+                <div class="channel-icon" style="color:#E1306C;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </div>
+                <div class="channel-text">
+                  <span class="channel-title">Instagram</span>
+                  <span class="channel-value mono">@xuniquelabs ↗</span>
+                </div>
+              </a>
             </div>
 
             <div class="contact-meta-strip">
@@ -982,6 +995,7 @@ export const LANDING_HTML = `<header>
         <li><a href="mailto:sayyednawababdulali@gmail.com">sayyednawababdulali@gmail.com</a></li>
         <li><a href="https://wa.me/917458845252?text=Hi%20Xunique%20Labs,%20I%20have%20an%20inquiry%20regarding%20customer%20support%20and%20services." target="_blank" rel="noopener">WhatsApp — +91 74588 45252</a></li>
         <li><a href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28" target="_blank" rel="noopener noreferrer" style="color:var(--brass); text-decoration:underline;">📍 Google Maps — Delhi Studio ↗</a></li>
+        <li><a href="https://www.instagram.com/xuniquelabs" target="_blank" rel="noopener noreferrer">Instagram — @xuniquelabs ↗</a></li>
       </ul>
     </div>
      

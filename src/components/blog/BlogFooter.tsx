@@ -35,6 +35,17 @@ export function BlogFooter() {
                 </a>
               </div>
               <div>
+                <span>Instagram: </span>
+                <a
+                  href="https://www.instagram.com/xuniquelabs"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-accent hover:underline inline-flex items-center gap-0.5"
+                >
+                  <span>@xuniquelabs ↗</span>
+                </a>
+              </div>
+              <div>
                 <span>Studio Location: </span>
                 <a
                   href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28"
