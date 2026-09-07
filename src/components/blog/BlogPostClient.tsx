@@ -86,6 +86,7 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
         month: "long",
         day: "numeric",
         year: "numeric",
+        timeZone: "UTC",
       });
     } catch {
       return "Published recently";

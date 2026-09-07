@@ -99,6 +99,7 @@ export default function BlogListingPage() {
         month: "short",
         day: "numeric",
         year: "numeric",
+        timeZone: "UTC",
       });
     } catch {
       return "Recent";

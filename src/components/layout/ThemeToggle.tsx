@@ -7,9 +7,11 @@ import { useTheme } from "@/providers/ThemeProvider";
 export function ThemeToggle() {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setMounted(true);
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
@@ -26,8 +28,11 @@ export function ThemeToggle() {
         className="flex h-8 w-8 items-center justify-center rounded-md border border-border bg-surface text-muted hover:text-foreground hover:bg-surface-elevated transition-colors"
         title="Toggle theme"
         aria-label="Toggle theme"
+        suppressHydrationWarning
       >
-        {resolvedTheme === "dark" ? (
+        {!mounted ? (
+          <span className="h-4 w-4 block" />
+        ) : resolvedTheme === "dark" ? (
           <Moon className="h-4 w-4 text-accent" />
         ) : (
           <Sun className="h-4 w-4 text-accent" />

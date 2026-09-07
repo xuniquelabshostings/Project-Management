@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, MessageSquare, ArrowUpRight, Clock, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function BlogNavbar() {
   const [localTime, setLocalTime] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const update = () => {
       const now = new Date();
       setLocalTime(
@@ -29,12 +31,12 @@ export function BlogNavbar() {
           <span>Xunique Labs • Technical Publishing & Architecture Journal</span>
         </div>
         <div className="hidden sm:flex items-center gap-4">
-          {localTime && (
-            <div className="flex items-center gap-1.5">
+          {mounted && localTime ? (
+            <div className="flex items-center gap-1.5" suppressHydrationWarning>
               <Clock className="w-3 h-3 text-accent" />
-              <span>Studio Time: {localTime}</span>
+              <span suppressHydrationWarning>Studio Time: {localTime}</span>
             </div>
-          )}
+          ) : null}
           <a
             href="tel:+917458845252"
             className="hover:text-foreground transition-colors"
