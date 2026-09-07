@@ -4,7 +4,11 @@ import { LandingInteractive } from "./LandingInteractive";
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const processedHtml = basePath
-  ? LANDING_HTML.replaceAll('src="/assets/', `src="${basePath}/assets/`)
+  ? LANDING_HTML
+      .replaceAll('src="/assets/', `src="${basePath}/assets/`)
+      .replaceAll('href="/blog"', `href="${basePath}/blog"`)
+      .replaceAll('href="/login"', `href="${basePath}/login"`)
+      .replaceAll('href="/management"', `href="${basePath}/management"`)
   : LANDING_HTML;
 
 export function LandingPage() {
