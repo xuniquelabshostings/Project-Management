@@ -28,8 +28,10 @@ export function LandingPage() {
     const anchorLinks = navLinks?.querySelectorAll("a");
     anchorLinks?.forEach((a) => a.addEventListener("click", handleNavLinkClick));
 
-    // 2. Scroll reveal observer
-    const revealEls = document.querySelectorAll(".reveal, .stage");
+    // 2. Scroll reveal observer with support for grid stagger
+    const revealEls = document.querySelectorAll(
+      ".reveal, .stage, .sheet-grid, .work-grid, .pricing-grid, .faq-grid, .contact-channels, .contact-card, .contact-form-panel"
+    );
     const revealIo = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -39,9 +41,61 @@ export function LandingPage() {
           }
         });
       },
-      { threshold: 0.15 }
+      { threshold: 0.12, rootMargin: "0px 0px -40px 0px" }
     );
     revealEls.forEach((el) => revealIo.observe(el));
+
+    // 2b. Header scroll elevation effect
+    const navWrap = document.querySelector(".nav-wrap");
+    const handleWindowScroll = () => {
+      if (!navWrap) return;
+      if (window.scrollY > 30) {
+        navWrap.classList.add("scrolled");
+      } else {
+        navWrap.classList.remove("scrolled");
+      }
+    };
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    handleWindowScroll();
+
+    // 2c. Hero panel interactive subtle 3D tilt on desktop
+    const heroPanel = document.querySelector(".hero-panel") as HTMLElement;
+    let heroRafId: number | null = null;
+    let targetX = 0;
+    let targetY = 0;
+    let currentX = 0;
+    let currentY = 0;
+
+    const animateHeroTilt = () => {
+      currentX += (targetX - currentX) * 0.08;
+      currentY += (targetY - currentY) * 0.08;
+      if (heroPanel) {
+        const heroImg = heroPanel.querySelector("img");
+        if (heroImg) {
+          heroImg.style.transform = `perspective(1000px) rotateY(${currentX * 6}deg) rotateX(${-currentY * 6}deg) scale(1.02)`;
+        }
+      }
+      heroRafId = requestAnimationFrame(animateHeroTilt);
+    };
+
+    const handleHeroMouseMove = (e: MouseEvent) => {
+      if (window.innerWidth < 900) return;
+      const { innerWidth, innerHeight } = window;
+      targetX = (e.clientX / innerWidth - 0.5) * 2;
+      targetY = (e.clientY / innerHeight - 0.5) * 2;
+    };
+
+    const handleHeroMouseLeave = () => {
+      targetX = 0;
+      targetY = 0;
+    };
+
+    const heroSection = document.querySelector(".hero");
+    if (heroSection) {
+      heroSection.addEventListener("mousemove", handleHeroMouseMove as EventListener, { passive: true });
+      heroSection.addEventListener("mouseleave", handleHeroMouseLeave);
+      heroRafId = requestAnimationFrame(animateHeroTilt);
+    }
 
     // 3. Count-up stats observer
     const counters = document.querySelectorAll("[data-count]");
@@ -169,6 +223,12 @@ _Dispatched via Xunique Labs Studio Contact Desk_`;
       anchorLinks?.forEach((a) => a.removeEventListener("click", handleNavLinkClick));
       revealIo.disconnect();
       countIo.disconnect();
+      window.removeEventListener("scroll", handleWindowScroll);
+      if (heroSection) {
+        heroSection.removeEventListener("mousemove", handleHeroMouseMove as EventListener);
+        heroSection.removeEventListener("mouseleave", handleHeroMouseLeave);
+      }
+      if (heroRafId) cancelAnimationFrame(heroRafId);
       if (clockInterval) clearInterval(clockInterval);
       if (contactForm) contactForm.removeEventListener("submit", handleContactSubmit);
     };
