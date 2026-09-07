@@ -10,7 +10,7 @@ export function BlogFooter() {
           <div className="md:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
               <img
-                src="/assets/logo-mark-nobg.png"
+                src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/assets/logo-mark-nobg.png`}
                 alt="Xunique Labs"
                 className="w-7 h-7 object-contain"
               />

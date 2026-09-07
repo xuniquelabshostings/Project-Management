@@ -72,10 +72,12 @@ export const metadata: Metadata = {
   },
 };
 
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export default function HomePage() {
   return (
     <>
-      <link rel="stylesheet" href="/landing.css" />
+      <link rel="stylesheet" href={`${basePath}/landing.css`} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: LANDING_SCHEMA }}
