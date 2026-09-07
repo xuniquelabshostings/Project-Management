@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Lora, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/ThemeProvider";
@@ -40,8 +41,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${lora.variable} ${inter.variable} ${jetbrainsMono.variable} h-full`}
     >
-      <head>
-        <script
+      <body className="min-h-full flex flex-col font-sans bg-background text-foreground antialiased selection:bg-accent/20 selection:text-foreground">
+        <Script
+          id="theme-initializer"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               try {
@@ -56,8 +59,6 @@ export default function RootLayout({
             `,
           }}
         />
-      </head>
-      <body className="min-h-full flex flex-col font-sans bg-background text-foreground antialiased selection:bg-accent/20 selection:text-foreground">
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>

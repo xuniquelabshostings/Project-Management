@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import { LandingPage } from "@/components/site/LandingPage";
+import { LANDING_SCHEMA } from "@/components/site/landing-content";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://xuniquelabs.com"),
@@ -72,5 +73,14 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
-  return <LandingPage />;
+  return (
+    <>
+      <link rel="stylesheet" href="/landing.css" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: LANDING_SCHEMA }}
+      />
+      <LandingPage />
+    </>
+  );
 }
