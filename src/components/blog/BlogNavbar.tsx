@@ -2,7 +2,6 @@
 
 import React, { useEffect } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Clock } from "lucide-react";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function BlogNavbar() {
@@ -34,7 +33,19 @@ export function BlogNavbar() {
         </div>
         <div className="hidden sm:flex items-center gap-4" suppressHydrationWarning>
           <div className="flex items-center gap-1.5" suppressHydrationWarning>
-            <Clock className="w-3 h-3 text-accent" />
+            <svg
+              className="w-3 h-3 text-accent shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
             <span>
               Studio Time: <span id="blogStudioTime" suppressHydrationWarning>--:--:--</span>
             </span>
@@ -73,7 +84,18 @@ export function BlogNavbar() {
             href="/"
             className="hidden md:inline-flex items-center gap-1.5 text-xs font-mono text-muted hover:text-foreground transition-colors"
           >
-            <ArrowLeft className="w-3.5 h-3.5 text-accent" />
+            <svg
+              className="w-3.5 h-3.5 text-accent shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
             <span>Studio Home</span>
           </Link>
         </div>
@@ -100,7 +122,18 @@ export function BlogNavbar() {
             className="inline-flex items-center gap-1.5 bg-[#0E2A47] hover:bg-[#1A3F66] text-white dark:bg-accent dark:hover:bg-accent/90 text-xs font-mono px-3.5 py-1.5 rounded transition-all shadow-xs"
           >
             <span>Start a Project</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
+            <svg
+              className="w-3.5 h-3.5 shrink-0"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M7 17L17 7M7 7h10v10" />
+            </svg>
           </a>
 
           <div className="border-l border-border/60 pl-2">
