@@ -175,6 +175,7 @@
   .sheet-grid.in .sheet:nth-child(4) { animation-delay: 0.22s; }
   .sheet-grid.in .sheet:nth-child(5) { animation-delay: 0.28s; }
   .sheet-grid.in .sheet:nth-child(6) { animation-delay: 0.34s; }
+  .sheet-grid.in .sheet:nth-child(7) { animation-delay: 0.40s; }
 
   .work-grid.in .case:nth-child(1) { animation-delay: 0.06s; }
   .work-grid.in .case:nth-child(2) { animation-delay: 0.15s; }

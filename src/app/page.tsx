@@ -3,13 +3,17 @@ import { LandingPage } from "@/components/site/LandingPage";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://xuniquelabs.com"),
-  title: "Website Development Services in Delhi | Web Design & App Development — Xunique Labs",
+  title: "Website Development Services in Delhi | Web Design, App Dev & Digital Marketing — Xunique Labs",
   description:
-    "Xunique Labs delivers premier website development services in Delhi, bespoke web design, and mobile app development in Delhi. Top website developers building fast Next.js & Flutter apps.",
+    "Xunique Labs delivers premier website development services in Delhi, bespoke web design, mobile app development, and ROI-driven digital marketing in Delhi. Top developers building fast Next.js & Flutter apps.",
   keywords: [
     "website development services in delhi",
     "web design",
     "app development in delhi",
+    "digital marketing services in delhi",
+    "seo company in delhi",
+    "performance marketing delhi",
+    "google ads management delhi",
     "website developers in delhi",
     "mobile app development in delhi",
     "web design company in delhi",
