@@ -250,7 +250,7 @@ export const LANDING_HTML = `<header>
       <div class="hero-copy reveal">
         <div class="eyebrow">Website Development Services in Delhi • Web Design &amp; App Development Studio</div>
         <h1>Software, drawn <em>to spec</em> — not shipped by guesswork.</h1>
-        <p><strong>Xunique Labs</strong> provides premier <strong>website development services in Delhi</strong>, bespoke <strong>web design</strong>, <strong>digital marketing</strong>, and high-performance <strong>mobile app development in Delhi</strong>. Our expert <strong>website developers in Delhi</strong> engineer fast, scalable web platforms, e-commerce systems, and mobile applications drawn to spec.</p>
+        <p><strong>Xunique Labs</strong> is a premier engineering studio delivering bespoke <strong>website development services in Delhi</strong>, intuitive <strong>web design</strong>, and high-performance <strong>mobile app development in Delhi</strong>. Our veteran <strong>website developers in Delhi</strong> architect fast, resilient web platforms, custom e-commerce systems, and data-driven <strong>digital marketing</strong> strategies engineered for scalable growth.</p>
         <div class="hero-actions">
           <a href="https://wa.me/917458845252?text=Hi%20Xunique%20Labs,%20I'm%20looking%20to%20start%20a%20new%20software%20project.%20Let's%20discuss%20scope,%20timeline,%20and%20deliverables." target="_blank" rel="noopener" class="btn btn-primary">Start a Project →</a>
           <a href="#work" class="btn btn-ghost">See our Work</a>
