@@ -10,7 +10,6 @@ import {
   Tag,
   ArrowRight,
   ArrowUpRight,
-  Eye,
   Calendar,
   Sparkles,
   BookOpen,
@@ -196,11 +195,6 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
                 Founder & Lead Software Engineer, Xunique Labs
               </div>
             </div>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-muted">
-            <Eye className="w-3.5 h-3.5" />
-            <span>{post.views_count} Reads</span>
           </div>
         </div>
 

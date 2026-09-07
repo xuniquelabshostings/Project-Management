@@ -5,7 +5,6 @@ import Link from "next/link";
 import {
   Search,
   Clock,
-  Eye,
   ArrowRight,
   Sparkles,
   Tag,
