@@ -59,7 +59,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
                 <span className="text-[10px] text-muted/60">Source Snippet</span>
               </div>
             )}
-            <pre className="p-4 overflow-x-auto font-mono text-xs leading-relaxed">
+            <pre className="p-3.5 sm:p-4 overflow-x-auto font-mono text-[11px] sm:text-xs leading-relaxed max-w-full">
               <code>{codeLines.join("\n")}</code>
             </pre>
           </div>
@@ -193,5 +193,5 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     );
   }
 
-  return <div className="blog-prose space-y-1">{elements}</div>;
+  return <div className="blog-prose space-y-1 break-words overflow-hidden leading-relaxed">{elements}</div>;
 }

@@ -278,109 +278,195 @@ export default function InvoicesPage() {
               </Button>
             </div>
           ) : (
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Invoice #</TableHead>
-                      <TableHead>Client & Project</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Due Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredInvoices.map((inv) => (
-                      <TableRow key={inv.id}>
-                        <TableCell>
-                          <div className="font-mono text-xs font-semibold text-foreground">
-                            {inv.invoice_number}
-                          </div>
-                          {inv.is_recurring && (
-                            <Badge variant="outline" className="text-[9px] mt-0.5 capitalize">
-                              Recurring ({inv.recurrence_interval})
-                            </Badge>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          <div className="text-sm font-medium text-foreground">
-                            {inv.client?.client_name || inv.client?.company_name || "Client"}
-                          </div>
-                          {inv.project && (
-                            <div className="text-xs text-muted flex items-center gap-1">
-                              <span>Project: {inv.project.name}</span>
+            <div>
+              {/* Desktop Table View */}
+              <Card className="hidden md:block">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Invoice #</TableHead>
+                        <TableHead>Client & Project</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Due Date</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredInvoices.map((inv) => (
+                        <TableRow key={inv.id}>
+                          <TableCell>
+                            <div className="font-mono text-xs font-semibold text-foreground">
+                              {inv.invoice_number}
                             </div>
-                          )}
-                        </TableCell>
-
-                        <TableCell>
-                          <InvoiceStatusBadge status={inv.status} />
-                        </TableCell>
-
-                        <TableCell className="text-xs font-mono text-muted">
-                          {new Date(inv.due_date).toLocaleDateString()}
-                        </TableCell>
-
-                        <TableCell className="text-right font-mono font-bold text-sm text-foreground">
-                          {formatINR(inv.total_amount)}
-                        </TableCell>
-
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1">
-                            {inv.status !== "paid" && (
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => handleUpdateStatus(inv.id, "paid")}
-                                className="text-[11px] h-7 px-2 text-success hover:border-success/40"
-                                title="Mark as Paid"
-                              >
-                                Mark Paid
-                              </Button>
+                            {inv.is_recurring && (
+                              <Badge variant="outline" className="text-[9px] mt-0.5 capitalize">
+                                Recurring ({inv.recurrence_interval})
+                              </Badge>
                             )}
+                          </TableCell>
 
-                            {inv.status === "draft" && (
+                          <TableCell>
+                            <div className="text-sm font-medium text-foreground">
+                              {inv.client?.client_name || inv.client?.company_name || "Client"}
+                            </div>
+                            {inv.project && (
+                              <div className="text-xs text-muted flex items-center gap-1">
+                                <span>Project: {inv.project.name}</span>
+                              </div>
+                            )}
+                          </TableCell>
+
+                          <TableCell>
+                            <InvoiceStatusBadge status={inv.status} />
+                          </TableCell>
+
+                          <TableCell className="text-xs font-mono text-muted">
+                            {new Date(inv.due_date).toLocaleDateString()}
+                          </TableCell>
+
+                          <TableCell className="text-right font-mono font-bold text-sm text-foreground">
+                            {formatINR(inv.total_amount)}
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {inv.status !== "paid" && (
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(inv.id, "paid")}
+                                  className="text-[11px] h-7 px-2 text-success hover:border-success/40"
+                                  title="Mark as Paid"
+                                >
+                                  Mark Paid
+                                </Button>
+                              )}
+
+                              {inv.status === "draft" && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleUpdateStatus(inv.id, "sent")}
+                                  className="text-[11px] h-7 px-2"
+                                  title="Mark as Sent"
+                                >
+                                  Mark Sent
+                                </Button>
+                              )}
+
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => handleUpdateStatus(inv.id, "sent")}
-                                className="text-[11px] h-7 px-2"
-                                title="Mark as Sent"
+                                onClick={() => setSelectedInvoiceForPrint(inv)}
+                                className="text-[11px] h-7 px-2 flex items-center gap-1 hover:border-foreground/40"
+                                title="Print / Export PDF for client"
                               >
-                                Mark Sent
+                                <Printer className="w-3 h-3 text-muted" />
+                                <span>Print / PDF</span>
                               </Button>
-                            )}
 
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedInvoiceForPrint(inv)}
-                              className="text-[11px] h-7 px-2 flex items-center gap-1 hover:border-foreground/40"
-                              title="Print / Export PDF for client"
-                            >
-                              <Printer className="w-3 h-3 text-muted" />
-                              <span>Print / PDF</span>
-                            </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEdit(inv)}
+                                className="text-[11px] h-7 px-2 text-muted hover:text-foreground"
+                              >
+                                Edit
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
 
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEdit(inv)}
-                              className="text-[11px] h-7 px-2 text-muted hover:text-foreground"
-                            >
-                              Edit
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+              {/* Mobile Card List View */}
+              <div className="md:hidden space-y-3">
+                {filteredInvoices.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="p-4 rounded-lg border border-border bg-surface shadow-xs space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <span className="font-mono text-xs font-semibold text-foreground">
+                          {inv.invoice_number}
+                        </span>
+                        <h4 className="text-sm font-medium text-foreground mt-0.5">
+                          {inv.client?.client_name || inv.client?.company_name || "Client"}
+                        </h4>
+                        {inv.project && (
+                          <p className="text-[11px] text-muted">
+                            Project: {inv.project.name}
+                          </p>
+                        )}
+                      </div>
+                      <InvoiceStatusBadge status={inv.status} />
+                    </div>
+
+                    <div className="flex items-center justify-between py-2 border-y border-border/50 text-xs">
+                      <div>
+                        <span className="text-[10px] text-muted font-mono uppercase block">Due Date</span>
+                        <span className="font-mono text-muted">{new Date(inv.due_date).toLocaleDateString()}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-muted font-mono uppercase block">Total Amount</span>
+                        <span className="font-mono font-bold text-base text-foreground">
+                          {formatINR(inv.total_amount)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-end gap-1.5 pt-1">
+                      {inv.status !== "paid" && (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleUpdateStatus(inv.id, "paid")}
+                          className="text-xs h-7 px-2.5 text-success"
+                        >
+                          Mark Paid
+                        </Button>
+                      )}
+
+                      {inv.status === "draft" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUpdateStatus(inv.id, "sent")}
+                          className="text-xs h-7 px-2.5"
+                        >
+                          Mark Sent
+                        </Button>
+                      )}
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedInvoiceForPrint(inv)}
+                        className="text-xs h-7 px-2.5 flex items-center gap-1"
+                      >
+                        <Printer className="w-3 h-3 text-muted" />
+                        <span>Print</span>
+                      </Button>
+
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEdit(inv)}
+                        className="text-xs h-7 px-2 text-muted hover:text-foreground"
+                      >
+                        Edit
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           <InvoiceModal

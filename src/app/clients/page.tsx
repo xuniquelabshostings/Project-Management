@@ -71,6 +71,7 @@ export default function ClientsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedLeadSource, setSelectedLeadSource] = useState<string>("all");
   const [viewMode, setViewMode] = useState<"list" | "pipeline">("list");
+  const [mobilePipelineStage, setMobilePipelineStage] = useState<string>("all");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [alertingClientId, setAlertingClientId] = useState<string | null>(null);
 
@@ -319,306 +320,439 @@ export default function ClientsPage() {
               </Button>
             </div>
           ) : viewMode === "list" ? (
-            /* Table View */
-            <Card>
-              <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Client Name</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Lead Source</TableHead>
-                      <TableHead>Contacts</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredClients.map((client) => {
-                      const renewalAlert = getClientRenewalAlert(client);
-                      return (
-                      <TableRow key={client.id}>
-                        <TableCell>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <Link
-                                href={`/clients/view?id=${client.id}`}
-                                className="font-medium text-foreground hover:text-accent flex items-center gap-1.5 transition-colors"
-                              >
-                                <span>{client.client_name || client.company_name}</span>
-                                <ArrowRight className="w-3 h-3 text-muted" />
-                              </Link>
-                              {renewalAlert && (
-                                <span
-                                  className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.2 rounded-full border ${
-                                    renewalAlert.expired
-                                      ? "bg-red-500/10 text-red-500 border-red-500/30"
-                                      : "bg-amber-500/10 text-amber-500 border-amber-500/30"
-                                  }`}
-                                  title={`Renewal Alert: ${renewalAlert.text}`}
-                                >
-                                  <AlertTriangle className="w-2.5 h-2.5" />
-                                  {renewalAlert.text}
-                                </span>
-                              )}
-                            </div>
-                            <div className="flex flex-wrap items-center gap-2 mt-1">
-                              {client.domain_name && (
-                                <span className="text-[11px] text-muted flex items-center gap-1 font-mono">
-                                  <Globe className="w-2.5 h-2.5 text-accent" />
-                                  {client.domain_name}
-                                </span>
-                              )}
-                              {client.industry && (
-                                <span className="text-xs text-muted">
-                                  {client.industry}
-                                </span>
-                              )}
-                              {client.tags && client.tags.length > 0 && (
-                                <div className="flex items-center gap-1">
-                                  {client.tags.slice(0, 2).map((tag, idx) => (
-                                    <span
-                                      key={idx}
-                                      className="text-[10px] bg-surface-elevated text-muted px-1.5 py-0.2 rounded border border-border"
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-
-                        <TableCell>
-                          <ClientStatusBadge status={client.status} />
-                        </TableCell>
-
-                        <TableCell className="text-xs text-muted capitalize font-mono">
-                          {client.lead_source || "—"}
-                        </TableCell>
-
-                        <TableCell className="text-xs text-muted">
-                          {client.contacts && client.contacts.length > 0 ? (
-                            <span>
-                              {client.contacts[0].name}{" "}
-                              {client.contacts.length > 1 && (
-                                <span className="text-[10px] text-muted font-mono">
-                                  (+{client.contacts.length - 1} more)
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="italic">No contacts</span>
-                          )}
-                        </TableCell>
-
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            {renewalAlert && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={alertingClientId === client.id}
-                                className="text-xs h-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium px-2"
-                                onClick={async () => {
-                                  setAlertingClientId(client.id);
-                                  try {
-                                    const res = await sendClientWhatsAppRenewalAlert(client, client.contacts, true);
-                                    if (res.updatedClient) {
-                                      setClients((prev) =>
-                                        prev.map((c) => (c.id === client.id ? res.updatedClient! : c))
-                                      );
-                                    }
-                                  } finally {
-                                    setAlertingClientId(null);
-                                  }
-                                }}
-                                title="Auto-fetch phone & live WHOIS and send WhatsApp reminder"
-                              >
-                                {alertingClientId === client.id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
-                                ) : (
-                                  <MessageCircle className="w-3 h-3 text-emerald-500" />
-                                )}
-                                <span className="hidden md:inline ml-1">
-                                  {alertingClientId === client.id ? "WHOIS..." : "WhatsApp"}
-                                </span>
-                              </Button>
-                            )}
-                            <Link href={`/clients/view?id=${client.id}`}>
-                              <Button variant="ghost" size="sm" className="text-xs h-7">
-                                Open Profile
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-xs h-7 text-muted hover:text-danger hover:bg-danger-bg px-2"
-                              onClick={(e) =>
-                                handleDeleteClient(
-                                  e,
-                                  client.id,
-                                  client.client_name || client.company_name || "Client"
-                                )
-                              }
-                              title="Delete client"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </TableCell>
+            <div>
+              {/* Desktop Table View */}
+              <Card className="hidden md:block">
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Client Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Lead Source</TableHead>
+                        <TableHead>Contacts</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    );
-                    })}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          ) : (
-            /* Pipeline Board View */
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto pb-4">
-              {pipelineStages.map((stage) => {
-                const stageClients = filteredClients.filter(
-                  (c) => c.status === stage.id
-                );
-
-                return (
-                  <div
-                    key={stage.id}
-                    className="rounded-lg border border-border bg-surface-elevated/40 p-3 min-w-[220px] flex flex-col"
-                  >
-                    {/* Column Header */}
-                    <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
-                      <span className="text-xs font-semibold text-foreground">
-                        {stage.label}
-                      </span>
-                      <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface border border-border text-muted">
-                        {stageClients.length}
-                      </span>
-                    </div>
-
-                    {/* Cards in stage */}
-                    <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[calc(100vh-280px)]">
-                      {stageClients.length === 0 ? (
-                        <div className="p-4 text-center text-xs text-muted/60 border border-dashed border-border/40 rounded-md">
-                          No clients in this stage
-                        </div>
-                      ) : (
-                        stageClients.map((c) => {
-                          const alert = getClientRenewalAlert(c);
-                          return (
-                          <div
-                            key={c.id}
-                            className="p-3 rounded-md border border-border bg-surface hover:border-accent/40 shadow-xs transition-colors space-y-2"
-                          >
-                            <div className="flex items-start justify-between gap-1">
-                              <Link
-                                href={`/clients/view?id=${c.id}`}
-                                className="text-xs font-semibold text-foreground hover:text-accent line-clamp-1"
-                              >
-                                {c.client_name || c.company_name}
-                              </Link>
-                              {alert && (
-                                <span
-                                  className={`shrink-0 text-[9px] font-medium px-1.5 py-0.2 rounded-full border ${
-                                    alert.expired
-                                      ? "bg-red-500/10 text-red-500 border-red-500/30"
-                                      : "bg-amber-500/10 text-amber-500 border-amber-500/30"
-                                  }`}
-                                  title={alert.text}
+                    </TableHeader>
+                    <TableBody>
+                      {filteredClients.map((client) => {
+                        const renewalAlert = getClientRenewalAlert(client);
+                        return (
+                        <TableRow key={client.id}>
+                          <TableCell>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  href={`/clients/view?id=${client.id}`}
+                                  className="font-medium text-foreground hover:text-accent flex items-center gap-1.5 transition-colors"
                                 >
-                                  {alert.text}
-                                </span>
-                              )}
-                            </div>
-
-                            {c.domain_name && (
-                              <p className="text-[10px] text-muted font-mono truncate flex items-center gap-1">
-                                <Globe className="w-2.5 h-2.5 text-accent shrink-0" />
-                                {c.domain_name}
-                              </p>
-                            )}
-
-                            {c.industry && (
-                              <p className="text-[11px] text-muted line-clamp-1">
-                                {c.industry}
-                              </p>
-                            )}
-
-                            {alert && (
-                              <button
-                                type="button"
-                                disabled={alertingClientId === c.id}
-                                onClick={async (e) => {
-                                  e.stopPropagation();
-                                  setAlertingClientId(c.id);
-                                  try {
-                                    const res = await sendClientWhatsAppRenewalAlert(c, c.contacts, true);
-                                    if (res.updatedClient) {
-                                      setClients((prev) =>
-                                        prev.map((item) => (item.id === c.id ? res.updatedClient! : item))
-                                      );
-                                    }
-                                  } finally {
-                                    setAlertingClientId(null);
-                                  }
-                                }}
-                                className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-[10px] font-medium transition-colors disabled:opacity-60"
-                                title="Auto-fetch phone & live WHOIS and send WhatsApp reminder"
-                              >
-                                {alertingClientId === c.id ? (
-                                  <Loader2 className="w-3 h-3 animate-spin" />
-                                ) : (
-                                  <MessageCircle className="w-3 h-3" />
+                                  <span>{client.client_name || client.company_name}</span>
+                                  <ArrowRight className="w-3 h-3 text-muted" />
+                                </Link>
+                                {renewalAlert && (
+                                  <span
+                                    className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.2 rounded-full border ${
+                                      renewalAlert.expired
+                                        ? "bg-red-500/10 text-red-500 border-red-500/30"
+                                        : "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                    }`}
+                                    title={`Renewal Alert: ${renewalAlert.text}`}
+                                  >
+                                    <AlertTriangle className="w-2.5 h-2.5" />
+                                    {renewalAlert.text}
+                                  </span>
                                 )}
-                                <span>{alertingClientId === c.id ? "WHOIS..." : "WhatsApp Alert"}</span>
-                              </button>
-                            )}
-
-                            <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[10px]">
-                              <span className="text-muted truncate max-w-[90px]">
-                                {c.account_manager?.full_name?.split(" ")[0] || "Unassigned"}
-                              </span>
-
-                              <div className="flex items-center gap-1">
-                                {/* Quick Move Stage */}
-                                <select
-                                  value={c.status}
-                                  onChange={(e) =>
-                                    handleStatusChange(c.id, e.target.value as ClientStatus)
-                                  }
-                                  className="bg-surface-elevated border border-border rounded px-1 py-0.5 text-[10px] text-muted hover:text-foreground"
-                                >
-                                  {pipelineStages.map((st) => (
-                                    <option key={st.id} value={st.id}>
-                                      Move: {st.label}
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  type="button"
-                                  onClick={(e) =>
-                                    handleDeleteClient(
-                                      e,
-                                      c.id,
-                                      c.client_name || c.company_name || "Client"
-                                    )
-                                  }
-                                  className="p-1 rounded text-muted hover:text-danger hover:bg-danger-bg transition-colors"
-                                  title="Delete Client"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2 mt-1">
+                                {client.domain_name && (
+                                  <span className="text-[11px] text-muted flex items-center gap-1 font-mono">
+                                    <Globe className="w-2.5 h-2.5 text-accent" />
+                                    {client.domain_name}
+                                  </span>
+                                )}
+                                {client.industry && (
+                                  <span className="text-xs text-muted">
+                                    {client.industry}
+                                  </span>
+                                )}
+                                {client.tags && client.tags.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    {client.tags.slice(0, 2).map((tag, idx) => (
+                                      <span
+                                        key={idx}
+                                        className="text-[10px] bg-surface-elevated text-muted px-1.5 py-0.2 rounded border border-border"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
                               </div>
                             </div>
-                          </div>
-                        );
-                        })
+                          </TableCell>
+
+                          <TableCell>
+                            <ClientStatusBadge status={client.status} />
+                          </TableCell>
+
+                          <TableCell className="text-xs text-muted capitalize font-mono">
+                            {client.lead_source || "—"}
+                          </TableCell>
+
+                          <TableCell className="text-xs text-muted">
+                            {client.contacts && client.contacts.length > 0 ? (
+                              <span>
+                                {client.contacts[0].name}{" "}
+                                {client.contacts.length > 1 && (
+                                  <span className="text-[10px] text-muted font-mono">
+                                    (+{client.contacts.length - 1} more)
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span className="italic">No contacts</span>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {renewalAlert && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  disabled={alertingClientId === client.id}
+                                  className="text-xs h-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium px-2"
+                                  onClick={async () => {
+                                    setAlertingClientId(client.id);
+                                    try {
+                                      const res = await sendClientWhatsAppRenewalAlert(client, client.contacts, true);
+                                      if (res.updatedClient) {
+                                        setClients((prev) =>
+                                          prev.map((c) => (c.id === client.id ? res.updatedClient! : c))
+                                        );
+                                      }
+                                    } finally {
+                                      setAlertingClientId(null);
+                                    }
+                                  }}
+                                  title="Auto-fetch phone & live WHOIS and send WhatsApp reminder"
+                                >
+                                  {alertingClientId === client.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin text-emerald-500" />
+                                  ) : (
+                                    <MessageCircle className="w-3 h-3 text-emerald-500" />
+                                  )}
+                                  <span className="hidden md:inline ml-1">
+                                    {alertingClientId === client.id ? "WHOIS..." : "WhatsApp"}
+                                  </span>
+                                </Button>
+                              )}
+                              <Link href={`/clients/view?id=${client.id}`}>
+                                <Button variant="ghost" size="sm" className="text-xs h-7">
+                                  Open Profile
+                                </Button>
+                              </Link>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs h-7 text-muted hover:text-danger hover:bg-danger-bg px-2"
+                                onClick={(e) =>
+                                  handleDeleteClient(
+                                    e,
+                                    client.id,
+                                    client.client_name || client.company_name || "Client"
+                                  )
+                                }
+                                title="Delete client"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              {/* Mobile Card List View */}
+              <div className="md:hidden space-y-3">
+                {filteredClients.map((client) => {
+                  const renewalAlert = getClientRenewalAlert(client);
+                  return (
+                    <div
+                      key={client.id}
+                      className="p-4 rounded-lg border border-border bg-surface shadow-xs space-y-3"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <Link
+                            href={`/clients/view?id=${client.id}`}
+                            className="font-medium text-foreground hover:text-accent text-sm flex items-center gap-1 leading-snug"
+                          >
+                            <span>{client.client_name || client.company_name}</span>
+                            <ArrowRight className="w-3.5 h-3.5 text-muted shrink-0" />
+                          </Link>
+                          {client.domain_name && (
+                            <p className="text-[11px] text-muted font-mono flex items-center gap-1 mt-0.5">
+                              <Globe className="w-3 h-3 text-accent shrink-0" />
+                              {client.domain_name}
+                            </p>
+                          )}
+                        </div>
+                        <ClientStatusBadge status={client.status} />
+                      </div>
+
+                      {renewalAlert && (
+                        <div className="flex items-center justify-between p-2 rounded-md bg-amber-500/10 border border-amber-500/20 text-xs">
+                          <span className="text-amber-600 dark:text-amber-400 text-[11px] font-medium flex items-center gap-1.5">
+                            <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                            {renewalAlert.text}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={alertingClientId === client.id}
+                            className="text-[11px] h-6 px-2 text-emerald-600 border-emerald-500/30"
+                            onClick={async () => {
+                              setAlertingClientId(client.id);
+                              try {
+                                const res = await sendClientWhatsAppRenewalAlert(client, client.contacts, true);
+                                if (res.updatedClient) {
+                                  setClients((prev) =>
+                                    prev.map((c) => (c.id === client.id ? res.updatedClient! : c))
+                                  );
+                                }
+                              } finally {
+                                setAlertingClientId(null);
+                              }
+                            }}
+                          >
+                            {alertingClientId === client.id ? (
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                            ) : (
+                              <MessageCircle className="w-3 h-3" />
+                            )}
+                            <span className="ml-1">WhatsApp</span>
+                          </Button>
+                        </div>
                       )}
+
+                      <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                        <span className="text-muted text-[11px]">
+                          {client.contacts?.[0]?.name ? `Contact: ${client.contacts[0].name}` : "No contact"}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          <Link href={`/clients/view?id=${client.id}`}>
+                            <Button variant="outline" size="sm" className="text-xs h-7 px-2.5">
+                              View Profile
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs h-7 px-2 text-muted hover:text-danger hover:bg-danger-bg"
+                            onClick={(e) =>
+                              handleDeleteClient(
+                                e,
+                                client.id,
+                                client.client_name || client.company_name || "Client"
+                              )
+                            }
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            /* Pipeline Board View */
+            <div className="space-y-4">
+              {/* Mobile Stage Switcher Pills */}
+              <div className="sm:hidden flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                <button
+                  onClick={() => setMobilePipelineStage("all")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                    mobilePipelineStage === "all"
+                      ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                      : "bg-surface border border-border text-muted hover:text-foreground"
+                  }`}
+                >
+                  All ({filteredClients.length})
+                </button>
+                {pipelineStages.map((stage) => {
+                  const count = filteredClients.filter((c) => c.status === stage.id).length;
+                  return (
+                    <button
+                      key={stage.id}
+                      onClick={() => setMobilePipelineStage(stage.id)}
+                      className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+                        mobilePipelineStage === stage.id
+                          ? "bg-accent text-accent-foreground font-semibold shadow-xs"
+                          : "bg-surface border border-border text-muted hover:text-foreground"
+                      }`}
+                    >
+                      <span>{stage.label}</span>
+                      <span className="font-mono text-[10px] opacity-80">({count})</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 overflow-x-auto pb-4">
+                {pipelineStages.map((stage) => {
+                  const stageClients = filteredClients.filter(
+                    (c) => c.status === stage.id
+                  );
+                  const isHiddenOnMobile =
+                    mobilePipelineStage !== "all" && mobilePipelineStage !== stage.id;
+
+                  return (
+                    <div
+                      key={stage.id}
+                      className={`rounded-lg border border-border bg-surface-elevated/40 p-3 min-w-[220px] flex-col ${
+                        isHiddenOnMobile ? "hidden sm:flex" : "flex"
+                      }`}
+                    >
+                      {/* Column Header */}
+                      <div className="flex items-center justify-between pb-3 mb-3 border-b border-border/60">
+                        <span className="text-xs font-semibold text-foreground">
+                          {stage.label}
+                        </span>
+                        <span className="text-[11px] font-mono px-1.5 py-0.5 rounded bg-surface border border-border text-muted">
+                          {stageClients.length}
+                        </span>
+                      </div>
+
+                      {/* Cards in stage */}
+                      <div className="space-y-2.5 flex-1 overflow-y-auto max-h-[calc(100vh-280px)]">
+                        {stageClients.length === 0 ? (
+                          <div className="p-4 text-center text-xs text-muted/60 border border-dashed border-border/40 rounded-md">
+                            No clients in this stage
+                          </div>
+                        ) : (
+                          stageClients.map((c) => {
+                            const alert = getClientRenewalAlert(c);
+                            return (
+                            <div
+                              key={c.id}
+                              className="p-3 rounded-md border border-border bg-surface hover:border-accent/40 shadow-xs transition-colors space-y-2"
+                            >
+                              <div className="flex items-start justify-between gap-1">
+                                <Link
+                                  href={`/clients/view?id=${c.id}`}
+                                  className="text-xs font-semibold text-foreground hover:text-accent line-clamp-1"
+                                >
+                                  {c.client_name || c.company_name}
+                                </Link>
+                                {alert && (
+                                  <span
+                                    className={`shrink-0 text-[9px] font-medium px-1.5 py-0.2 rounded-full border ${
+                                      alert.expired
+                                        ? "bg-red-500/10 text-red-500 border-red-500/30"
+                                        : "bg-amber-500/10 text-amber-500 border-amber-500/30"
+                                    }`}
+                                    title={alert.text}
+                                  >
+                                    {alert.text}
+                                  </span>
+                                )}
+                              </div>
+
+                              {c.domain_name && (
+                                <p className="text-[10px] text-muted font-mono truncate flex items-center gap-1">
+                                  <Globe className="w-2.5 h-2.5 text-accent shrink-0" />
+                                  {c.domain_name}
+                                </p>
+                              )}
+
+                              {c.industry && (
+                                <p className="text-[11px] text-muted line-clamp-1">
+                                  {c.industry}
+                                </p>
+                              )}
+
+                              {alert && (
+                                <button
+                                  type="button"
+                                  disabled={alertingClientId === c.id}
+                                  onClick={async (e) => {
+                                    e.stopPropagation();
+                                    setAlertingClientId(c.id);
+                                    try {
+                                      const res = await sendClientWhatsAppRenewalAlert(c, c.contacts, true);
+                                      if (res.updatedClient) {
+                                        setClients((prev) =>
+                                          prev.map((item) => (item.id === c.id ? res.updatedClient! : item))
+                                        );
+                                      }
+                                    } finally {
+                                      setAlertingClientId(null);
+                                    }
+                                  }}
+                                  className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 text-[10px] font-medium transition-colors disabled:opacity-60"
+                                  title="Auto-fetch phone & live WHOIS and send WhatsApp reminder"
+                                >
+                                  {alertingClientId === c.id ? (
+                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                  ) : (
+                                    <MessageCircle className="w-3 h-3" />
+                                  )}
+                                  <span>{alertingClientId === c.id ? "WHOIS..." : "WhatsApp Alert"}</span>
+                                </button>
+                              )}
+
+                              <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[10px]">
+                                <span className="text-muted truncate max-w-[90px]">
+                                  {c.account_manager?.full_name?.split(" ")[0] || "Unassigned"}
+                                </span>
+
+                                <div className="flex items-center gap-1">
+                                  {/* Quick Move Stage */}
+                                  <select
+                                    value={c.status}
+                                    onChange={(e) =>
+                                      handleStatusChange(c.id, e.target.value as ClientStatus)
+                                    }
+                                    className="bg-surface-elevated border border-border rounded px-1 py-0.5 text-[10px] text-muted hover:text-foreground"
+                                  >
+                                    {pipelineStages.map((st) => (
+                                      <option key={st.id} value={st.id}>
+                                        Move: {st.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="button"
+                                    onClick={(e) =>
+                                      handleDeleteClient(
+                                        e,
+                                        c.id,
+                                        c.client_name || c.company_name || "Client"
+                                      )
+                                    }
+                                    className="p-1 rounded text-muted hover:text-danger hover:bg-danger-bg transition-colors"
+                                    title="Delete Client"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

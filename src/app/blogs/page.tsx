@@ -306,8 +306,8 @@ export default function AdminBlogsPage() {
           </div>
         </div>
 
-        {/* Articles Table */}
-        <Card className="border-border overflow-hidden shadow-2xs">
+        {/* Articles Table & Mobile Cards */}
+        <Card className="border-border overflow-hidden shadow-2xs hidden md:block">
           <Table>
             <TableHeader>
               <TableRow className="bg-surface-elevated/40">
@@ -415,7 +415,7 @@ export default function AdminBlogsPage() {
                         <button
                           onClick={() => handleDeletePost(post.id)}
                           title="Delete Article"
-                          className="p-1.5 rounded text-muted hover:text-rose-500 hover:bg-rose-500/10 transition-colors"
+                          className="p-1.5 rounded text-muted hover:text-danger hover:bg-danger-bg transition-colors"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -427,6 +427,103 @@ export default function AdminBlogsPage() {
             </TableBody>
           </Table>
         </Card>
+
+        {/* Mobile Blog Posts List */}
+        <div className="md:hidden space-y-3">
+          {isLoading ? (
+            <div className="p-8 text-center text-xs text-muted font-mono">
+              Loading technical dispatches...
+            </div>
+          ) : filteredPosts.length === 0 ? (
+            <div className="p-8 text-center border border-dashed border-border rounded-lg text-xs text-muted">
+              No articles found matching criteria.
+            </div>
+          ) : (
+            filteredPosts.map((post) => (
+              <div
+                key={post.id}
+                className="p-4 rounded-lg border border-border bg-surface shadow-xs space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-surface-elevated text-muted border border-border">
+                        {post.category}
+                      </span>
+                      {post.featured && (
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-accent/10 text-accent border border-accent/20">
+                          ★ Featured
+                        </span>
+                      )}
+                    </div>
+                    <h4 className="text-sm font-medium text-foreground mt-1.5 leading-snug">
+                      {post.title}
+                    </h4>
+                    <p className="text-[11px] font-mono text-muted mt-0.5">
+                      /blog/{post.slug}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => handleToggleStatus(post)}
+                    title="Click to toggle status"
+                  >
+                    <Badge
+                      variant={
+                        post.status === "published"
+                          ? "success"
+                          : post.status === "draft"
+                          ? "warning"
+                          : "secondary"
+                      }
+                      className="capitalize"
+                    >
+                      {post.status}
+                    </Badge>
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+                  <span className="text-[11px] font-mono text-muted">
+                    {post.read_time_minutes}m read • {post.views_count} views
+                  </span>
+
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={`/blog/${post.slug}`}
+                      target="_blank"
+                      className="p-1.5 rounded text-muted hover:text-accent border border-border bg-surface-elevated"
+                      title="View Live Article"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </Link>
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEditingPost(post);
+                        setIsModalOpen(true);
+                      }}
+                      className="text-xs h-7 px-2.5"
+                    >
+                      <Edit2 className="w-3 h-3 mr-1" /> Edit
+                    </Button>
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDeletePost(post.id)}
+                      className="text-xs h-7 px-2 text-muted hover:text-danger hover:bg-danger-bg"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
       {/* Editor Modal */}
