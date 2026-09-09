@@ -781,31 +781,45 @@
     transform:scale(1.1);
   }
   .stage h4{font-size:1.05rem; color:var(--text-on-ink); font-weight:600;}
-  .stage p{font-size:0.88rem; color:var(--text-dim-on-ink);}
   .stage-bar{
     height:6px;
+    width:100%;
     background:rgba(234,241,248,0.14);
     border-radius:3px;
     overflow:hidden;
     position:relative;
+    display:block;
   }
   .stage-bar span{
-    position:absolute; left:0; top:0; bottom:0;
+    display:block;
+    position:absolute;
+    left:0;
+    top:0;
+    bottom:0;
+    height:100%;
     width:0%;
     background:linear-gradient(90deg, var(--brass), var(--brass-2));
     transition:width 1.2s cubic-bezier(.2,.7,.2,1);
-    position:relative;
     overflow:hidden;
+    border-radius:3px;
   }
   .stage-bar span::after{
     content:"";
     position:absolute;
-    top:0; bottom:0;
+    top:0;
+    bottom:0;
+    left:0;
     width:40px;
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
-    animation:stageGlowSweep 2.4s infinite ease-in-out;
+    height:100%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
+    animation:stageGlowSweep 2.2s infinite ease-in-out;
   }
-  .stage.in .stage-bar span{width:var(--fill);}
+  .stage.in .stage-bar span,
+  .schedule.in .stage .stage-bar span,
+  .process.in .stage .stage-bar span,
+  .stage:hover .stage-bar span{
+    width:var(--fill, 100%);
+  }
   .stage-time{display:none;}
 
   @media (max-width:820px){

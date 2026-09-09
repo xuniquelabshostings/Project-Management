@@ -29,13 +29,19 @@ export function LandingInteractive() {
 
     // 2. Scroll reveal observer with support for grid stagger
     const revealEls = document.querySelectorAll(
-      ".reveal, .stage, .sheet-grid, .work-grid, .pricing-grid, .faq-grid, .contact-channels, .contact-card, .contact-form-panel"
+      ".reveal, .stage, .schedule, .process, .sheet-grid, .work-grid, .pricing-grid, .faq-grid, .contact-channels, .contact-card, .contact-form-panel"
     );
     const revealIo = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           if (entry.isIntersecting) {
             entry.target.classList.add("in");
+            // If the schedule container is revealed, make sure all child stages are marked in
+            if (entry.target.classList.contains("schedule") || entry.target.classList.contains("process")) {
+              entry.target.querySelectorAll(".stage").forEach((s, idx) => {
+                setTimeout(() => s.classList.add("in"), idx * 120);
+              });
+            }
             revealIo.unobserve(entry.target);
           }
         });
