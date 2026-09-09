@@ -430,12 +430,27 @@ export const LANDING_HTML = `<header>
           </div>
         </a>
 
+        <a class="case" href="https://wasimhealthcare.com/" target="_blank" rel="noopener">
+          <div class="case-figure" aria-hidden="true">
+            <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"><path d="M200 50V210M120 130H280" stroke="#0E2A47" stroke-width="1.2" fill="none"/><circle cx="200" cy="130" r="70" stroke="#0E2A47" stroke-width="0.8" stroke-dasharray="4 4" fill="none"/><rect x="145" y="75" width="110" height="110" rx="4" stroke="#0E2A47" stroke-width="0.8" fill="none"/></svg>
+          </div>
+          <div class="case-top">
+            <span class="case-tag mono">CASE — MED-03</span>
+            <span class="case-action mono">LIVE SITE ↗</span>
+          </div>
+          <div class="case-body">
+            <h3>Wasim Health Care</h3>
+            <p>An international medical tourism &amp; surgery portal connecting global patients with India's top JCI-accredited hospitals, treatments, and quotes.</p>
+            <div class="stack"><span>Medical Portal</span><span>Hospital Network</span><span>Quote &amp; Care Flow</span></div>
+          </div>
+        </a>
+
         <a class="case" href="https://freedomnex.com/" target="_blank" rel="noopener">
           <div class="case-figure" aria-hidden="true">
             <svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"><path d="M40 220V60M40 60L110 120L180 40L250 150L320 90L390 200" stroke="#0E2A47" stroke-width="1" fill="none"/></svg>
           </div>
           <div class="case-top">
-            <span class="case-tag mono">CASE — EDU-03</span>
+            <span class="case-tag mono">CASE — EDU-04</span>
             <span class="case-action mono">LIVE SITE ↗</span>
           </div>
           <div class="case-body">
