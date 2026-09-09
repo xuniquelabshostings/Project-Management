@@ -1,9 +1,126 @@
 "use client";
 
 import { useEffect } from "react";
+import { getLocalCaseFiles, getLocalPlans } from "@/lib/mock-data";
+
+function getFigureSvg(figureType: string, imageUrl?: string | null, title?: string) {
+  if (figureType === "image" && imageUrl) {
+    return `<img src="${imageUrl}" alt="${title || "Project"}" style="width:100%; height:100%; object-fit:cover; opacity:0.65;" />`;
+  }
+  if (figureType === "circle") {
+    return `<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"><circle cx="120" cy="130" r="70" stroke="#0E2A47" stroke-width="1" fill="none"/><circle cx="280" cy="130" r="45" stroke="#0E2A47" stroke-width="1" fill="none"/></svg>`;
+  }
+  if (figureType === "cross") {
+    return `<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"><path d="M200 50V210M120 130H280" stroke="#0E2A47" stroke-width="1.2" fill="none"/><circle cx="200" cy="130" r="70" stroke="#0E2A47" stroke-width="0.8" stroke-dasharray="4 4" fill="none"/><rect x="145" y="75" width="110" height="110" rx="4" stroke="#0E2A47" stroke-width="0.8" fill="none"/></svg>`;
+  }
+  if (figureType === "wave") {
+    return `<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"><path d="M40 220V60M40 60L110 120L180 40L250 150L320 90L390 200" stroke="#0E2A47" stroke-width="1" fill="none"/></svg>`;
+  }
+  if (figureType === "blueprint") {
+    return `<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"><rect x="50" y="40" width="300" height="180" stroke="#0E2A47" stroke-width="1" fill="none"/><path d="M50 90H350M150 90V220" stroke="#0E2A47" stroke-width="0.8"/></svg>`;
+  }
+  return `<svg viewBox="0 0 400 260" xmlns="http://www.w3.org/2000/svg"><rect x="60" y="60" width="280" height="140" stroke="#0E2A47" stroke-width="1" fill="none"/><path d="M60 130H340" stroke="#0E2A47" stroke-width="1"/></svg>`;
+}
+
+function syncDynamicContent() {
+  // 1. Sync Case Files (#work .work-grid)
+  const workGrid = document.querySelector("#work .work-grid");
+  if (workGrid) {
+    const cases = getLocalCaseFiles().filter((c) => c.featured);
+    if (cases.length > 0) {
+      workGrid.innerHTML = cases
+        .map(
+          (c) => `
+          <a class="case" href="${c.live_url}" target="_blank" rel="noopener">
+            <div class="case-figure" aria-hidden="true">
+              ${getFigureSvg(c.figure_type, c.image_url, c.title)}
+            </div>
+            <div class="case-top">
+              <span class="case-tag mono">${c.case_code}</span>
+              <span class="case-action mono">LIVE SITE ↗</span>
+            </div>
+            <div class="case-body">
+              <h3>${c.title}</h3>
+              <p>${c.description}</p>
+              <div class="stack">${c.tags.map((t) => `<span>${t}</span>`).join("")}</div>
+            </div>
+          </a>
+        `
+        )
+        .join("");
+    }
+  }
+
+  // 2. Sync Development Plans (#pricing .pricing-grid)
+  const pricingGrid = document.querySelector("#pricing .pricing-grid");
+  if (pricingGrid) {
+    const plans = getLocalPlans();
+    if (plans.length > 0) {
+      pricingGrid.innerHTML = plans
+        .map((p) => {
+          const isPopular = p.is_popular;
+          const isCustom = p.is_custom_quote;
+          const ribbonHtml = isPopular
+            ? `<div class="pricing-ribbon">${p.popular_badge || "★ MOST POPULAR"}</div>`
+            : "";
+          const priceBoxHtml = isCustom
+            ? `<div class="pricing-price-box"><div class="pricing-curr custom-curr">Custom Scope</div></div>`
+            : `<div class="pricing-price-box">
+                ${p.original_price ? `<span class="pricing-orig">${p.currency_symbol || "₹"}${p.original_price}</span>` : ""}
+                <div class="pricing-curr">
+                  <span class="curr-sym">${p.currency_symbol || "₹"}</span>${p.price}<span style="font-size:0.9rem; font-family:var(--sans, sans-serif); color:var(--text-dim-on-paper);">${p.price_period || "/-"}</span>
+                </div>
+              </div>`;
+
+          const featuresHtml = p.features
+            .map(
+              (f) => `
+              <li>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                <span>${f}</span>
+              </li>`
+            )
+            .join("");
+
+          const waMsg =
+            p.whatsapp_message ||
+            `Hi Xunique Labs, I'm interested in the ${p.name} Plan (${
+              isCustom ? "Custom Quote" : `${p.currency_symbol || "₹"}${p.price}${p.price_period || "/-"}`
+            }, ${p.delivery_time}). Let's discuss scope and get started.`;
+          const waLink = `https://wa.me/917458845252?text=${encodeURIComponent(waMsg)}`;
+
+          return `
+            <div class="pricing-card ${isPopular ? "popular" : ""} ${isCustom ? "custom" : ""}">
+              ${ribbonHtml}
+              <div class="pricing-card-header">
+                <span class="pricing-num mono">${p.sheet_code}</span>
+                <h3 class="pricing-title">${p.name}</h3>
+                <div class="pricing-delivery mono">
+                  <span>🕓 Delivery: ${p.delivery_time}</span>
+                </div>
+              </div>
+              ${priceBoxHtml}
+              <ul class="pricing-features">
+                ${featuresHtml}
+              </ul>
+              <div class="pricing-footer">
+                <a href="${waLink}" class="btn ${isPopular ? "btn-primary" : "btn-ghost"}" target="_blank" rel="noopener">${p.cta_text || "Book Now →"}</a>
+              </div>
+            </div>
+          `;
+        })
+        .join("");
+    }
+  }
+}
 
 export function LandingInteractive() {
   useEffect(() => {
+    // 0. Dynamic sync from stored case files and development plans
+    syncDynamicContent();
+    const handleContentUpdate = () => syncDynamicContent();
+    window.addEventListener("xunique_site_content_updated", handleContentUpdate);
+
     // 1. Mobile nav toggle
     const navToggle = document.getElementById("navToggle");
     const navLinks = document.getElementById("navLinks");
@@ -236,6 +353,7 @@ _Dispatched via Xunique Labs Studio Contact Desk_`;
       if (heroRafId) cancelAnimationFrame(heroRafId);
       if (clockInterval) clearInterval(clockInterval);
       if (contactForm) contactForm.removeEventListener("submit", handleContactSubmit);
+      window.removeEventListener("xunique_site_content_updated", handleContentUpdate);
     };
   }, []);
 

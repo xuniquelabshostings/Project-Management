@@ -1,4 +1,4 @@
-import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile, Agreement, BlogPost } from "@/types/database.types";
+import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile, Agreement, BlogPost, CaseFile, DevelopmentPlan } from "@/types/database.types";
 
 export const MOCK_PROFILES: Profile[] = [
   {
@@ -828,6 +828,367 @@ export function incrementLocalBlogPostViews(slug: string): void {
       localStorage.setItem(LOCAL_STORAGE_BLOGS_KEY, JSON.stringify(posts));
     }
   } catch {}
+}
+
+/* ==========================================================================
+   CASE FILES (PORTFOLIO WORK) STORAGE & HELPERS
+   ========================================================================== */
+
+export const LOCAL_STORAGE_CASE_FILES_KEY = "xunique_custom_case_files";
+
+export const DEFAULT_CASE_FILES: CaseFile[] = [
+  {
+    id: "case-ourhomeindia",
+    case_code: "CASE — PROP-01",
+    title: "OurHomeIndia",
+    client_name: "OurHomeIndia Realty",
+    description: "A pan-India real estate discovery platform — verified buy/rent listings, an advisor enquiry flow, and property-owner onboarding.",
+    live_url: "https://www.ourhomeindia.com/",
+    category: "Real Estate",
+    tags: ["Web Platform", "Property Search", "Lead Gen"],
+    figure_type: "grid",
+    featured: true,
+    display_order: 1,
+    created_at: "2026-01-10T10:00:00Z",
+    updated_at: "2026-01-10T10:00:00Z",
+  },
+  {
+    id: "case-mrnothing",
+    case_code: "CASE — RTL-02",
+    title: "Mr.Nothing",
+    client_name: "Mr.Nothing Brand",
+    description: "A curated lifestyle showcase spanning clothing, electronics, and home & kitchen essentials, built for fast browsing and discovery.",
+    live_url: "https://mrnothing.in/",
+    category: "E-Commerce",
+    tags: ["E-commerce", "Catalog UI", "Payment Flow"],
+    figure_type: "circle",
+    featured: true,
+    display_order: 2,
+    created_at: "2026-01-15T12:00:00Z",
+    updated_at: "2026-01-15T12:00:00Z",
+  },
+  {
+    id: "case-wasimhealthcare",
+    case_code: "CASE — MED-03",
+    title: "Wasim Health Care",
+    client_name: "Wasim Health Care & Services",
+    description: "An international medical tourism & surgery portal connecting global patients with India's top JCI-accredited hospitals, treatments, and quotes.",
+    live_url: "https://wasimhealthcare.com/",
+    category: "Healthcare",
+    tags: ["Medical Portal", "Hospital Network", "Quote & Care Flow"],
+    figure_type: "cross",
+    featured: true,
+    display_order: 3,
+    created_at: "2026-01-20T14:00:00Z",
+    updated_at: "2026-01-20T14:00:00Z",
+  },
+  {
+    id: "case-freedomnex",
+    case_code: "CASE — EDU-04",
+    title: "FreedomNex",
+    client_name: "FreedomNex Philosophy",
+    description: "A digital learning sanctuary for classical Islamic philosophy — structured curricula, a wisdom anthology, and a reverent manuscript-inspired interface.",
+    live_url: "https://freedomnex.com/",
+    category: "Education",
+    tags: ["Content Platform", "Learning Paths", "Manuscript UI"],
+    figure_type: "wave",
+    featured: true,
+    display_order: 4,
+    created_at: "2026-01-25T16:00:00Z",
+    updated_at: "2026-01-25T16:00:00Z",
+  },
+];
+
+export function getLocalCaseFiles(): CaseFile[] {
+  if (typeof window === "undefined") {
+    return DEFAULT_CASE_FILES;
+  }
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_CASE_FILES_KEY);
+    if (!raw) {
+      localStorage.setItem(LOCAL_STORAGE_CASE_FILES_KEY, JSON.stringify(DEFAULT_CASE_FILES));
+      return DEFAULT_CASE_FILES;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.sort((a: CaseFile, b: CaseFile) => a.display_order - b.display_order);
+    }
+    return DEFAULT_CASE_FILES;
+  } catch (err) {
+    console.error("Error reading local case files:", err);
+    return DEFAULT_CASE_FILES;
+  }
+}
+
+export function saveLocalCaseFile(caseData: Partial<CaseFile> & { title: string }): CaseFile {
+  const cases = getLocalCaseFiles();
+  const now = new Date().toISOString();
+
+  if (caseData.id) {
+    const existingIndex = cases.findIndex((c) => c.id === caseData.id);
+    if (existingIndex >= 0) {
+      const updated: CaseFile = {
+        ...cases[existingIndex],
+        ...caseData,
+        tags: Array.isArray(caseData.tags) ? caseData.tags : cases[existingIndex].tags,
+        updated_at: now,
+      };
+      cases[existingIndex] = updated;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(LOCAL_STORAGE_CASE_FILES_KEY, JSON.stringify(cases));
+        window.dispatchEvent(new Event("xunique_site_content_updated"));
+      }
+      return updated;
+    }
+  }
+
+  const newCase: CaseFile = {
+    id: caseData.id || `case-${Date.now()}`,
+    case_code: caseData.case_code || `CASE — DEV-${String(cases.length + 1).padStart(2, "0")}`,
+    title: caseData.title,
+    client_name: caseData.client_name || null,
+    description: caseData.description || "",
+    live_url: caseData.live_url || "https://xuniquelabs.com/",
+    category: caseData.category || "Web Platform",
+    tags: Array.isArray(caseData.tags) && caseData.tags.length > 0 ? caseData.tags : ["Web Platform"],
+    figure_type: caseData.figure_type || "blueprint",
+    custom_svg: caseData.custom_svg || null,
+    image_url: caseData.image_url || null,
+    featured: caseData.featured ?? true,
+    display_order: caseData.display_order || cases.length + 1,
+    created_at: now,
+    updated_at: now,
+  };
+
+  cases.push(newCase);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_CASE_FILES_KEY, JSON.stringify(cases));
+    window.dispatchEvent(new Event("xunique_site_content_updated"));
+  }
+  return newCase;
+}
+
+export function deleteLocalCaseFile(id: string): void {
+  const cases = getLocalCaseFiles().filter((c) => c.id !== id);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_CASE_FILES_KEY, JSON.stringify(cases));
+    window.dispatchEvent(new Event("xunique_site_content_updated"));
+  }
+}
+
+export function resetCaseFilesToDefault(): CaseFile[] {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_CASE_FILES_KEY, JSON.stringify(DEFAULT_CASE_FILES));
+    window.dispatchEvent(new Event("xunique_site_content_updated"));
+  }
+  return DEFAULT_CASE_FILES;
+}
+
+/* ==========================================================================
+   DEVELOPMENT PLANS (PRICING TIERS) STORAGE & HELPERS
+   ========================================================================== */
+
+export const LOCAL_STORAGE_PLANS_KEY = "xunique_custom_plans";
+
+export const DEFAULT_PLANS: DevelopmentPlan[] = [
+  {
+    id: "plan-starter",
+    sheet_code: "SHEET P-01",
+    name: "Starter",
+    price: "1,999",
+    original_price: "2999",
+    currency_symbol: "₹",
+    price_period: "/-",
+    delivery_time: "1–2 Days",
+    is_popular: false,
+    popular_badge: null,
+    is_custom_quote: false,
+    features: [
+      "Single page high-converting landing page",
+      "Mobile, tablet & desktop responsive",
+      "WhatsApp & lead capture form integration",
+      "Fast page speed & basic SEO configuration",
+      "Free deployment & domain setup support",
+      "Full source code ownership",
+      "14 days post-launch warranty support",
+    ],
+    cta_text: "Get Started →",
+    whatsapp_message: "Hi Xunique Labs, I'm interested in the Starter Plan (₹1,999/- Landing Page, 1–2 Days). How can we proceed further?",
+    display_order: 1,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-01-01T10:00:00Z",
+  },
+  {
+    id: "plan-business",
+    sheet_code: "SHEET P-02",
+    name: "Business Website",
+    price: "7,999",
+    original_price: "11999",
+    currency_symbol: "₹",
+    price_period: "/-",
+    delivery_time: "3–5 Days",
+    is_popular: true,
+    popular_badge: "★ MOST POPULAR",
+    is_custom_quote: false,
+    features: [
+      "Up to 5 custom designed & responsive pages",
+      "Next.js / modern high-performance architecture",
+      "Bespoke UI/UX design drawn to spec",
+      "Interactive inquiry forms & contact dispatch",
+      "Google Search & On-Page SEO optimization",
+      "Social media, maps & WhatsApp scoping",
+      "Ultra-fast loading speed (<1.5s)",
+      "30 days dedicated support & revisions",
+    ],
+    cta_text: "Book Now →",
+    whatsapp_message: "Hi Xunique Labs, I'm interested in the Business Website Plan (₹7,999/- Up to 5 Pages, 3–5 Days). Let's discuss and book this project.",
+    display_order: 2,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-01-01T10:00:00Z",
+  },
+  {
+    id: "plan-ecommerce",
+    sheet_code: "SHEET P-03",
+    name: "E-Commerce Store",
+    price: "9,999",
+    original_price: "14999",
+    currency_symbol: "₹",
+    price_period: "/-",
+    delivery_time: "7–10 Days",
+    is_popular: false,
+    popular_badge: null,
+    is_custom_quote: false,
+    features: [
+      "Dynamic product catalog with categories & search",
+      "Shopping cart, wishlist & smooth checkout",
+      "Payment gateway (Razorpay / Stripe / UPI QR)",
+      "Dedicated admin dashboard for products & orders",
+      "Automated email confirmations & order tracking",
+      "Mobile-optimized high-converting checkout flow",
+      "Inventory management & discount coupon system",
+      "45 days maintenance & staff onboarding walkthrough",
+    ],
+    cta_text: "Launch Store →",
+    whatsapp_message: "Hi Xunique Labs, I'm interested in the E-Commerce Store Plan (₹9,999/- WooCommerce & Payments, 7–10 Days). Let's launch my store.",
+    display_order: 3,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-01-01T10:00:00Z",
+  },
+  {
+    id: "plan-custom",
+    sheet_code: "SHEET P-04",
+    name: "Custom Application",
+    price: "Custom",
+    original_price: null,
+    currency_symbol: "",
+    price_period: "Scope Based",
+    delivery_time: "2–4 Weeks",
+    is_popular: false,
+    popular_badge: null,
+    is_custom_quote: true,
+    features: [
+      "Full-stack Web Platform or Cross-Platform Mobile App",
+      "Custom relational database & scalable backend APIs",
+      "Secure user authentication & role-based permissions",
+      "Third-party REST/GraphQL APIs & CRM integrations",
+      "Production cloud infrastructure (AWS / Vercel / Supabase)",
+      "Automated CI/CD deployment pipeline",
+      "Comprehensive architectural blueprint & spec docs",
+      "Milestone-based delivery & SLA guarantee",
+    ],
+    cta_text: "Discuss Project →",
+    whatsapp_message: "Hi Xunique Labs, I'm looking for a Custom Large-Scale Application Plan (Full-Stack Web/Mobile). Let's discuss our project scope, milestones, and negotiate pricing.",
+    display_order: 4,
+    created_at: "2026-01-01T10:00:00Z",
+    updated_at: "2026-01-01T10:00:00Z",
+  },
+];
+
+export function getLocalPlans(): DevelopmentPlan[] {
+  if (typeof window === "undefined") {
+    return DEFAULT_PLANS;
+  }
+  try {
+    const raw = localStorage.getItem(LOCAL_STORAGE_PLANS_KEY);
+    if (!raw) {
+      localStorage.setItem(LOCAL_STORAGE_PLANS_KEY, JSON.stringify(DEFAULT_PLANS));
+      return DEFAULT_PLANS;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed.sort((a: DevelopmentPlan, b: DevelopmentPlan) => a.display_order - b.display_order);
+    }
+    return DEFAULT_PLANS;
+  } catch (err) {
+    console.error("Error reading local plans:", err);
+    return DEFAULT_PLANS;
+  }
+}
+
+export function saveLocalPlan(planData: Partial<DevelopmentPlan> & { name: string }): DevelopmentPlan {
+  const plans = getLocalPlans();
+  const now = new Date().toISOString();
+
+  if (planData.id) {
+    const existingIndex = plans.findIndex((p) => p.id === planData.id);
+    if (existingIndex >= 0) {
+      const updated: DevelopmentPlan = {
+        ...plans[existingIndex],
+        ...planData,
+        features: Array.isArray(planData.features) ? planData.features : plans[existingIndex].features,
+        updated_at: now,
+      };
+      plans[existingIndex] = updated;
+      if (typeof window !== "undefined") {
+        localStorage.setItem(LOCAL_STORAGE_PLANS_KEY, JSON.stringify(plans));
+        window.dispatchEvent(new Event("xunique_site_content_updated"));
+      }
+      return updated;
+    }
+  }
+
+  const newPlan: DevelopmentPlan = {
+    id: planData.id || `plan-${Date.now()}`,
+    sheet_code: planData.sheet_code || `SHEET P-${String(plans.length + 1).padStart(2, "0")}`,
+    name: planData.name,
+    price: planData.price || "1,999",
+    original_price: planData.original_price || null,
+    currency_symbol: planData.currency_symbol !== undefined ? planData.currency_symbol : "₹",
+    price_period: planData.price_period !== undefined ? planData.price_period : "/-",
+    delivery_time: planData.delivery_time || "3–5 Days",
+    is_popular: planData.is_popular ?? false,
+    popular_badge: planData.popular_badge || (planData.is_popular ? "★ POPULAR" : null),
+    is_custom_quote: planData.is_custom_quote ?? false,
+    features: Array.isArray(planData.features) && planData.features.length > 0 ? planData.features : ["Responsive Design", "Full Code Ownership"],
+    cta_text: planData.cta_text || "Get Started →",
+    whatsapp_message: planData.whatsapp_message || null,
+    display_order: planData.display_order || plans.length + 1,
+    created_at: now,
+    updated_at: now,
+  };
+
+  plans.push(newPlan);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_PLANS_KEY, JSON.stringify(plans));
+    window.dispatchEvent(new Event("xunique_site_content_updated"));
+  }
+  return newPlan;
+}
+
+export function deleteLocalPlan(id: string): void {
+  const plans = getLocalPlans().filter((p) => p.id !== id);
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_PLANS_KEY, JSON.stringify(plans));
+    window.dispatchEvent(new Event("xunique_site_content_updated"));
+  }
+}
+
+export function resetPlansToDefault(): DevelopmentPlan[] {
+  if (typeof window !== "undefined") {
+    localStorage.setItem(LOCAL_STORAGE_PLANS_KEY, JSON.stringify(DEFAULT_PLANS));
+    window.dispatchEvent(new Event("xunique_site_content_updated"));
+  }
+  return DEFAULT_PLANS;
 }
 
 

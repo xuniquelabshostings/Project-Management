@@ -264,6 +264,44 @@ export interface BlogPost {
   updated_at?: string;
 }
 
+export interface CaseFile {
+  id: string;
+  case_code: string;
+  title: string;
+  client_name?: string | null;
+  description: string;
+  live_url: string;
+  category: string;
+  tags: string[];
+  figure_type: "grid" | "circle" | "cross" | "wave" | "blueprint" | "custom_svg" | "image";
+  custom_svg?: string | null;
+  image_url?: string | null;
+  featured: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface DevelopmentPlan {
+  id: string;
+  sheet_code: string;
+  name: string;
+  price: string;
+  original_price?: string | null;
+  currency_symbol: string;
+  price_period?: string | null;
+  delivery_time: string;
+  is_popular: boolean;
+  popular_badge?: string | null;
+  is_custom_quote: boolean;
+  features: string[];
+  cta_text: string;
+  whatsapp_message?: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at?: string;
+}
+
 export interface AppNotification {
   id: string;
   user_id: string;

@@ -19,6 +19,8 @@ import {
   Globe,
   ExternalLink,
   BookOpen,
+  CreditCard,
+  Layers,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { useRole } from "@/lib/hooks/useRole";
@@ -89,6 +91,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       name: "Blog Posts",
       href: "/blogs",
       icon: BookOpen,
+      show: true,
+    },
+    {
+      name: "Case Files",
+      href: "/case-files",
+      icon: Layers,
+      show: true,
+    },
+    {
+      name: "Dev Plans",
+      href: "/plans",
+      icon: CreditCard,
       show: true,
     },
     {
