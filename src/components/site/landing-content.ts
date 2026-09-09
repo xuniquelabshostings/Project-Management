@@ -221,7 +221,7 @@ export const LANDING_HTML = `<header>
     <nav class="nav">
       <a href="#top" class="logo" aria-label="Xunique Labs — Website Development Services in Delhi">
         <span class="mark">
-          <img src="/assets/logo-mark-nobg.png" alt="Xunique Labs — Website Development Services &amp; App Development in Delhi" loading="eager">
+          <img src="/assets/only-x.png" alt="Xunique Labs — Website Development Services &amp; App Development in Delhi" loading="eager">
         </span>
       </a>
       <ul class="nav-links" id="navLinks">
@@ -979,7 +979,7 @@ export const LANDING_HTML = `<header>
   <div class="wrap">
     <div class="foot-logo">
       <span class="mark mark-plaque">
-        <img src="/assets/logo-mark-nobg.png" alt="Xunique Labs — Website Development Services in Delhi" loading="lazy">
+        <img src="/assets/only-x.png" alt="Xunique Labs — Website Development Services in Delhi" loading="lazy">
       </span>
     </div>
   </div>

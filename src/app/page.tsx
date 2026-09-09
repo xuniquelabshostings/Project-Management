@@ -70,6 +70,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://xuniquelabs.com",
   },
+  icons: {
+    icon: "/assets/only-x.png",
+    shortcut: "/assets/only-x.png",
+    apple: "/assets/only-x.png",
+  },
 };
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || "";

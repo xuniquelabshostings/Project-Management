@@ -28,6 +28,11 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Xunique Labs | Internal Client Management",
   description: "Unified client, project, financial, and team management for Xunique Labs",
+  icons: {
+    icon: "/assets/only-x.png",
+    shortcut: "/assets/only-x.png",
+    apple: "/assets/only-x.png",
+  },
 };
 
 export default function RootLayout({

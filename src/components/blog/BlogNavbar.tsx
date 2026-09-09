@@ -84,7 +84,7 @@ export function BlogNavbar() {
         <div className="flex items-center gap-4 sm:gap-6 min-w-0">
           <Link href="/" className="flex items-center gap-2.5 sm:gap-3 group shrink-0">
             <img
-              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/assets/logo-mark-nobg.png`}
+              src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/assets/only-x.png`}
               alt="Xunique Labs"
               className="w-7 h-7 sm:w-8 sm:h-8 object-contain transition-transform group-hover:scale-105"
             />
