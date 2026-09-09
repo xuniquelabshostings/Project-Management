@@ -48,6 +48,9 @@ export interface Client {
   company_name: string;
   industry: string | null;
   website: string | null;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
   status: ClientStatus;
   lead_source: LeadSource | null;
   tags: string[];
@@ -83,6 +86,7 @@ export interface Contact {
   role: string | null;
   email: string | null;
   phone: string | null;
+  address?: string | null;
   preferred_channel: "whatsapp" | "email" | "phone" | "other" | null;
   created_at: string;
 }
@@ -101,6 +105,18 @@ export interface Project {
   created_at: string;
   updated_at: string;
   client?: Client;
+  // Domain & Infrastructure
+  domain_name?: string | null;
+  domain_registrar?: string | null;
+  domain_registered_at?: string | null;
+  domain_renew_at?: string | null;
+  domain_price?: number | null;
+  hosting_provider?: string | null;
+  hosting_plan?: string | null;
+  hosting_activated_at?: string | null;
+  hosting_renew_at?: string | null;
+  hosting_price?: number | null;
+  renewal_alert_days?: number | null;
 }
 
 export interface ProjectMember {

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Client, ClientStatus, LeadSource, Profile } from "@/types/database.types";
+import { Client, ClientStatus, LeadSource, Profile, Contact } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { saveLocalClient, generateUUID, deleteLocalClient, isValidUuid } from "@/lib/mock-data";
@@ -20,6 +20,10 @@ import {
   AlertCircle,
   Calendar,
   Trash2,
+  User,
+  Mail,
+  Phone,
+  MapPin,
 } from "lucide-react";
 
 interface ClientModalProps {
@@ -43,6 +47,14 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Primary Contact Details State
+  const [contactName, setContactName] = useState("");
+  const [contactRole, setContactRole] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [contactPhone, setContactPhone] = useState("");
+  const [contactAddress, setContactAddress] = useState("");
+  const [preferredChannel, setPreferredChannel] = useState<"whatsapp" | "email" | "phone" | "other">("whatsapp");
+
   // Domain & Hosting Lifecycle State
   const [domainName, setDomainName] = useState("");
   const [domainRegistrar, setDomainRegistrar] = useState("");
@@ -60,6 +72,7 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
   const [isWhoisLoading, setIsWhoisLoading] = useState(false);
   const [whoisSuccessMsg, setWhoisSuccessMsg] = useState<string | null>(null);
   const [whoisErrorMsg, setWhoisErrorMsg] = useState<string | null>(null);
+  const lastFetchedDomainRef = useRef<string>("");
 
   useEffect(() => {
     async function loadAccountManagers() {
@@ -86,6 +99,15 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       setTagsInput(clientToEdit.tags ? clientToEdit.tags.join(", ") : "");
       setAccountManagerId(clientToEdit.account_manager_id || "");
 
+      // Populate contact details from primary contact or client fields
+      const primaryContact = clientToEdit.contacts && clientToEdit.contacts.length > 0 ? clientToEdit.contacts[0] : null;
+      setContactName(primaryContact?.name || "");
+      setContactRole(primaryContact?.role || "");
+      setContactEmail(primaryContact?.email || clientToEdit.email || "");
+      setContactPhone(primaryContact?.phone || clientToEdit.phone || "");
+      setContactAddress(primaryContact?.address || clientToEdit.address || "");
+      setPreferredChannel((primaryContact?.preferred_channel as any) || "whatsapp");
+
       // Populate domain & hosting
       setDomainName(clientToEdit.domain_name || "");
       setDomainRegistrar(clientToEdit.domain_registrar || "");
@@ -98,6 +120,7 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       setHostingRenewAt(clientToEdit.hosting_renew_at || "");
       setHostingPrice(clientToEdit.hosting_price != null ? String(clientToEdit.hosting_price) : "");
       setRenewalAlertDays(clientToEdit.renewal_alert_days ?? 30);
+      lastFetchedDomainRef.current = (clientToEdit.domain_name || "").toLowerCase().trim();
 
       // Expand if client already has infra data
       if (
@@ -119,6 +142,14 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       setTagsInput("");
       setAccountManagerId(currentProfile?.id || "");
 
+      // Reset contact details
+      setContactName("");
+      setContactRole("");
+      setContactEmail("");
+      setContactPhone("");
+      setContactAddress("");
+      setPreferredChannel("whatsapp");
+
       setDomainName("");
       setDomainRegistrar("");
       setDomainRegisteredAt("");
@@ -131,11 +162,60 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       setHostingPrice("");
       setRenewalAlertDays(30);
       setShowInfraSection(false);
+      lastFetchedDomainRef.current = "";
     }
     setErrorMsg(null);
     setWhoisErrorMsg(null);
     setWhoisSuccessMsg(null);
   }, [clientToEdit, isOpen, currentProfile]);
+
+  // Auto-fetch WHOIS domain details as user enters/types a domain or website URL
+  useEffect(() => {
+    const raw = (domainName || website || "").trim();
+    if (!raw) return;
+
+    const clean = raw
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0]
+      .split(":")[0];
+
+    // Must look like a real domain (has a dot, 4+ chars, valid TLD ending)
+    if (!clean.includes(".") || clean.length < 4 || clean.endsWith(".")) {
+      return;
+    }
+
+    const tld = clean.split(".").pop();
+    if (!tld || tld.length < 2) return;
+
+    if (lastFetchedDomainRef.current === clean) return;
+
+    const debounceTimer = setTimeout(async () => {
+      lastFetchedDomainRef.current = clean;
+      setIsWhoisLoading(true);
+      setWhoisErrorMsg(null);
+      setWhoisSuccessMsg(null);
+
+      try {
+        const data = await lookupDomainWhois(clean);
+        if (data.success) {
+          if (data.domain) setDomainName(data.domain);
+          if (data.registrar) setDomainRegistrar(data.registrar);
+          if (data.registeredAt) setDomainRegisteredAt(data.registeredAt);
+          if (data.expiresAt) setDomainRenewAt(data.expiresAt);
+          setWhoisSuccessMsg(`Auto-detected registrar & expiry for ${data.domain}!`);
+          setShowInfraSection(true);
+        }
+      } catch (err: any) {
+        // silent fail on auto-fetch
+      } finally {
+        setIsWhoisLoading(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(debounceTimer);
+  }, [domainName, website]);
 
   const handleWhoisLookup = async () => {
     const target = (domainName || website || "").trim();
@@ -191,19 +271,46 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
 
   const saveLocally = (tagsArray: string[], safeAMId: string | null) => {
     const trimmedName = clientName.trim();
+    const existingContacts = clientToEdit?.contacts || [];
+    let updatedContacts = [...existingContacts];
+
+    // If contact info was provided, update existing primary contact or add a new one
+    if (contactName.trim() || contactEmail.trim() || contactPhone.trim() || contactAddress.trim()) {
+      const contactPayload: Contact = {
+        id: updatedContacts.length > 0 ? updatedContacts[0].id : generateUUID(),
+        client_id: clientToEdit?.id || generateUUID(),
+        name: contactName.trim() || trimmedName,
+        role: contactRole.trim() || (updatedContacts[0]?.role || "Primary Contact"),
+        email: contactEmail.trim() || null,
+        phone: contactPhone.trim() || null,
+        address: contactAddress.trim() || null,
+        preferred_channel: preferredChannel,
+        created_at: updatedContacts[0]?.created_at || new Date().toISOString(),
+      };
+
+      if (updatedContacts.length > 0) {
+        updatedContacts[0] = contactPayload;
+      } else {
+        updatedContacts = [contactPayload];
+      }
+    }
+
     const mockClient: Client = {
       id: clientToEdit?.id || generateUUID(),
       client_name: trimmedName,
       company_name: trimmedName,
       industry: industry.trim() || null,
       website: website.trim() || null,
+      email: contactEmail.trim() || null,
+      phone: contactPhone.trim() || null,
+      address: contactAddress.trim() || null,
       status,
       lead_source: leadSource,
       tags: tagsArray,
       account_manager_id: safeAMId || null,
       account_manager:
         accountManagers.find((am) => am.id === safeAMId) || currentProfile || null,
-      contacts: clientToEdit?.contacts || [],
+      contacts: updatedContacts,
       ...buildInfraPayload(),
       created_at: clientToEdit?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -248,6 +355,9 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       company_name: trimmedName,
       industry: industry.trim() || null,
       website: website.trim() || null,
+      email: contactEmail.trim() || null,
+      phone: contactPhone.trim() || null,
+      address: contactAddress.trim() || null,
       status,
       lead_source: leadSource,
       tags: tagsArray,
@@ -257,6 +367,8 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
     };
 
     try {
+      let savedClientId: string = clientToEdit?.id || "";
+
       if (clientToEdit) {
         const { data, error } = await supabase
           .from("clients")
@@ -266,8 +378,7 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
           .single();
 
         if (error) throw error;
-        saveLocalClient(data as Client);
-        onSaved(data as Client);
+        savedClientId = (data as Client).id;
       } else {
         const { data, error } = await supabase
           .from("clients")
@@ -279,10 +390,31 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
           .single();
 
         if (error) throw error;
-        saveLocalClient(data as Client);
-        onSaved(data as Client);
+        savedClientId = (data as Client).id;
       }
-      onClose();
+
+      // Sync contact to Supabase contacts table if provided and ID is valid UUID
+      if (savedClientId && isValidUuid(savedClientId) && (contactName.trim() || contactEmail.trim() || contactPhone.trim() || contactAddress.trim())) {
+        try {
+          const contactPayload = {
+            client_id: savedClientId,
+            name: contactName.trim() || trimmedName,
+            role: contactRole.trim() || "Primary Contact",
+            email: contactEmail.trim() || null,
+            phone: contactPhone.trim() || null,
+            preferred_channel: preferredChannel,
+          };
+          if (clientToEdit?.contacts && clientToEdit.contacts.length > 0 && isValidUuid(clientToEdit.contacts[0].id)) {
+            await supabase.from("contacts").update(contactPayload).eq("id", clientToEdit.contacts[0].id);
+          } else {
+            await supabase.from("contacts").insert(contactPayload);
+          }
+        } catch (cErr) {
+          console.warn("Could not sync contact to Supabase contacts table:", cErr);
+        }
+      }
+
+      saveLocally(tagsArray, safeAccountManagerId);
     } catch (err: any) {
       if (
         err.message?.toLowerCase().includes("row-level security") ||
@@ -443,6 +575,106 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
           />
+        </div>
+
+        {/* Primary Contact Details Section */}
+        <div className="border border-border/80 rounded-lg p-3.5 bg-surface-elevated/20 space-y-3">
+          <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
+            <User className="h-3.5 w-3.5 text-accent" />
+            <span>Primary Contact & Communication Details</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Contact Person Name
+              </label>
+              <Input
+                placeholder="e.g. Sarah Jenkins or John Doe"
+                value={contactName}
+                onChange={(e) => setContactName(e.target.value)}
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Role / Designation <span className="text-muted font-normal">(Optional)</span>
+              </label>
+              <Input
+                placeholder="e.g. Founder, CEO, Project Lead"
+                value={contactRole}
+                onChange={(e) => setContactRole(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Email Address
+              </label>
+              <div className="relative">
+                <Input
+                  type="email"
+                  placeholder="e.g. sarah@client.com"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  className="pl-8"
+                />
+                <Mail className="w-3.5 h-3.5 text-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Phone / WhatsApp Number
+              </label>
+              <div className="relative">
+                <Input
+                  type="tel"
+                  placeholder="e.g. +91 98765 43210 or +1 555 0192"
+                  value={contactPhone}
+                  onChange={(e) => setContactPhone(e.target.value)}
+                  className="pl-8"
+                />
+                <Phone className="w-3.5 h-3.5 text-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Physical / Office Address <span className="text-muted font-normal">(Optional)</span>
+              </label>
+              <div className="relative">
+                <Input
+                  placeholder="e.g. Suite 400, 100 Innovation Way"
+                  value={contactAddress}
+                  onChange={(e) => setContactAddress(e.target.value)}
+                  className="pl-8"
+                />
+                <MapPin className="w-3.5 h-3.5 text-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-foreground mb-1">
+                Preferred Channel
+              </label>
+              <select
+                value={preferredChannel}
+                onChange={(e) =>
+                  setPreferredChannel(
+                    e.target.value as "whatsapp" | "email" | "phone" | "other"
+                  )
+                }
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent"
+              >
+                <option value="whatsapp">WhatsApp (Direct message / calls)</option>
+                <option value="email">Email</option>
+                <option value="phone">Phone Call</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Collapsible Domain & Hosting Infrastructure Section */}

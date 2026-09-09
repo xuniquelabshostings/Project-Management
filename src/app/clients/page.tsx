@@ -135,11 +135,23 @@ export default function ClientsPage() {
 
   const filteredClients = useMemo(() => {
     return clients.filter((c) => {
+      const q = searchQuery.toLowerCase();
       const clientDisplayName = c.client_name || c.company_name || "";
       const matchesSearch =
-        clientDisplayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (c.industry && c.industry.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (c.tags && c.tags.some((t) => t.toLowerCase().includes(searchQuery.toLowerCase())));
+        clientDisplayName.toLowerCase().includes(q) ||
+        (c.industry && c.industry.toLowerCase().includes(q)) ||
+        (c.email && c.email.toLowerCase().includes(q)) ||
+        (c.phone && c.phone.toLowerCase().includes(q)) ||
+        (c.address && c.address.toLowerCase().includes(q)) ||
+        (c.domain_name && c.domain_name.toLowerCase().includes(q)) ||
+        (c.tags && c.tags.some((t) => t.toLowerCase().includes(q))) ||
+        (c.contacts &&
+          c.contacts.some(
+            (ct) =>
+              ct.name.toLowerCase().includes(q) ||
+              (ct.email && ct.email.toLowerCase().includes(q)) ||
+              (ct.phone && ct.phone.toLowerCase().includes(q))
+          ));
 
       const matchesStatus =
         selectedStatus === "all" || c.status === selectedStatus;

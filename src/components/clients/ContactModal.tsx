@@ -27,6 +27,7 @@ export function ContactModal({
   const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [preferredChannel, setPreferredChannel] = useState<"whatsapp" | "email" | "phone" | "other">("whatsapp");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -37,12 +38,14 @@ export function ContactModal({
       setRole(contactToEdit.role || "");
       setEmail(contactToEdit.email || "");
       setPhone(contactToEdit.phone || "");
+      setAddress(contactToEdit.address || "");
       setPreferredChannel((contactToEdit.preferred_channel as any) || "whatsapp");
     } else {
       setName("");
       setRole("");
       setEmail("");
       setPhone("");
+      setAddress("");
       setPreferredChannel("whatsapp");
     }
     setErrorMsg(null);
@@ -56,6 +59,7 @@ export function ContactModal({
       role: role.trim() || null,
       email: email.trim() || null,
       phone: phone.trim() || null,
+      address: address.trim() || null,
       preferred_channel: preferredChannel,
       created_at: contactToEdit?.created_at || new Date().toISOString(),
     };
@@ -193,6 +197,17 @@ export function ContactModal({
               onChange={(e) => setPhone(e.target.value)}
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-xs font-medium text-foreground mb-1.5">
+            Physical / Office Address <span className="text-muted font-normal">(Optional)</span>
+          </label>
+          <Input
+            placeholder="e.g. Suite 400, 100 Innovation Way, San Francisco, CA"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+          />
         </div>
 
         <div>

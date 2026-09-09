@@ -15,6 +15,8 @@ import {
   Users,
   Plus,
   MessageSquare,
+  Globe,
+  Server,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { formatINR } from "@/lib/utils";
@@ -315,6 +317,24 @@ function ProjectWorkspaceContent() {
                   <span className="flex items-center gap-1 font-mono text-[11px]">
                     <Calendar className="w-3.5 h-3.5 text-muted" />
                     {project.start_date || "TBD"} &rarr; {project.end_date || "TBD"}
+                  </span>
+                )}
+                {(project.domain_name || project.client?.domain_name) && (
+                  <a
+                    href={`https://${(project.domain_name || project.client?.domain_name || "").replace(/^https?:\/\//, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 font-mono text-xs text-accent hover:underline"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    {(project.domain_name || project.client?.domain_name || "").replace(/^https?:\/\//, "")}
+                  </a>
+                )}
+                {(project.hosting_provider || project.client?.hosting_provider) && (
+                  <span className="flex items-center gap-1 font-mono text-xs text-muted">
+                    <Server className="w-3.5 h-3.5 text-accent" />
+                    {project.hosting_provider || project.client?.hosting_provider}
+                    {(project.hosting_plan || project.client?.hosting_plan) ? ` (${project.hosting_plan || project.client?.hosting_plan})` : ""}
                   </span>
                 )}
               </div>

@@ -25,6 +25,9 @@ import {
   MessageCircle,
   Loader2,
   Trash2,
+  Mail,
+  Phone,
+  MapPin,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGate } from "@/components/auth/RoleGate";
@@ -342,6 +345,29 @@ function ClientDetailContent() {
                   >
                     <Globe className="w-3.5 h-3.5" /> {client.website.replace(/^https?:\/\//, "")}
                   </a>
+                )}
+                {client.email && (
+                  <a
+                    href={`mailto:${client.email}`}
+                    className="flex items-center gap-1 text-muted hover:text-foreground transition-colors"
+                  >
+                    <Mail className="w-3.5 h-3.5 text-accent" /> {client.email}
+                  </a>
+                )}
+                {client.phone && (
+                  <a
+                    href={`https://wa.me/${client.phone.replace(/[^\d]/g, "")}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1 text-muted hover:text-success transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5 text-success" /> {client.phone}
+                  </a>
+                )}
+                {client.address && (
+                  <span className="flex items-center gap-1 text-muted">
+                    <MapPin className="w-3.5 h-3.5 text-accent" /> {client.address}
+                  </span>
                 )}
               </div>
 

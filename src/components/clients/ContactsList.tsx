@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Mail, Phone, MessageSquare, Edit2, Trash2, Plus, UserCheck } from "lucide-react";
+import { Mail, Phone, MessageSquare, Edit2, Trash2, Plus, UserCheck, MapPin } from "lucide-react";
 import { Contact } from "@/types/database.types";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -81,6 +81,12 @@ export function ContactsList({ clientId, contacts, onContactsUpdated }: Contacts
                   <div>
                     <h4 className="text-sm font-medium text-foreground">{contact.name}</h4>
                     {contact.role && <p className="text-xs text-muted">{contact.role}</p>}
+                    {contact.address && (
+                      <p className="text-[11px] text-muted flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-2.5 h-2.5 shrink-0 text-accent" />
+                        <span className="truncate max-w-[200px]">{contact.address}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
 
