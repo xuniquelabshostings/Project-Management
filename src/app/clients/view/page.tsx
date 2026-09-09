@@ -228,6 +228,10 @@ function ClientDetailContent() {
     }
   };
 
+  useEffect(() => {
+    fetchClientFullData();
+  }, [clientId]);
+
   const handleDeleteClient = async () => {
     if (!client) return;
     const name = client.client_name || client.company_name || "this client";
