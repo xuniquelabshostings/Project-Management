@@ -262,7 +262,9 @@ export function InvoiceModal({
     const isDemo =
       !session ||
       (profile?.id && profile.id.startsWith("00000000")) ||
-      !isValidUuid(clientId);
+      !isValidUuid(clientId) ||
+      (invoiceToEdit && !isValidUuid(invoiceToEdit.id)) ||
+      (projectId && !isValidUuid(projectId));
 
     if (isDemo) {
       saveLocally();

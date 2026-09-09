@@ -1,7 +1,7 @@
 import { Client, Contact, getClientName } from "@/types/database.types";
 import { lookupDomainWhois, DomainWhoisResult } from "@/lib/domain-whois";
 import { supabase } from "@/lib/supabase/client";
-import { getLocalClients, saveLocalClient } from "@/lib/mock-data";
+import { getLocalClients, saveLocalClient, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 export interface SendWhatsAppAlertResult {
@@ -36,16 +36,18 @@ export async function resolveClientPhone(
 
   // C. If still empty, query Supabase
   if (!contactsList || contactsList.length === 0) {
-    try {
-      const { data } = await supabase
-        .from("contacts")
-        .select("*")
-        .eq("client_id", client.id);
-      if (data && data.length > 0) {
-        contactsList = data as Contact[];
+    if (isValidUuid(client.id)) {
+      try {
+        const { data } = await supabase
+          .from("contacts")
+          .select("*")
+          .eq("client_id", client.id);
+        if (data && data.length > 0) {
+          contactsList = data as Contact[];
+        }
+      } catch (err) {
+        console.warn("Could not query contacts for client:", err);
       }
-    } catch (err) {
-      console.warn("Could not query contacts for client:", err);
     }
   }
 
@@ -103,19 +105,21 @@ export async function fetchAndSyncDomainWhois(
     saveLocalClient(updatedClient);
 
     // Try persisting to Supabase if accessible
-    try {
-      await supabase
-        .from("clients")
-        .update({
-          domain_name: updatedClient.domain_name,
-          domain_registrar: updatedClient.domain_registrar,
-          domain_registered_at: updatedClient.domain_registered_at,
-          domain_renew_at: updatedClient.domain_renew_at,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", client.id);
-    } catch (err) {
-      // Ignored if demo mode or offline
+    if (isValidUuid(client.id)) {
+      try {
+        await supabase
+          .from("clients")
+          .update({
+            domain_name: updatedClient.domain_name,
+            domain_registrar: updatedClient.domain_registrar,
+            domain_registered_at: updatedClient.domain_registered_at,
+            domain_renew_at: updatedClient.domain_renew_at,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", client.id);
+      } catch (err) {
+        // Ignored if demo mode or offline
+      }
     }
   }
 

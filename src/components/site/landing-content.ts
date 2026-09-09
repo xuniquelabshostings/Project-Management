@@ -41,8 +41,10 @@ export const LANDING_SCHEMA = `{
       },
       "address": {
         "@type": "PostalAddress",
-        "addressLocality": "Delhi",
+        "streetAddress": "Bharat Nagar, New Friends Colony",
+        "addressLocality": "New Delhi",
         "addressRegion": "Delhi",
+        "postalCode": "110025",
         "addressCountry": "IN"
       },
       "geo": {
@@ -896,7 +898,7 @@ export const LANDING_HTML = `<header>
               ></iframe>
             </div>
             <div class="map-card-footer">
-              <span class="mono text-muted text-[11px]">📍 Delhi 110025, India • Coords: 28.5662° N, 77.2709° E</span>
+              <span class="mono text-muted text-[11px]">📍 Bharat Nagar, New Friends Colony, New Delhi, Delhi, 110025 • Coords: 28.5662° N, 77.2709° E</span>
               <a href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28" target="_blank" rel="noopener noreferrer" class="mono text-[11px] text-accent hover:underline">Directions ↗</a>
             </div>
           </div>

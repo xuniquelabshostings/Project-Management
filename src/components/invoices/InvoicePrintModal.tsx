@@ -404,7 +404,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
               <div className="max-w-xs text-xs text-slate-500 space-y-1">
                 <p className="font-semibold text-slate-700">Payment Notes:</p>
                 <p className="text-slate-600 italic">
-                  {invoice.notes || "Thank you for partnering with XUnique Labs. Prompt payment is appreciated."}
+                  {invoice.notes || "Thank you for partnering with Xunique Labs. Prompt payment is appreciated."}
                 </p>
               </div>
 

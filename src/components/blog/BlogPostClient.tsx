@@ -57,7 +57,26 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
 
       if (currentPost) {
         setPost(currentPost);
-        incrementLocalBlogPostViews(slug);
+
+        // Record real view (deduplicated per browser session to prevent reload spamming)
+        if (typeof window !== "undefined") {
+          const sessionKey = `xunique_blog_view_${slug}`;
+          if (!sessionStorage.getItem(sessionKey)) {
+            sessionStorage.setItem(sessionKey, "1");
+            incrementLocalBlogPostViews(slug);
+
+            // Attempt to increment in Supabase if post exists in DB
+            if (currentPost.id && !currentPost.id.startsWith("blog-")) {
+              try {
+                supabase
+                  .from("blog_posts")
+                  .update({ views_count: (currentPost.views_count || 0) + 1 })
+                  .eq("slug", slug)
+                  .then(() => {});
+              } catch {}
+            }
+          }
+        }
       }
 
       // 2. Load related posts

@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import Script from "next/script";
 import { LandingPage } from "@/components/site/LandingPage";
 import { LANDING_SCHEMA } from "@/components/site/landing-content";
 
@@ -86,6 +87,23 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: LANDING_SCHEMA }}
+      />
+      {/* Google Analytics (gtag.js) - Landing Page Only */}
+      <Script
+        src="https://www.googletagmanager.com/gtag/js?id=G-DZ2JY6S5GF"
+        strategy="afterInteractive"
+      />
+      <Script
+        id="google-tag-landing"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-DZ2JY6S5GF');
+          `,
+        }}
       />
       <LandingPage />
     </>

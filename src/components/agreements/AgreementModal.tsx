@@ -197,7 +197,7 @@ export function AgreementModal({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <div>
             <label className="block text-xs font-medium text-foreground mb-1.5">
-              Client Company *
+              Client Name (Second Party) *
             </label>
             <select
               value={clientId}

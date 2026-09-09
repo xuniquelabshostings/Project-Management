@@ -172,9 +172,17 @@ export function BlogModal({
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="font-serif text-lg font-bold text-foreground">
-                {editingPost ? "Edit Technical Article" : "Create Technical Article"}
-              </h2>
+              <div className="flex items-center gap-2">
+                <h2 className="font-serif text-lg font-bold text-foreground">
+                  {editingPost ? "Edit Technical Article" : "Create Technical Article"}
+                </h2>
+                {editingPost && (
+                  <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
+                    <Eye className="w-3 h-3" />
+                    {(editingPost.views_count || 0).toLocaleString()} views
+                  </span>
+                )}
+              </div>
               <p className="text-[11px] font-mono text-muted">
                 Xunique Labs Engineering Journal & Case Publishing
               </p>

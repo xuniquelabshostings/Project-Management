@@ -186,7 +186,7 @@ export default function ClientsPage() {
 
     // 2. Sync to Supabase if valid UUID
     try {
-      if (isValidUuid(clientId)) {
+      if (isValidUuid(clientId) && !clientId.includes("-local")) {
         await supabase
           .from("clients")
           .update({ status: newStatus, updated_at: new Date().toISOString() })

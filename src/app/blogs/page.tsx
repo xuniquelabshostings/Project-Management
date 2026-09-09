@@ -18,6 +18,9 @@ import {
   FileText,
   Radio,
   Globe,
+  TrendingUp,
+  ArrowUpDown,
+  Flame,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -47,6 +50,7 @@ export default function AdminBlogsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<"recent" | "views_desc" | "views_asc" | "read_time" | "title">("recent");
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -82,6 +86,17 @@ export default function AdminBlogsPage() {
 
   useEffect(() => {
     loadData();
+
+    // Listen for real-time blog views update events across the portal & tabs
+    const handleViewsUpdate = () => {
+      setPosts(getLocalBlogPosts());
+    };
+    window.addEventListener("xunique_blog_views_updated", handleViewsUpdate);
+    window.addEventListener("storage", handleViewsUpdate);
+    return () => {
+      window.removeEventListener("xunique_blog_views_updated", handleViewsUpdate);
+      window.removeEventListener("storage", handleViewsUpdate);
+    };
   }, []);
 
   const handleSavePost = async (postData: Partial<BlogPost> & { title: string }) => {
@@ -154,10 +169,14 @@ export default function AdminBlogsPage() {
   const publishedCount = posts.filter((p) => p.status === "published").length;
   const draftCount = posts.filter((p) => p.status === "draft").length;
   const totalViews = posts.reduce((sum, p) => sum + (p.views_count || 0), 0);
+  const topPost = useMemo(() => {
+    if (posts.length === 0) return null;
+    return [...posts].sort((a, b) => (b.views_count || 0) - (a.views_count || 0))[0];
+  }, [posts]);
 
-  // Filtered List
+  // Filtered and Sorted List
   const filteredPosts = useMemo(() => {
-    return posts.filter((post) => {
+    const list = posts.filter((post) => {
       const matchesStatus =
         statusFilter === "all" || post.status === statusFilter;
       const matchesCategory =
@@ -172,7 +191,25 @@ export default function AdminBlogsPage() {
 
       return matchesStatus && matchesCategory && matchesQuery;
     });
-  }, [posts, statusFilter, categoryFilter, searchQuery]);
+
+    // Apply Sorting
+    return list.sort((a, b) => {
+      if (sortBy === "views_desc") {
+        return (b.views_count || 0) - (a.views_count || 0);
+      }
+      if (sortBy === "views_asc") {
+        return (a.views_count || 0) - (b.views_count || 0);
+      }
+      if (sortBy === "read_time") {
+        return (b.read_time_minutes || 0) - (a.read_time_minutes || 0);
+      }
+      if (sortBy === "title") {
+        return a.title.localeCompare(b.title);
+      }
+      // Default recent
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [posts, statusFilter, categoryFilter, searchQuery, sortBy]);
 
   return (
     <DashboardLayout>
@@ -184,7 +221,7 @@ export default function AdminBlogsPage() {
               Technical Blog & Editorial Engine
             </h1>
             <p className="text-xs text-muted font-sans mt-0.5">
-              Draft, publish, and manage architectural write-ups and engineering dispatches for Xunique Labs.
+              Draft, publish, and manage architectural write-ups and engineering dispatches with live reader view analytics.
             </p>
           </div>
 
@@ -253,16 +290,24 @@ export default function AdminBlogsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-border shadow-2xs">
+          <Card className="border-border shadow-2xs bg-accent/5">
             <CardContent className="p-4 flex items-center justify-between">
               <div>
-                <span className="text-[11px] font-mono text-muted uppercase">Total Readers</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[11px] font-mono text-accent font-semibold uppercase">Total Views</span>
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                </div>
                 <div className="font-serif text-2xl font-bold text-foreground mt-1">
                   {totalViews.toLocaleString()}
                 </div>
+                {topPost && (topPost.views_count || 0) > 0 && (
+                  <p className="text-[10px] text-muted truncate max-w-[150px] mt-0.5" title={`Top: ${topPost.title} (${topPost.views_count} views)`}>
+                    Top: {topPost.title}
+                  </p>
+                )}
               </div>
-              <div className="w-9 h-9 rounded-lg bg-accent/10 border border-accent/20 flex items-center justify-center text-accent">
-                <Eye className="w-4 h-4" />
+              <div className="w-9 h-9 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center text-accent">
+                <Eye className="w-4.5 h-4.5" />
               </div>
             </CardContent>
           </Card>
@@ -280,7 +325,26 @@ export default function AdminBlogsPage() {
             />
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+            {/* Sort Order Selector */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-mono text-muted flex items-center gap-1">
+                <ArrowUpDown className="w-3 h-3 text-accent" />
+                Sort:
+              </span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="px-3 py-1.5 text-xs font-sans rounded-md border border-border bg-surface text-foreground focus:outline-none focus:ring-1 focus:ring-accent"
+              >
+                <option value="recent">Most Recent</option>
+                <option value="views_desc">Most Views (High → Low)</option>
+                <option value="views_asc">Fewest Views (Low → High)</option>
+                <option value="read_time">Longest Read</option>
+                <option value="title">Title (A → Z)</option>
+              </select>
+            </div>
+
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -386,8 +450,11 @@ export default function AdminBlogsPage() {
                       {post.read_time_minutes} min
                     </TableCell>
 
-                    <TableCell className="text-right font-mono text-xs text-muted">
-                      {post.views_count}
+                    <TableCell className="text-right">
+                      <div className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-foreground bg-surface-elevated px-2 py-0.5 rounded border border-border/80">
+                        <Eye className="w-3.5 h-3.5 text-accent" />
+                        <span>{(post.views_count || 0).toLocaleString()}</span>
+                      </div>
                     </TableCell>
 
                     <TableCell className="text-right">
@@ -484,9 +551,15 @@ export default function AdminBlogsPage() {
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
-                  <span className="text-[11px] font-mono text-muted">
-                    {post.read_time_minutes}m read • {post.views_count} views
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-mono text-muted">
+                      {post.read_time_minutes}m read
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-mono font-medium text-foreground bg-surface-elevated px-2 py-0.5 rounded border border-border/80">
+                      <Eye className="w-3 h-3 text-accent" />
+                      {(post.views_count || 0).toLocaleString()} views
+                    </span>
+                  </div>
 
                   <div className="flex items-center gap-1">
                     <Link

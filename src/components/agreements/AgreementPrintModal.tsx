@@ -308,7 +308,7 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
             <div className="grid grid-cols-2 gap-6 p-4 rounded-lg bg-slate-50 border border-slate-200 text-xs">
               <div>
                 <p className="font-mono uppercase font-bold text-[10px] text-slate-500 tracking-wider mb-1">
-                  SERVICE PROVIDER (AGENCY / DEVELOPER)
+                  FIRST PARTY (SERVICE PROVIDER / DEVELOPER)
                 </p>
                 <p className="font-bold text-slate-900 text-sm">{companyName}</p>
                 <p className="text-slate-600 mt-0.5">{branding.addressLine1}</p>
@@ -321,17 +321,18 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
 
               <div>
                 <p className="font-mono uppercase font-bold text-[10px] text-slate-500 tracking-wider mb-1">
-                  CLIENT (CUSTOMER)
+                  SECOND PARTY (CLIENT / CUSTOMER)
                 </p>
                 <p className="font-bold text-slate-900 text-sm">{clientName}</p>
-                <p className="text-slate-700 font-medium">{clientContactName}</p>
-                <p className="text-slate-600 mt-0.5">{clientEmail}</p>
-                {agreement.client?.website && (
-                  <p className="text-slate-500">{agreement.client.website}</p>
+                {clientEmail && (
+                  <p className="text-slate-600 mt-0.5">{clientEmail}</p>
                 )}
-                <p className="text-[11px] text-slate-500 mt-1">
-                  Industry: {agreement.client?.industry || "Commercial Enterprise"}
-                </p>
+                {agreement.client?.phone && (
+                  <p className="text-slate-600">{agreement.client.phone}</p>
+                )}
+                {agreement.client?.address && (
+                  <p className="text-slate-500 mt-0.5">{agreement.client.address}</p>
+                )}
               </div>
             </div>
 
@@ -345,8 +346,8 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
                     month: "long",
                     day: "numeric",
                   })}
-                </strong>, by and between <strong>{companyName}</strong> (the <strong>&quot;Service Provider&quot;</strong> / <strong>&quot;Developer&quot;</strong>) and{" "}
-                <strong>{clientName}</strong> (the <strong>&quot;Client&quot;</strong>).
+                </strong>, by and between <strong>{companyName}</strong> (the <strong>&quot;Service Provider&quot;</strong> / <strong>&quot;First Party&quot;</strong>) and{" "}
+                <strong>{clientName}</strong> (the <strong>&quot;Client&quot;</strong> / <strong>&quot;Second Party&quot;</strong>).
               </p>
               <p>
                 WHEREAS, Client desires to retain Service Provider as an independent software developer to perform bespoke digital engineering, architecture, and programming services; and WHEREAS, Service Provider agrees to perform such services strictly under the terms, statutory disclosures, and comprehensive legal liability exemptions set forth herein.
@@ -434,7 +435,7 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
                 {/* Developer Side */}
                 <div className="space-y-3">
                   <p className="font-mono uppercase font-bold text-[10px] text-slate-500 tracking-wider">
-                    FOR SERVICE PROVIDER (DEVELOPER)
+                    FOR FIRST PARTY (SERVICE PROVIDER)
                   </p>
                   <p className="font-bold text-slate-900">{companyName}</p>
 
@@ -468,17 +469,17 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
                 {/* Client Side */}
                 <div className="space-y-3">
                   <p className="font-mono uppercase font-bold text-[10px] text-slate-500 tracking-wider">
-                    FOR CLIENT (CUSTOMER)
+                    FOR SECOND PARTY (CLIENT)
                   </p>
                   <p className="font-bold text-slate-900">{clientName}</p>
 
                   <div className="pt-2">
                     <div className="h-12 border-b border-dashed border-slate-400 w-48 mb-1"></div>
                     <p className="text-[10px] font-medium text-slate-700 uppercase tracking-wider mt-1">
-                      Authorized Signatory / Officer
+                      Authorized Signature
                     </p>
                     <p className="text-[10px] text-slate-500">
-                      Name: {clientContactName}
+                      Name: {clientName}
                     </p>
                     <p className="text-[10px] text-slate-500">
                       Date: ________________________

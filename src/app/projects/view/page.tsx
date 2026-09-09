@@ -17,10 +17,13 @@ import {
   MessageSquare,
   Globe,
   Server,
+  AlertTriangle,
+  MessageCircle,
+  Loader2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { formatINR } from "@/lib/utils";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ProjectStatusBadge } from "@/components/projects/ProjectStatusBadge";
@@ -29,7 +32,7 @@ import { KanbanBoard } from "@/components/kanban/KanbanBoard";
 import { MilestonesList } from "@/components/projects/MilestonesList";
 import { ProjectTeamList } from "@/components/projects/ProjectTeamList";
 import { TaskModal } from "@/components/tasks/TaskModal";
-import { Project, Task, Milestone, ProjectMember, ProjectStatus } from "@/types/database.types";
+import { Project, Task, Milestone, ProjectMember, ProjectStatus, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
 import {
@@ -39,6 +42,48 @@ import {
   getLocalTasks,
   isValidUuid,
 } from "@/lib/mock-data";
+import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
+
+function getRenewalStatus(renewDateStr?: string | null, alertDays = 30) {
+  if (!renewDateStr) return null;
+  const target = new Date(renewDateStr);
+  const now = new Date();
+  target.setHours(0, 0, 0, 0);
+  now.setHours(0, 0, 0, 0);
+  const diffTime = target.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) {
+    return {
+      status: "expired" as const,
+      label: `Expired ${Math.abs(diffDays)}d ago`,
+      diffDays,
+      badgeClass: "bg-red-500/10 text-red-500 border-red-500/30",
+    };
+  }
+  if (diffDays === 0) {
+    return {
+      status: "due_today" as const,
+      label: "Expires Today",
+      diffDays: 0,
+      badgeClass: "bg-red-500/10 text-red-500 border-red-500/30",
+    };
+  }
+  if (diffDays <= alertDays) {
+    return {
+      status: "expiring_soon" as const,
+      label: `${diffDays} days left`,
+      diffDays,
+      badgeClass: "bg-amber-500/10 text-amber-500 border-amber-500/30",
+    };
+  }
+  return {
+    status: "active" as const,
+    label: `${diffDays} days left`,
+    diffDays,
+    badgeClass: "bg-emerald-500/10 text-emerald-500 border-emerald-500/30",
+  };
+}
 
 function ProjectWorkspaceContent() {
   const searchParams = useSearchParams();
@@ -51,8 +96,52 @@ function ProjectWorkspaceContent() {
   const [members, setMembers] = useState<ProjectMember[]>([]);
   const [activeTab, setActiveTab] = useState<"kanban" | "milestones">("kanban");
   const [isLoading, setIsLoading] = useState(true);
+  const [isAlertSending, setIsAlertSending] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+
+  const handleSendWhatsAppAlert = async () => {
+    if (!project) return;
+    setIsAlertSending(true);
+    try {
+      const clientForAlert = project.client || (project.client_id ? getLocalClients().find((c) => c.id === project.client_id) : undefined) || {
+        id: project.client_id,
+        company_name: project.name,
+        client_name: project.name,
+        domain_name: project.domain_name,
+        domain_registrar: project.domain_registrar,
+        domain_registered_at: project.domain_registered_at,
+        domain_renew_at: project.domain_renew_at,
+        domain_price: project.domain_price,
+        hosting_provider: project.hosting_provider,
+        hosting_plan: project.hosting_plan,
+        hosting_activated_at: project.hosting_activated_at,
+        hosting_renew_at: project.hosting_renew_at,
+        hosting_price: project.hosting_price,
+        renewal_alert_days: project.renewal_alert_days,
+        status: "active" as const,
+        tags: [],
+        account_manager_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const res = await sendClientWhatsAppRenewalAlert(clientForAlert as Client, (clientForAlert as any).contacts, true);
+      if (res.updatedClient) {
+        setProject((prev) => (prev ? {
+          ...prev,
+          domain_name: res.updatedClient?.domain_name ?? prev.domain_name,
+          domain_registrar: res.updatedClient?.domain_registrar ?? prev.domain_registrar,
+          domain_registered_at: res.updatedClient?.domain_registered_at ?? prev.domain_registered_at,
+          domain_renew_at: res.updatedClient?.domain_renew_at ?? prev.domain_renew_at,
+        } : null));
+      }
+    } catch (err: any) {
+      console.error("Failed to send WhatsApp alert:", err);
+    } finally {
+      setIsAlertSending(false);
+    }
+  };
 
   const fetchProjectData = async () => {
     if (!projectId) return;
@@ -372,6 +461,218 @@ function ProjectWorkspaceContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Infrastructure & Service Renewals Section */}
+      {(() => {
+        const domainRenewDate = project.domain_renew_at || project.client?.domain_renew_at;
+        const hostingRenewDate = project.hosting_renew_at || project.client?.hosting_renew_at;
+        const alertDays = project.renewal_alert_days || project.client?.renewal_alert_days || 30;
+
+        const domainStatus = getRenewalStatus(domainRenewDate, alertDays);
+        const hostingStatus = getRenewalStatus(hostingRenewDate, alertDays);
+        const hasAlert =
+          (domainStatus && (domainStatus.status === "expiring_soon" || domainStatus.status === "expired" || domainStatus.status === "due_today")) ||
+          (hostingStatus && (hostingStatus.status === "expiring_soon" || hostingStatus.status === "expired" || hostingStatus.status === "due_today"));
+
+        const domainName = project.domain_name || project.client?.domain_name;
+        const domainRegistrar = project.domain_registrar || project.client?.domain_registrar;
+        const domainRegisteredAt = project.domain_registered_at || project.client?.domain_registered_at;
+        const domainPrice = project.domain_price ?? project.client?.domain_price;
+
+        const hostingProvider = project.hosting_provider || project.client?.hosting_provider;
+        const hostingPlan = project.hosting_plan || project.client?.hosting_plan;
+        const hostingActivatedAt = project.hosting_activated_at || project.client?.hosting_activated_at;
+        const hostingPrice = project.hosting_price ?? project.client?.hosting_price;
+
+        const hasInfra = Boolean(domainName || hostingProvider || domainRenewDate || hostingRenewDate);
+
+        return (
+          <Card className="border-border bg-surface shadow-xs">
+            <CardHeader className="py-3 px-5 border-b border-border/60 flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <Globe className="w-4 h-4 text-accent" />
+                <CardTitle className="text-sm font-semibold">Infrastructure & Service Renewals</CardTitle>
+                {hasAlert && (
+                  <span className="flex items-center gap-1 text-[11px] font-medium bg-amber-500/15 text-amber-500 border border-amber-500/30 px-2 py-0.5 rounded-full">
+                    <AlertTriangle className="w-3 h-3" /> Renewal Alert
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {hasInfra && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isAlertSending}
+                    className="text-xs h-7 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 border-emerald-500/30 dark:hover:bg-emerald-950/30 font-medium disabled:opacity-60"
+                    onClick={handleSendWhatsAppAlert}
+                    title="Automatically queries live WHOIS and opens WhatsApp with client renewal dates"
+                  >
+                    {isAlertSending ? (
+                      <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin text-emerald-500" />
+                    ) : (
+                      <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-500" />
+                    )}
+                    <span>{isAlertSending ? "Fetching WHOIS..." : "WhatsApp Renewal Alert"}</span>
+                  </Button>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
+                  <Edit2 className="w-3 h-3 mr-1" /> {hasInfra ? "Edit Infra" : "Setup Infra"}
+                </Button>
+              </div>
+            </CardHeader>
+
+            <CardContent className="p-5">
+              {!hasInfra ? (
+                <div className="flex flex-col sm:flex-row items-center justify-between p-4 rounded-lg bg-surface-elevated/40 border border-dashed border-border gap-3 text-center sm:text-left">
+                  <div>
+                    <p className="text-xs font-semibold text-foreground">No domain or hosting infrastructure tracked</p>
+                    <p className="text-[11px] text-muted mt-0.5">
+                      Store domain registrar, expiration dates, hosting plans, and send automatic WhatsApp renewal reminders.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="text-xs shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5 mr-1" /> Configure Domain & Hosting
+                  </Button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Domain Card */}
+                  <div className="p-4 rounded-lg border border-border/80 bg-surface-elevated/40 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-md bg-accent/10 text-accent">
+                            <Globe className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-semibold text-foreground">Domain Registration</h4>
+                            <p className="text-[10px] text-muted">
+                              {domainRegistrar || "Registrar unrecorded"}
+                            </p>
+                          </div>
+                        </div>
+                        {domainStatus && (
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${domainStatus.badgeClass}`}
+                          >
+                            {domainStatus.label}
+                          </span>
+                        )}
+                      </div>
+
+                      {domainName ? (
+                        <div className="my-2">
+                          <a
+                            href={`https://${domainName.replace(/^https?:\/\//, "")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm font-mono font-medium text-accent hover:underline flex items-center gap-1.5"
+                          >
+                            {domainName}
+                          </a>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted italic my-2">No domain name specified</p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                        <div>
+                          <span className="text-[10px] text-muted block">Registered</span>
+                          <span className="font-medium text-foreground">
+                            {domainRegisteredAt || "—"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted block">Renewal / Expiry</span>
+                          <span className="font-medium text-foreground">
+                            {domainRenewDate || "—"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {domainPrice != null && (
+                      <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs">
+                        <span className="text-[10px] text-muted">Domain Cost:</span>
+                        <span className="font-semibold text-foreground">{formatINR(domainPrice)} / yr</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Hosting Card */}
+                  <div className="p-4 rounded-lg border border-border/80 bg-surface-elevated/40 flex flex-col justify-between space-y-3">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-1.5 rounded-md bg-accent/10 text-accent">
+                            <Server className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-semibold text-foreground">Web Hosting & Server</h4>
+                            <p className="text-[10px] text-muted">
+                              {hostingProvider || "Provider unrecorded"}
+                            </p>
+                          </div>
+                        </div>
+                        {hostingStatus && (
+                          <span
+                            className={`text-[10px] font-medium px-2 py-0.5 rounded-full border ${hostingStatus.badgeClass}`}
+                          >
+                            {hostingStatus.label}
+                          </span>
+                        )}
+                      </div>
+
+                      {hostingPlan ? (
+                        <div className="my-2">
+                          <span className="text-sm font-medium text-foreground">
+                            {hostingPlan}
+                          </span>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted italic my-2">No plan specified</p>
+                      )}
+
+                      <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                        <div>
+                          <span className="text-[10px] text-muted block">Activated On</span>
+                          <span className="font-medium text-foreground">
+                            {hostingActivatedAt || "—"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-muted block">Renewal Date</span>
+                          <span className="font-medium text-foreground">
+                            {hostingRenewDate || "—"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {hostingPrice != null && (
+                      <div className="pt-2 border-t border-border/50 flex items-center justify-between text-xs">
+                        <span className="text-[10px] text-muted">Hosting Cost:</span>
+                        <span className="font-semibold text-foreground">{formatINR(hostingPrice)} / yr</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
 
       {/* Workspace Tabs */}
       <div className="border-b border-border/60 flex items-center gap-6 text-sm">

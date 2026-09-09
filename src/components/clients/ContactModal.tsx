@@ -78,8 +78,8 @@ export function ContactModal({
     setIsLoading(true);
     setErrorMsg(null);
 
-    // If client ID is local / non-UUID, save directly to local store
-    if (!isValidUuid(clientId)) {
+    // If client ID or contact ID is local / non-UUID, save directly to local store
+    if (!isValidUuid(clientId) || (contactToEdit && !isValidUuid(contactToEdit.id))) {
       saveLocally();
       setIsLoading(false);
       return;

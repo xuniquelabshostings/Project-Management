@@ -1,4 +1,4 @@
-import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile, Agreement, BlogPost, CaseFile, DevelopmentPlan } from "@/types/database.types";
+import { Client, Contact, Project, Task, Milestone, Invoice, ActivityLogEntry, Profile, Agreement, Proposal, BlogPost, CaseFile, DevelopmentPlan } from "@/types/database.types";
 
 export const MOCK_PROFILES: Profile[] = [
   {
@@ -421,6 +421,57 @@ export function deleteLocalAgreement(agreementId: string): Agreement[] {
   }
 }
 
+export const MOCK_PROPOSALS: Proposal[] = [];
+
+const LOCAL_PROPOSALS_KEY = "xunique_custom_proposals";
+
+export function getLocalProposals(): Proposal[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(LOCAL_PROPOSALS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter((p: Proposal) => !isMockId(p.id));
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveLocalProposal(proposal: Proposal): Proposal[] {
+  if (typeof window === "undefined") return [proposal];
+  try {
+    const current = getLocalProposals();
+    const existingIndex = current.findIndex((p) => p.id === proposal.id);
+    let updated: Proposal[];
+    if (existingIndex >= 0) {
+      updated = [...current];
+      updated[existingIndex] = proposal;
+    } else {
+      updated = [proposal, ...current];
+    }
+    localStorage.setItem(LOCAL_PROPOSALS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [proposal];
+  }
+}
+
+export function deleteLocalProposal(proposalId: string): Proposal[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const current = getLocalProposals();
+    const updated = current.filter((p) => p.id !== proposalId);
+    localStorage.setItem(LOCAL_PROPOSALS_KEY, JSON.stringify(updated));
+    return updated;
+  } catch {
+    return [];
+  }
+}
+
+
 export function getNextInvoiceNumber(existingInvoices?: Invoice[]): string {
   const list = existingInvoices && existingInvoices.length > 0 ? existingInvoices : getLocalInvoices();
   const currentYear = new Date().getFullYear();
@@ -818,16 +869,24 @@ export function deleteLocalBlogPost(id: string): void {
   }
 }
 
-export function incrementLocalBlogPostViews(slug: string): void {
-  if (typeof window === "undefined") return;
+export function incrementLocalBlogPostViews(slug: string): number {
+  if (typeof window === "undefined") return 0;
   try {
     const posts = getLocalBlogPosts();
     const post = posts.find((p) => p.slug === slug);
     if (post) {
       post.views_count = (post.views_count || 0) + 1;
       localStorage.setItem(LOCAL_STORAGE_BLOGS_KEY, JSON.stringify(posts));
+      // Dispatch event for real-time reactivity across tabs & portal dashboard
+      window.dispatchEvent(
+        new CustomEvent("xunique_blog_views_updated", {
+          detail: { slug, views_count: post.views_count },
+        })
+      );
+      return post.views_count;
     }
   } catch {}
+  return 0;
 }
 
 /* ==========================================================================

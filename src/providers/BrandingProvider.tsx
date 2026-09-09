@@ -16,14 +16,14 @@ export interface AppBranding {
 }
 
 export const DEFAULT_BRANDING: AppBranding = {
-  companyName: "XUnique Labs",
+  companyName: "Xunique Labs",
   tagline: "Design & Engineering Studio",
   logoUrl: null,
   signatureUrl: null,
   signatoryName: "Authorized Signatory",
-  addressLine1: "104 Tech Park Boulevard, Sector 5",
-  addressLine2: "Bengaluru, Karnataka 560103, India",
-  email: "billing@xuniquelabs.com",
+  addressLine1: "Bharat Nagar, New Friends Colony",
+  addressLine2: "New Delhi, Delhi, 110025",
+  email: "support@xuniquelabs.com",
   phone: "+91 (80) 4920-1100",
   taxId: "29AABCU9603R1ZM",
 };

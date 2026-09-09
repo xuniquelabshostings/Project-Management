@@ -150,7 +150,7 @@ export default function SettingsPage() {
   const handleSaveBranding = (e: React.FormEvent) => {
     e.preventDefault();
     updateBranding({
-      companyName: brandingForm.companyName.trim() || "XUnique Labs",
+      companyName: brandingForm.companyName.trim() || "Xunique Labs",
       tagline: brandingForm.tagline.trim(),
       logoUrl: brandingForm.logoUrl.trim() || null,
       signatureUrl: brandingForm.signatureUrl.trim() || null,
@@ -574,7 +574,7 @@ export default function SettingsPage() {
                     required
                     value={brandingForm.companyName}
                     onChange={(e) => setBrandingForm((prev) => ({ ...prev, companyName: e.target.value }))}
-                    placeholder="XUnique Labs"
+                    placeholder="Xunique Labs"
                     className="text-sm"
                   />
                   <p className="text-[11px] text-muted mt-1">App header title &amp; bill issuer name</p>
@@ -602,7 +602,7 @@ export default function SettingsPage() {
                     type="text"
                     value={brandingForm.addressLine1}
                     onChange={(e) => setBrandingForm((prev) => ({ ...prev, addressLine1: e.target.value }))}
-                    placeholder="104 Tech Park Boulevard, Sector 5"
+                    placeholder="Bharat Nagar, New Friends Colony"
                     className="text-sm"
                   />
                 </div>
@@ -615,7 +615,7 @@ export default function SettingsPage() {
                     type="text"
                     value={brandingForm.addressLine2}
                     onChange={(e) => setBrandingForm((prev) => ({ ...prev, addressLine2: e.target.value }))}
-                    placeholder="Bengaluru, Karnataka 560103, India"
+                    placeholder="New Delhi, Delhi, 110025"
                     className="text-sm"
                   />
                 </div>
@@ -628,7 +628,7 @@ export default function SettingsPage() {
                     type="email"
                     value={brandingForm.email}
                     onChange={(e) => setBrandingForm((prev) => ({ ...prev, email: e.target.value }))}
-                    placeholder="billing@xuniquelabs.com"
+                    placeholder="support@xuniquelabs.com"
                     className="text-sm"
                   />
                 </div>

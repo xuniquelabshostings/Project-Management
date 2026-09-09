@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,17 +8,7 @@ import { Client, ClientStatus, LeadSource, Profile, Contact } from "@/types/data
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
 import { saveLocalClient, generateUUID, deleteLocalClient, isValidUuid } from "@/lib/mock-data";
-import { lookupDomainWhois } from "@/lib/domain-whois";
 import {
-  Globe,
-  Server,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
-  Loader2,
-  CheckCircle2,
-  AlertCircle,
-  Calendar,
   Trash2,
   User,
   Mail,
@@ -55,25 +45,6 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
   const [contactAddress, setContactAddress] = useState("");
   const [preferredChannel, setPreferredChannel] = useState<"whatsapp" | "email" | "phone" | "other">("whatsapp");
 
-  // Domain & Hosting Lifecycle State
-  const [domainName, setDomainName] = useState("");
-  const [domainRegistrar, setDomainRegistrar] = useState("");
-  const [domainRegisteredAt, setDomainRegisteredAt] = useState("");
-  const [domainRenewAt, setDomainRenewAt] = useState("");
-  const [domainPrice, setDomainPrice] = useState("");
-  const [hostingProvider, setHostingProvider] = useState("");
-  const [hostingPlan, setHostingPlan] = useState("");
-  const [hostingActivatedAt, setHostingActivatedAt] = useState("");
-  const [hostingRenewAt, setHostingRenewAt] = useState("");
-  const [hostingPrice, setHostingPrice] = useState("");
-  const [renewalAlertDays, setRenewalAlertDays] = useState(30);
-
-  const [showInfraSection, setShowInfraSection] = useState(false);
-  const [isWhoisLoading, setIsWhoisLoading] = useState(false);
-  const [whoisSuccessMsg, setWhoisSuccessMsg] = useState<string | null>(null);
-  const [whoisErrorMsg, setWhoisErrorMsg] = useState<string | null>(null);
-  const lastFetchedDomainRef = useRef<string>("");
-
   useEffect(() => {
     async function loadAccountManagers() {
       const { data } = await supabase
@@ -107,32 +78,6 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       setContactPhone(primaryContact?.phone || clientToEdit.phone || "");
       setContactAddress(primaryContact?.address || clientToEdit.address || "");
       setPreferredChannel((primaryContact?.preferred_channel as any) || "whatsapp");
-
-      // Populate domain & hosting
-      setDomainName(clientToEdit.domain_name || "");
-      setDomainRegistrar(clientToEdit.domain_registrar || "");
-      setDomainRegisteredAt(clientToEdit.domain_registered_at || "");
-      setDomainRenewAt(clientToEdit.domain_renew_at || "");
-      setDomainPrice(clientToEdit.domain_price != null ? String(clientToEdit.domain_price) : "");
-      setHostingProvider(clientToEdit.hosting_provider || "");
-      setHostingPlan(clientToEdit.hosting_plan || "");
-      setHostingActivatedAt(clientToEdit.hosting_activated_at || "");
-      setHostingRenewAt(clientToEdit.hosting_renew_at || "");
-      setHostingPrice(clientToEdit.hosting_price != null ? String(clientToEdit.hosting_price) : "");
-      setRenewalAlertDays(clientToEdit.renewal_alert_days ?? 30);
-      lastFetchedDomainRef.current = (clientToEdit.domain_name || "").toLowerCase().trim();
-
-      // Expand if client already has infra data
-      if (
-        clientToEdit.domain_name ||
-        clientToEdit.hosting_provider ||
-        clientToEdit.domain_renew_at ||
-        clientToEdit.hosting_renew_at
-      ) {
-        setShowInfraSection(true);
-      } else {
-        setShowInfraSection(false);
-      }
     } else {
       setClientName("");
       setIndustry("");
@@ -149,125 +94,9 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       setContactPhone("");
       setContactAddress("");
       setPreferredChannel("whatsapp");
-
-      setDomainName("");
-      setDomainRegistrar("");
-      setDomainRegisteredAt("");
-      setDomainRenewAt("");
-      setDomainPrice("");
-      setHostingProvider("");
-      setHostingPlan("");
-      setHostingActivatedAt("");
-      setHostingRenewAt("");
-      setHostingPrice("");
-      setRenewalAlertDays(30);
-      setShowInfraSection(false);
-      lastFetchedDomainRef.current = "";
     }
     setErrorMsg(null);
-    setWhoisErrorMsg(null);
-    setWhoisSuccessMsg(null);
   }, [clientToEdit, isOpen, currentProfile]);
-
-  // Auto-fetch WHOIS domain details as user enters/types a domain or website URL
-  useEffect(() => {
-    const raw = (domainName || website || "").trim();
-    if (!raw) return;
-
-    const clean = raw
-      .toLowerCase()
-      .replace(/^https?:\/\//, "")
-      .replace(/^www\./, "")
-      .split("/")[0]
-      .split(":")[0];
-
-    // Must look like a real domain (has a dot, 4+ chars, valid TLD ending)
-    if (!clean.includes(".") || clean.length < 4 || clean.endsWith(".")) {
-      return;
-    }
-
-    const tld = clean.split(".").pop();
-    if (!tld || tld.length < 2) return;
-
-    if (lastFetchedDomainRef.current === clean) return;
-
-    const debounceTimer = setTimeout(async () => {
-      lastFetchedDomainRef.current = clean;
-      setIsWhoisLoading(true);
-      setWhoisErrorMsg(null);
-      setWhoisSuccessMsg(null);
-
-      try {
-        const data = await lookupDomainWhois(clean);
-        if (data.success) {
-          if (data.domain) setDomainName(data.domain);
-          if (data.registrar) setDomainRegistrar(data.registrar);
-          if (data.registeredAt) setDomainRegisteredAt(data.registeredAt);
-          if (data.expiresAt) setDomainRenewAt(data.expiresAt);
-          setWhoisSuccessMsg(`Auto-detected registrar & expiry for ${data.domain}!`);
-          setShowInfraSection(true);
-        }
-      } catch (err: any) {
-        // silent fail on auto-fetch
-      } finally {
-        setIsWhoisLoading(false);
-      }
-    }, 600);
-
-    return () => clearTimeout(debounceTimer);
-  }, [domainName, website]);
-
-  const handleWhoisLookup = async () => {
-    const target = (domainName || website || "").trim();
-    if (!target) {
-      setWhoisErrorMsg("Please enter a Domain Name or Website URL first.");
-      return;
-    }
-    setIsWhoisLoading(true);
-    setWhoisErrorMsg(null);
-    setWhoisSuccessMsg(null);
-
-    try {
-      const data = await lookupDomainWhois(target);
-      if (!data.success) {
-        setWhoisErrorMsg(data.error || "Failed to lookup domain.");
-        return;
-      }
-
-      if (data.domain) {
-        setDomainName(data.domain);
-      }
-      if (data.registrar) {
-        setDomainRegistrar(data.registrar);
-      }
-      if (data.registeredAt) {
-        setDomainRegisteredAt(data.registeredAt);
-      }
-      if (data.expiresAt) {
-        setDomainRenewAt(data.expiresAt);
-      }
-      setWhoisSuccessMsg(`Fetched details for ${data.domain}! Check registration & renewal.`);
-      setShowInfraSection(true);
-    } catch (err: any) {
-      setWhoisErrorMsg(err.message || "Failed to contact domain lookup service.");
-    } finally {
-      setIsWhoisLoading(false);
-    }
-  };
-
-  const buildInfraPayload = () => ({
-    domain_name: domainName.trim() || null,
-    domain_registrar: domainRegistrar.trim() || null,
-    domain_registered_at: domainRegisteredAt || null,
-    domain_renew_at: domainRenewAt || null,
-    domain_price: domainPrice ? parseFloat(domainPrice) : null,
-    hosting_provider: hostingProvider.trim() || null,
-    hosting_plan: hostingPlan.trim() || null,
-    hosting_activated_at: hostingActivatedAt || null,
-    hosting_renew_at: hostingRenewAt || null,
-    hosting_price: hostingPrice ? parseFloat(hostingPrice) : null,
-    renewal_alert_days: Number(renewalAlertDays) || 30,
-  });
 
   const saveLocally = (tagsArray: string[], safeAMId: string | null) => {
     const trimmedName = clientName.trim();
@@ -311,7 +140,17 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       account_manager:
         accountManagers.find((am) => am.id === safeAMId) || currentProfile || null,
       contacts: updatedContacts,
-      ...buildInfraPayload(),
+      domain_name: clientToEdit?.domain_name || null,
+      domain_registrar: clientToEdit?.domain_registrar || null,
+      domain_registered_at: clientToEdit?.domain_registered_at || null,
+      domain_renew_at: clientToEdit?.domain_renew_at || null,
+      domain_price: clientToEdit?.domain_price ?? null,
+      hosting_provider: clientToEdit?.hosting_provider || null,
+      hosting_plan: clientToEdit?.hosting_plan || null,
+      hosting_activated_at: clientToEdit?.hosting_activated_at || null,
+      hosting_renew_at: clientToEdit?.hosting_renew_at || null,
+      hosting_price: clientToEdit?.hosting_price ?? null,
+      renewal_alert_days: clientToEdit?.renewal_alert_days ?? 30,
       created_at: clientToEdit?.created_at || new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
@@ -343,7 +182,7 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
         ? accountManagerId
         : session?.user?.id || null;
 
-    if (isDemo) {
+    if (isDemo || (clientToEdit && !isValidUuid(clientToEdit.id))) {
       saveLocally(tagsArray, safeAccountManagerId);
       setIsLoading(false);
       return;
@@ -362,44 +201,72 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       lead_source: leadSource,
       tags: tagsArray,
       account_manager_id: safeAccountManagerId,
-      ...buildInfraPayload(),
       updated_at: new Date().toISOString(),
     };
 
     try {
       let savedClientId: string = clientToEdit?.id || "";
 
-      if (clientToEdit) {
-        const { data, error } = await supabase
-          .from("clients")
-          .update(payload)
-          .eq("id", clientToEdit.id)
-          .select()
-          .single();
+      const performDbSave = async (dataPayload: any) => {
+        if (clientToEdit && isValidUuid(clientToEdit.id)) {
+          const { data, error } = await supabase
+            .from("clients")
+            .update(dataPayload)
+            .eq("id", clientToEdit.id)
+            .select()
+            .single();
+          if (error) throw error;
+          return (data as Client).id;
+        } else if (!clientToEdit) {
+          const { data, error } = await supabase
+            .from("clients")
+            .insert({
+              ...dataPayload,
+              created_at: new Date().toISOString(),
+            })
+            .select()
+            .single();
+          if (error) throw error;
+          return (data as Client).id;
+        } else {
+          return clientToEdit.id;
+        }
+      };
 
-        if (error) throw error;
-        savedClientId = (data as Client).id;
-      } else {
-        const { data, error } = await supabase
-          .from("clients")
-          .insert({
-            ...payload,
-            created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        savedClientId = (data as Client).id;
+      try {
+        savedClientId = await performDbSave(payload);
+      } catch (firstErr: any) {
+        // If Postgres/PostgREST complains about missing columns (e.g. 'address', 'phone', 'email') in the remote schema cache,
+        // retry with core standard columns so the client still saves to Supabase
+        if (firstErr?.message?.toLowerCase().includes("column") || firstErr?.code === "PGRST204" || firstErr?.code === "42703") {
+          const fallbackCorePayload = {
+            company_name: trimmedName,
+            client_name: trimmedName,
+            industry: industry.trim() || null,
+            website: website.trim() || null,
+            status,
+            lead_source: leadSource,
+            tags: tagsArray,
+            account_manager_id: safeAccountManagerId,
+            updated_at: new Date().toISOString(),
+          };
+          try {
+            savedClientId = await performDbSave(fallbackCorePayload);
+          } catch (retryErr) {
+            console.warn("Core payload save error, saving locally:", retryErr);
+          }
+        } else {
+          throw firstErr;
+        }
       }
 
       // Sync contact to Supabase contacts table if provided and ID is valid UUID
-      if (savedClientId && isValidUuid(savedClientId) && (contactName.trim() || contactEmail.trim() || contactPhone.trim() || contactAddress.trim())) {
+      if (savedClientId && isValidUuid(savedClientId) && (contactEmail.trim() || contactPhone.trim() || contactAddress.trim())) {
         try {
           const contactPayload = {
             client_id: savedClientId,
-            name: contactName.trim() || trimmedName,
-            role: contactRole.trim() || "Primary Contact",
+            name: trimmedName,
+            role: "Primary Contact",
             email: contactEmail.trim() || null,
             phone: contactPhone.trim() || null,
             preferred_channel: preferredChannel,
@@ -416,16 +283,9 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
 
       saveLocally(tagsArray, safeAccountManagerId);
     } catch (err: any) {
-      if (
-        err.message?.toLowerCase().includes("row-level security") ||
-        err.code === "42501" ||
-        err.status === 403
-      ) {
-        // Fallback locally and persist so the newly added client appears right away
-        saveLocally(tagsArray, safeAccountManagerId);
-        return;
-      }
-      setErrorMsg(err.message || "Failed to save client.");
+      console.warn("Supabase client operation failed, persisting locally:", err?.message || err);
+      // Fallback locally and persist so the client is updated smoothly without interruption
+      saveLocally(tagsArray, safeAccountManagerId);
     } finally {
       setIsLoading(false);
     }
@@ -463,7 +323,7 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       isOpen={isOpen}
       onClose={onClose}
       title={clientToEdit ? "Edit Client Profile" : "Create New Client"}
-      description="Record client details, hosting, domain lifecycle, and assigned Account Manager."
+      description="Record client contacts, organizational details, and assigned Account Manager."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
@@ -496,35 +356,14 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
             />
           </div>
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="block text-xs font-medium text-foreground">
-                Website URL
-              </label>
-              {website && !domainName && (
-                <button
-                  type="button"
-                  onClick={handleWhoisLookup}
-                  className="text-[10px] text-accent hover:underline flex items-center gap-1"
-                >
-                  <Sparkles className="h-2.5 w-2.5" />
-                  Auto-fill domain
-                </button>
-              )}
-            </div>
+            <label className="block text-xs font-medium text-foreground mb-1.5">
+              Website URL
+            </label>
             <Input
               type="url"
               placeholder="https://example.com"
               value={website}
-              onChange={(e) => {
-                setWebsite(e.target.value);
-                if (!domainName && e.target.value.includes(".")) {
-                  const cleaned = e.target.value
-                    .replace(/^https?:\/\//, "")
-                    .replace(/^www\./, "")
-                    .split("/")[0];
-                  if (cleaned) setDomainName(cleaned);
-                }
-              }}
+              onChange={(e) => setWebsite(e.target.value)}
             />
           </div>
         </div>
@@ -581,30 +420,7 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
         <div className="border border-border/80 rounded-lg p-3.5 bg-surface-elevated/20 space-y-3">
           <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
             <User className="h-3.5 w-3.5 text-accent" />
-            <span>Primary Contact & Communication Details</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-foreground mb-1">
-                Contact Person Name
-              </label>
-              <Input
-                placeholder="e.g. Sarah Jenkins or John Doe"
-                value={contactName}
-                onChange={(e) => setContactName(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-foreground mb-1">
-                Role / Designation <span className="text-muted font-normal">(Optional)</span>
-              </label>
-              <Input
-                placeholder="e.g. Founder, CEO, Project Lead"
-                value={contactRole}
-                onChange={(e) => setContactRole(e.target.value)}
-              />
-            </div>
+            <span>Client Contact Details</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -615,7 +431,7 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
               <div className="relative">
                 <Input
                   type="email"
-                  placeholder="e.g. sarah@client.com"
+                  placeholder="e.g. contact@client.com"
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   className="pl-8"
@@ -675,217 +491,6 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
               </select>
             </div>
           </div>
-        </div>
-
-        {/* Collapsible Domain & Hosting Infrastructure Section */}
-        <div className="border border-border/80 rounded-lg overflow-hidden bg-surface-elevated/30">
-          <button
-            type="button"
-            onClick={() => setShowInfraSection(!showInfraSection)}
-            className="w-full flex items-center justify-between px-3.5 py-2.5 bg-surface hover:bg-surface-elevated/80 transition-colors text-left"
-          >
-            <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-accent" />
-              <span className="text-xs font-semibold text-foreground">
-                Domain & Hosting Infrastructure
-              </span>
-              {(domainName || hostingProvider) && (
-                <span className="text-[10px] bg-accent/15 text-accent font-medium px-2 py-0.5 rounded-full">
-                  Configured
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <span>{showInfraSection ? "Hide Details" : "Add / View Details"}</span>
-              {showInfraSection ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
-            </div>
-          </button>
-
-          {showInfraSection && (
-            <div className="p-3.5 space-y-4 border-t border-border/60 bg-surface">
-              {/* WHOIS status messages */}
-              {whoisSuccessMsg && (
-                <div className="flex items-center gap-2 p-2.5 rounded-md bg-success-bg border border-success/30 text-success text-xs">
-                  <CheckCircle2 className="h-4 w-4 shrink-0" />
-                  <span>{whoisSuccessMsg}</span>
-                </div>
-              )}
-              {whoisErrorMsg && (
-                <div className="flex items-center gap-2 p-2.5 rounded-md bg-danger-bg border border-danger/30 text-danger text-xs">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  <span>{whoisErrorMsg}</span>
-                </div>
-              )}
-
-              {/* Domain Subsection */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                    <Globe className="h-3.5 w-3.5 text-accent" />
-                    <span>Domain Details</span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleWhoisLookup}
-                    disabled={isWhoisLoading}
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent/90 bg-accent/10 hover:bg-accent/20 px-2.5 py-1 rounded transition-colors disabled:opacity-50"
-                  >
-                    {isWhoisLoading ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3 w-3" />
-                    )}
-                    <span>{isWhoisLoading ? "Querying RDAP..." : "Auto-Fetch via WHOIS"}</span>
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Domain Name
-                    </label>
-                    <Input
-                      placeholder="e.g. example.com"
-                      value={domainName}
-                      onChange={(e) => setDomainName(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Registrar
-                    </label>
-                    <Input
-                      placeholder="e.g. GoDaddy, Namecheap"
-                      value={domainRegistrar}
-                      onChange={(e) => setDomainRegistrar(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Registered Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={domainRegisteredAt}
-                      onChange={(e) => setDomainRegisteredAt(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Renewal / Expiry Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={domainRenewAt}
-                      onChange={(e) => setDomainRenewAt(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Domain Cost (₹ INR/yr)
-                    </label>
-                    <Input
-                      type="number"
-                      step="1"
-                      placeholder="1000"
-                      value={domainPrice}
-                      onChange={(e) => setDomainPrice(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Divider */}
-              <div className="border-t border-border/50" />
-
-              {/* Hosting Subsection */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-foreground">
-                  <Server className="h-3.5 w-3.5 text-accent" />
-                  <span>Web Hosting & Server Details</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Hosting Provider
-                    </label>
-                    <Input
-                      placeholder="e.g. AWS, Vercel, Hostinger, GCP"
-                      value={hostingProvider}
-                      onChange={(e) => setHostingProvider(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Hosting Plan / Tier
-                    </label>
-                    <Input
-                      placeholder="e.g. Business Pro, VPS 4GB, Cloud Run"
-                      value={hostingPlan}
-                      onChange={(e) => setHostingPlan(e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Activation Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={hostingActivatedAt}
-                      onChange={(e) => setHostingActivatedAt(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Renewal Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={hostingRenewAt}
-                      onChange={(e) => setHostingRenewAt(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-medium text-muted-foreground mb-1">
-                      Hosting Cost (₹ INR/yr)
-                    </label>
-                    <Input
-                      type="number"
-                      step="1"
-                      placeholder="5000"
-                      value={hostingPrice}
-                      onChange={(e) => setHostingPrice(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Alert Settings */}
-              <div className="pt-2 border-t border-border/50 flex items-center justify-between">
-                <label className="text-xs text-muted-foreground">
-                  Send renewal alerts prior to:
-                </label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="1"
-                    max="180"
-                    className="w-20 text-center text-xs py-1"
-                    value={renewalAlertDays}
-                    onChange={(e) => setRenewalAlertDays(Number(e.target.value))}
-                  />
-                  <span className="text-xs text-muted-foreground">days</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="pt-3 border-t border-border/50 flex items-center justify-between">
