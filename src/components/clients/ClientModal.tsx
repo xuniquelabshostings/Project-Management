@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Client, ClientStatus, LeadSource, Profile, Contact } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { saveLocalClient, generateUUID, deleteLocalClient, isValidUuid } from "@/lib/mock-data";
+import { isValidUuid, generateUUID } from "@/lib/mock-data";
 import {
   Trash2,
   User,
@@ -46,17 +46,21 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
   const [preferredChannel, setPreferredChannel] = useState<"whatsapp" | "email" | "phone" | "other">("whatsapp");
 
   useEffect(() => {
-    async function loadAccountManagers() {
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("role", ["admin", "account_manager"]);
-      if (data && data.length > 0) {
-        setAccountManagers(data as Profile[]);
+    async function loadAMs() {
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("*")
+          .order("full_name", { ascending: true });
+        if (data && data.length > 0) {
+          setAccountManagers(data as Profile[]);
+        }
+      } catch (err) {
+        console.error("Failed to load profiles:", err);
       }
     }
     if (isOpen) {
-      loadAccountManagers();
+      loadAMs();
     }
   }, [isOpen]);
 
@@ -70,14 +74,17 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       setTagsInput(clientToEdit.tags ? clientToEdit.tags.join(", ") : "");
       setAccountManagerId(clientToEdit.account_manager_id || "");
 
-      // Populate contact details from primary contact or client fields
-      const primaryContact = clientToEdit.contacts && clientToEdit.contacts.length > 0 ? clientToEdit.contacts[0] : null;
-      setContactName(primaryContact?.name || "");
-      setContactRole(primaryContact?.role || "");
-      setContactEmail(primaryContact?.email || clientToEdit.email || "");
-      setContactPhone(primaryContact?.phone || clientToEdit.phone || "");
-      setContactAddress(primaryContact?.address || clientToEdit.address || "");
-      setPreferredChannel((primaryContact?.preferred_channel as any) || "whatsapp");
+      // Populate primary contact if present
+      const primary = clientToEdit.contacts && clientToEdit.contacts.length > 0
+        ? clientToEdit.contacts[0]
+        : null;
+
+      setContactName(primary?.name || "");
+      setContactRole(primary?.role || "");
+      setContactEmail(primary?.email || clientToEdit.email || "");
+      setContactPhone(primary?.phone || clientToEdit.phone || "");
+      setContactAddress(primary?.address || clientToEdit.address || "");
+      setPreferredChannel((primary?.preferred_channel as any) || "whatsapp");
     } else {
       setClientName("");
       setIndustry("");
@@ -98,67 +105,6 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
     setErrorMsg(null);
   }, [clientToEdit, isOpen, currentProfile]);
 
-  const saveLocally = (tagsArray: string[], safeAMId: string | null) => {
-    const trimmedName = clientName.trim();
-    const existingContacts = clientToEdit?.contacts || [];
-    let updatedContacts = [...existingContacts];
-
-    // If contact info was provided, update existing primary contact or add a new one
-    if (contactName.trim() || contactEmail.trim() || contactPhone.trim() || contactAddress.trim()) {
-      const contactPayload: Contact = {
-        id: updatedContacts.length > 0 ? updatedContacts[0].id : generateUUID(),
-        client_id: clientToEdit?.id || generateUUID(),
-        name: contactName.trim() || trimmedName,
-        role: contactRole.trim() || (updatedContacts[0]?.role || "Primary Contact"),
-        email: contactEmail.trim() || null,
-        phone: contactPhone.trim() || null,
-        address: contactAddress.trim() || null,
-        preferred_channel: preferredChannel,
-        created_at: updatedContacts[0]?.created_at || new Date().toISOString(),
-      };
-
-      if (updatedContacts.length > 0) {
-        updatedContacts[0] = contactPayload;
-      } else {
-        updatedContacts = [contactPayload];
-      }
-    }
-
-    const mockClient: Client = {
-      id: clientToEdit?.id || generateUUID(),
-      client_name: trimmedName,
-      company_name: trimmedName,
-      industry: industry.trim() || null,
-      website: website.trim() || null,
-      email: contactEmail.trim() || null,
-      phone: contactPhone.trim() || null,
-      address: contactAddress.trim() || null,
-      status,
-      lead_source: leadSource,
-      tags: tagsArray,
-      account_manager_id: safeAMId || null,
-      account_manager:
-        accountManagers.find((am) => am.id === safeAMId) || currentProfile || null,
-      contacts: updatedContacts,
-      domain_name: clientToEdit?.domain_name || null,
-      domain_registrar: clientToEdit?.domain_registrar || null,
-      domain_registered_at: clientToEdit?.domain_registered_at || null,
-      domain_renew_at: clientToEdit?.domain_renew_at || null,
-      domain_price: clientToEdit?.domain_price ?? null,
-      hosting_provider: clientToEdit?.hosting_provider || null,
-      hosting_plan: clientToEdit?.hosting_plan || null,
-      hosting_activated_at: clientToEdit?.hosting_activated_at || null,
-      hosting_renew_at: clientToEdit?.hosting_renew_at || null,
-      hosting_price: clientToEdit?.hosting_price ?? null,
-      renewal_alert_days: clientToEdit?.renewal_alert_days ?? 30,
-      created_at: clientToEdit?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-    saveLocalClient(mockClient);
-    onSaved(mockClient);
-    onClose();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientName.trim()) {
@@ -174,22 +120,14 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
-    const isDemo = !session || (currentProfile?.id && currentProfile.id.startsWith("00000000"));
-
-    // Sanitize accountManagerId: avoid sending mock ID to live database
     const safeAccountManagerId =
-      accountManagerId && !accountManagerId.startsWith("00000000")
-        ? accountManagerId
-        : session?.user?.id || null;
-
-    if (isDemo || (clientToEdit && !isValidUuid(clientToEdit.id))) {
-      saveLocally(tagsArray, safeAccountManagerId);
-      setIsLoading(false);
-      return;
-    }
+      accountManagerId && isValidUuid(accountManagerId) ? accountManagerId : null;
 
     const trimmedName = clientName.trim();
+    const clientIdToSave = clientToEdit?.id && isValidUuid(clientToEdit.id) ? clientToEdit.id : generateUUID();
+
     const payload = {
+      id: clientIdToSave,
       client_name: trimmedName,
       company_name: trimmedName,
       industry: industry.trim() || null,
@@ -205,70 +143,43 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
     };
 
     try {
-      let savedClientId: string = clientToEdit?.id || "";
+      let savedClientId: string = clientIdToSave;
 
-      const performDbSave = async (dataPayload: any) => {
-        if (clientToEdit && isValidUuid(clientToEdit.id)) {
-          const { data, error } = await supabase
-            .from("clients")
-            .update(dataPayload)
-            .eq("id", clientToEdit.id)
-            .select()
-            .single();
-          if (error) throw error;
-          return (data as Client).id;
-        } else if (!clientToEdit) {
-          const { data, error } = await supabase
-            .from("clients")
-            .insert({
-              ...dataPayload,
-              created_at: new Date().toISOString(),
-            })
-            .select()
-            .single();
-          if (error) throw error;
-          return (data as Client).id;
-        } else {
-          return clientToEdit.id;
-        }
-      };
-
-      try {
-        savedClientId = await performDbSave(payload);
-      } catch (firstErr: any) {
-        // If Postgres/PostgREST complains about missing columns (e.g. 'address', 'phone', 'email') in the remote schema cache,
-        // retry with core standard columns so the client still saves to Supabase
-        if (firstErr?.message?.toLowerCase().includes("column") || firstErr?.code === "PGRST204" || firstErr?.code === "42703") {
-          const fallbackCorePayload = {
-            company_name: trimmedName,
-            client_name: trimmedName,
-            industry: industry.trim() || null,
-            website: website.trim() || null,
-            status,
-            lead_source: leadSource,
-            tags: tagsArray,
-            account_manager_id: safeAccountManagerId,
-            updated_at: new Date().toISOString(),
-          };
-          try {
-            savedClientId = await performDbSave(fallbackCorePayload);
-          } catch (retryErr) {
-            console.warn("Core payload save error, saving locally:", retryErr);
-          }
-        } else {
-          throw firstErr;
-        }
+      if (clientToEdit && isValidUuid(clientToEdit.id)) {
+        const { data, error } = await supabase
+          .from("clients")
+          .update(payload)
+          .eq("id", clientToEdit.id)
+          .select()
+          .single();
+        if (error) throw error;
+        savedClientId = (data as Client).id;
+      } else {
+        const { data, error } = await supabase
+          .from("clients")
+          .insert({
+            ...payload,
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+        if (error) throw error;
+        savedClientId = (data as Client).id;
       }
 
-      // Sync contact to Supabase contacts table if provided and ID is valid UUID
-      if (savedClientId && isValidUuid(savedClientId) && (contactEmail.trim() || contactPhone.trim() || contactAddress.trim())) {
+      // Sync contact to Supabase contacts table if provided
+      if (savedClientId && (contactEmail.trim() || contactPhone.trim() || contactAddress.trim() || contactName.trim())) {
         try {
           const contactPayload = {
+            id: clientToEdit?.contacts?.[0]?.id && isValidUuid(clientToEdit.contacts[0].id)
+              ? clientToEdit.contacts[0].id
+              : generateUUID(),
             client_id: savedClientId,
-            name: trimmedName,
-            role: "Primary Contact",
+            name: contactName.trim() || trimmedName,
+            role: contactRole.trim() || "Primary Contact",
             email: contactEmail.trim() || null,
             phone: contactPhone.trim() || null,
+            address: contactAddress.trim() || null,
             preferred_channel: preferredChannel,
           };
           if (clientToEdit?.contacts && clientToEdit.contacts.length > 0 && isValidUuid(clientToEdit.contacts[0].id)) {
@@ -277,15 +188,32 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
             await supabase.from("contacts").insert(contactPayload);
           }
         } catch (cErr) {
-          console.warn("Could not sync contact to Supabase contacts table:", cErr);
+          console.error("Could not sync contact to Supabase:", cErr);
         }
       }
 
-      saveLocally(tagsArray, safeAccountManagerId);
+      // Fetch the fresh client with contacts and account manager
+      const { data: fullClient, error: fetchErr } = await supabase
+        .from("clients")
+        .select("*, account_manager:profiles(*), contacts(*)")
+        .eq("id", savedClientId)
+        .single();
+
+      if (fullClient) {
+        onSaved(fullClient as Client);
+      } else {
+        onSaved({
+          ...payload,
+          account_manager: accountManagers.find((am) => am.id === safeAccountManagerId) || null,
+          contacts: [],
+          created_at: new Date().toISOString(),
+        } as unknown as Client);
+      }
+
+      onClose();
     } catch (err: any) {
-      console.warn("Supabase client operation failed, persisting locally:", err?.message || err);
-      // Fallback locally and persist so the client is updated smoothly without interruption
-      saveLocally(tagsArray, safeAccountManagerId);
+      console.error("Supabase client operation error:", err?.message || err);
+      setErrorMsg(err?.message || "Failed to save client to Supabase.");
     } finally {
       setIsLoading(false);
     }
@@ -302,20 +230,18 @@ export function ClientModal({ isOpen, onClose, onSaved, onDeleted, clientToEdit 
       return;
     }
 
-    deleteLocalClient(clientToEdit.id);
-
-    if (isValidUuid(clientToEdit.id)) {
-      try {
+    try {
+      if (isValidUuid(clientToEdit.id)) {
         await supabase.from("clients").delete().eq("id", clientToEdit.id);
-      } catch (err: any) {
-        console.warn("Could not delete client from Supabase:", err.message);
       }
+      if (onDeleted) {
+        onDeleted(clientToEdit.id);
+      }
+      onClose();
+    } catch (err: any) {
+      console.error("Could not delete client from Supabase:", err.message);
+      alert("Failed to delete client: " + err.message);
     }
-
-    if (onDeleted) {
-      onDeleted(clientToEdit.id);
-    }
-    onClose();
   };
 
   return (

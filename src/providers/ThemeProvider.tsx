@@ -15,19 +15,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = "xunique_theme_preference";
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+        if (stored && ["light", "dark", "system"].includes(stored)) {
+          return stored;
+        }
+      } catch {
+        // localStorage may be unavailable
+      }
+    }
+    return "system";
+  });
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (stored && ["light", "dark", "system"].includes(stored)) {
-        setThemeState(stored);
-      }
-    } catch {
-      // localStorage may be unavailable
-    }
     setMounted(true);
   }, []);
 

@@ -70,15 +70,12 @@ export function ActivityTimeline({
 
   const handleDelete = async (activityId: string) => {
     if (!confirm("Are you sure you want to delete this interaction log?")) return;
-    deleteLocalActivity(activityId);
     try {
-      if (isValidUuid(activityId)) {
-        await supabase.from("activity_log").delete().eq("id", activityId);
-      }
+      await supabase.from("activity_log").delete().eq("id", activityId);
+      onActivitiesUpdated();
     } catch (err: any) {
-      console.warn("Failed to delete activity from database:", err.message);
+      console.error("Failed to delete activity from database:", err.message);
     }
-    onActivitiesUpdated();
   };
 
   return (

@@ -1,6 +1,5 @@
 import { Client, Invoice, Task, AppNotification, getClientName } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import { getLocalClients, getLocalInvoices, getLocalTasks } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 export type AlertCategory = "all" | "infrastructure" | "invoices" | "tasks" | "general";
@@ -76,16 +75,11 @@ export async function fetchUnifiedAlerts(userId?: string): Promise<UnifiedAlert[
   // 1. DOMAIN & HOSTING INFRASTRUCTURE ALERTS
   // -------------------------------------------------------------
   try {
-    let clients: Client[] = [];
     const { data: dbClients } = await supabase
       .from("clients")
       .select("*, contacts(*)");
 
-    if (dbClients && dbClients.length > 0) {
-      clients = dbClients as Client[];
-    } else {
-      clients = getLocalClients();
-    }
+    const clients: Client[] = (dbClients as Client[]) || [];
 
     clients.forEach((c) => {
       const clientName = getClientName(c);
@@ -171,17 +165,12 @@ export async function fetchUnifiedAlerts(userId?: string): Promise<UnifiedAlert[
   // 2. OVERDUE INVOICES ALERTS
   // -------------------------------------------------------------
   try {
-    let invoices: Invoice[] = [];
     const { data: dbInvoices } = await supabase
       .from("invoices")
       .select("*, client:clients(*)")
       .eq("status", "overdue");
 
-    if (dbInvoices && dbInvoices.length > 0) {
-      invoices = dbInvoices as Invoice[];
-    } else {
-      invoices = getLocalInvoices().filter((i) => i.status === "overdue");
-    }
+    const invoices: Invoice[] = (dbInvoices as Invoice[]) || [];
 
     invoices.forEach((inv) => {
       const clientName = inv.client?.client_name || inv.client?.company_name || "Client";
@@ -216,7 +205,6 @@ export async function fetchUnifiedAlerts(userId?: string): Promise<UnifiedAlert[
   // 3. URGENT & APPROACHING TASKS
   // -------------------------------------------------------------
   try {
-    let tasks: Task[] = [];
     const { data: dbTasks } = await supabase
       .from("tasks")
       .select("*, project:projects(*)")
@@ -224,11 +212,7 @@ export async function fetchUnifiedAlerts(userId?: string): Promise<UnifiedAlert[
       .neq("kanban_column", "Done")
       .limit(10);
 
-    if (dbTasks && dbTasks.length > 0) {
-      tasks = dbTasks as Task[];
-    } else {
-      tasks = getLocalTasks().filter((t) => (t.priority === "urgent" || t.priority === "high") && t.kanban_column !== "Done");
-    }
+    const tasks: Task[] = (dbTasks as Task[]) || [];
 
     tasks.forEach((t) => {
       if (t.due_date) {

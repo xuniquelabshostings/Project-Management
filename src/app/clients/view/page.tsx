@@ -34,14 +34,6 @@ import { ContactsList } from "@/components/clients/ContactsList";
 import { ActivityTimeline } from "@/components/clients/ActivityTimeline";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Contact, ActivityLogEntry, Project } from "@/types/database.types";
-import {
-  getLocalClients,
-  saveLocalClient,
-  deleteLocalClient,
-  getLocalProjects,
-  getLocalActivities,
-  isValidUuid,
-} from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 function ClientDetailContent() {
@@ -62,106 +54,45 @@ function ClientDetailContent() {
     try {
       setIsLoading(true);
 
-      // 1. If not a valid UUID (e.g. legacy test ID), load directly from local store
-      if (!isValidUuid(clientId)) {
-        const localList = getLocalClients();
-        const fallback = localList.find((c) => c.id === clientId) || null;
-        if (fallback) {
-          setClient(fallback);
-          setContacts(fallback.contacts || []);
-          setActivities(getLocalActivities(fallback.id));
-          setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
-        } else {
-          setClient(null);
-        }
-        setIsLoading(false);
-        return;
-      }
-
-      // 2. Fetch client from live database
+      // Fetch client from live database
       const { data: clientData, error: clientErr } = await supabase
         .from("clients")
         .select("*, account_manager:profiles(*)")
         .eq("id", clientId)
-        .single();
+        .maybeSingle();
 
       if (clientErr || !clientData) {
-        const localList = getLocalClients();
-        const fallback = localList.find((c) => c.id === clientId) || null;
-        if (fallback) {
-          setClient(fallback);
-          setContacts(fallback.contacts || []);
-          setActivities(getLocalActivities(fallback.id));
-          setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
-          return;
-        } else {
-          setClient(null);
-          setIsLoading(false);
-          return;
-        }
-      } else {
-        setClient(clientData as Client);
+        setClient(null);
+        return;
       }
+      setClient(clientData as Client);
 
-      // 3. Fetch contacts
-      const localClient = getLocalClients().find((c) => c.id === clientId);
-      const localContacts = localClient?.contacts || [];
+      // Fetch contacts
       const { data: contactsData } = await supabase
         .from("contacts")
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: true });
-      if (contactsData && contactsData.length > 0) {
-        const customContacts = localContacts.filter((lc) => !contactsData.some((cd) => cd.id === lc.id));
-        setContacts([...customContacts, ...(contactsData as Contact[])]);
-      } else if (localContacts.length > 0) {
-        setContacts(localContacts);
-      }
+      setContacts((contactsData as Contact[]) || []);
 
-      // 4. Fetch activity log
-      const localActs = getLocalActivities(clientId);
+      // Fetch activity log
       const { data: activitiesData } = await supabase
         .from("activity_log")
         .select("*, author:profiles(*)")
         .eq("client_id", clientId)
         .order("occurred_at", { ascending: false });
+      setActivities((activitiesData as ActivityLogEntry[]) || []);
 
-      if (activitiesData && activitiesData.length > 0) {
-        const customActs = localActs.filter((la) => !activitiesData.some((ad) => ad.id === la.id));
-        const combined = [...customActs, ...(activitiesData as ActivityLogEntry[])].sort(
-          (a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()
-        );
-        setActivities(combined);
-      } else {
-        setActivities(localActs);
-      }
-
-      // 5. Fetch linked projects
+      // Fetch linked projects
       const { data: projectsData } = await supabase
         .from("projects")
         .select("*")
         .eq("client_id", clientId)
         .order("created_at", { ascending: false });
-
-      const localProjects = getLocalProjects().filter((p) => p.client_id === clientId);
-      if (projectsData && projectsData.length > 0) {
-        const customProjs = localProjects.filter((lp) => !projectsData.some((pd) => pd.id === lp.id));
-        setProjects([...customProjs, ...(projectsData as Project[])]);
-      } else {
-        setProjects(localProjects);
-      }
+      setProjects((projectsData as Project[]) || []);
     } catch (err: any) {
-      console.warn("Error fetching client details, checking fallback:", err.message);
-      const localList = getLocalClients();
-      const fallback = localList.find((c) => c.id === clientId) || null;
-      if (fallback) {
-        setClient(fallback);
-        setContacts(fallback.contacts || []);
-        setActivities(getLocalActivities(fallback.id));
-        setProjects(getLocalProjects().filter((p) => p.client_id === fallback.id));
-      } else {
-        setClient(null);
-      }
+      console.warn("Error fetching client details:", err.message);
+      setClient(null);
     } finally {
       setIsLoading(false);
     }
@@ -182,14 +113,10 @@ function ClientDetailContent() {
       return;
     }
 
-    deleteLocalClient(client.id);
-
-    if (isValidUuid(client.id)) {
-      try {
-        await supabase.from("clients").delete().eq("id", client.id);
-      } catch (err: any) {
-        console.warn("Could not delete client from Supabase:", err.message);
-      }
+    try {
+      await supabase.from("clients").delete().eq("id", client.id);
+    } catch (err: any) {
+      console.warn("Could not delete client from Supabase:", err.message);
     }
 
     router.push("/clients");

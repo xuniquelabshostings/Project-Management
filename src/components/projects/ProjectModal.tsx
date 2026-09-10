@@ -6,13 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Project, ProjectStatus, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import {
-  getLocalClients,
-  saveLocalProject,
-  saveLocalClient,
-  isValidUuid,
-  generateUUID,
-} from "@/lib/mock-data";
+import { isValidUuid, generateUUID } from "@/lib/mock-data";
 import { lookupDomainWhois } from "@/lib/domain-whois";
 import {
   Globe,
@@ -49,9 +43,7 @@ export function ProjectModal({
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [status, setStatus] = useState<ProjectStatus>("active");
-  const [clients, setClients] = useState<Client[]>(() =>
-    typeof window !== "undefined" ? getLocalClients() : []
-  );
+  const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
@@ -76,25 +68,15 @@ export function ProjectModal({
 
   useEffect(() => {
     async function loadClients() {
-      const localList = getLocalClients();
-      if (clients.length === 0 && localList.length > 0) {
-        setClients(localList);
-      }
-
       try {
         const { data } = await supabase
           .from("clients")
           .select("*")
           .order("company_name", { ascending: true });
 
-        if (data && data.length > 0) {
-          const custom = localList.filter((c) => !data.some((d) => d.id === c.id));
-          setClients([...custom, ...(data as Client[])]);
-        } else {
-          setClients(localList);
-        }
-      } catch {
-        setClients(localList);
+        setClients((data as Client[]) || []);
+      } catch (err) {
+        console.error("Failed to load clients:", err);
       }
     }
     if (isOpen) {
@@ -117,8 +99,7 @@ export function ProjectModal({
       // Populate domain & hosting from project or linked client
       const c =
         projectToEdit.client ||
-        clients.find((cl) => cl.id === projectToEdit.client_id) ||
-        getLocalClients().find((cl) => cl.id === projectToEdit.client_id);
+        clients.find((cl) => cl.id === projectToEdit.client_id);
 
       const dName = projectToEdit.domain_name || c?.domain_name || "";
       setDomainName(dName);
@@ -164,9 +145,7 @@ export function ProjectModal({
 
       // If default client provided, pull their domain & infra details
       if (initialClientId) {
-        const c =
-          clients.find((cl) => cl.id === initialClientId) ||
-          getLocalClients().find((cl) => cl.id === initialClientId);
+        const c = clients.find((cl) => cl.id === initialClientId);
         if (c) {
           populateDomainFromClient(c);
         } else {
@@ -223,10 +202,7 @@ export function ProjectModal({
     setClientId(newClientId);
     if (!newClientId) return;
 
-    const selectedClient =
-      clients.find((c) => c.id === newClientId) ||
-      getLocalClients().find((c) => c.id === newClientId);
-
+    const selectedClient = clients.find((c) => c.id === newClientId);
     if (selectedClient) {
       populateDomainFromClient(selectedClient);
     }
@@ -343,52 +319,7 @@ export function ProjectModal({
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
-    const selectedClient =
-      clients.find((c) => c.id === clientId) ||
-      getLocalClients().find((c) => c.id === clientId) ||
-      null;
-
     const infraPayload = buildInfraPayload();
-
-    // If client had missing domain details, update client record too so they remain in sync
-    if (selectedClient && infraPayload.domain_name && !selectedClient.domain_name) {
-      const updatedClient: Client = {
-        ...selectedClient,
-        ...infraPayload,
-        updated_at: new Date().toISOString(),
-      };
-      saveLocalClient(updatedClient);
-    }
-
-    const saveLocally = () => {
-      const mockProject: Project = {
-        id: projectToEdit?.id || generateUUID(),
-        client_id: clientId,
-        name: name.trim(),
-        description: description.trim() || null,
-        tech_stack: techArray,
-        budget: budget ? parseFloat(budget) : null,
-        start_date: startDate || null,
-        end_date: endDate || null,
-        status,
-        kanban_columns: ["To Do", "In Progress", "Review", "Done"],
-        created_at: projectToEdit?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        client: selectedClient || undefined,
-        ...infraPayload,
-      };
-      saveLocalProject(mockProject);
-      onSaved(mockProject);
-      onClose();
-    };
-
-    // If client ID is local or not valid UUID, save directly locally
-    if (!isValidUuid(clientId)) {
-      saveLocally();
-      setIsLoading(false);
-      return;
-    }
-
     const payload = {
       name: name.trim(),
       client_id: clientId,
@@ -403,56 +334,35 @@ export function ProjectModal({
     };
 
     try {
-      if (projectToEdit) {
-        if (isValidUuid(projectToEdit.id) && isValidUuid(clientId)) {
-          try {
-            const { data, error } = await supabase
-              .from("projects")
-              .update(payload)
-              .eq("id", projectToEdit.id)
-              .select("*, client:clients(*)")
-              .maybeSingle();
+      if (projectToEdit && isValidUuid(projectToEdit.id)) {
+        const { data, error } = await supabase
+          .from("projects")
+          .update(payload)
+          .eq("id", projectToEdit.id)
+          .select("*, client:clients(*)")
+          .single();
 
-            if (!error && data) {
-              const saved = data as Project;
-              saveLocalProject(saved);
-              onSaved(saved);
-              onClose();
-              return;
-            }
-          } catch (dbErr) {
-            console.warn("Supabase project update failed, saving locally:", dbErr);
-          }
-        }
-        saveLocally();
+        if (error) throw error;
+        onSaved(data as Project);
+        onClose();
       } else {
-        if (isValidUuid(clientId)) {
-          try {
-            const { data, error } = await supabase
-              .from("projects")
-              .insert({
-                ...payload,
-                kanban_columns: ["To Do", "In Progress", "Review", "Done"],
-                created_at: new Date().toISOString(),
-              })
-              .select("*, client:clients(*)")
-              .maybeSingle();
+        const { data, error } = await supabase
+          .from("projects")
+          .insert({
+            ...payload,
+            kanban_columns: ["To Do", "In Progress", "Review", "Done"],
+            created_at: new Date().toISOString(),
+          })
+          .select("*, client:clients(*)")
+          .single();
 
-            if (!error && data) {
-              const saved = data as Project;
-              saveLocalProject(saved);
-              onSaved(saved);
-              onClose();
-              return;
-            }
-          } catch (dbErr) {
-            console.warn("Supabase project insert failed, saving locally:", dbErr);
-          }
-        }
-        saveLocally();
+        if (error) throw error;
+        onSaved(data as Project);
+        onClose();
       }
     } catch (err: any) {
-      saveLocally();
+      console.error("Supabase project save error:", err?.message || err);
+      setErrorMsg(err?.message || "Failed to save project to Supabase.");
     } finally {
       setIsLoading(false);
     }

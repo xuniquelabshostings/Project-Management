@@ -85,16 +85,73 @@ export function markClientDeleted(clientId: string): void {
   } catch {}
 }
 
+export function mergeAndDeduplicateClients(
+  remoteClients: Client[] = [],
+  localClients: Client[] = []
+): Client[] {
+  const seenIds = new Set<string>();
+  const seenNames = new Set<string>();
+  const result: Client[] = [];
+  const deleted = getDeletedClientIds();
+
+  // 1. Remote clients take first priority
+  for (const c of remoteClients) {
+    if (!c || !c.id || deleted.has(c.id)) continue;
+    const name = (c.client_name || c.company_name || "").trim().toLowerCase();
+    seenIds.add(c.id);
+    if (name) seenNames.add(name);
+    result.push({
+      ...c,
+      client_name: c.client_name || c.company_name || "",
+      company_name: c.company_name || c.client_name || "",
+    });
+  }
+
+  // 2. Add local clients only if not already seen by ID or by company/client name
+  for (const c of localClients) {
+    if (!c || !c.id || deleted.has(c.id) || isMockId(c.id)) continue;
+    const name = (c.client_name || c.company_name || "").trim().toLowerCase();
+    if (seenIds.has(c.id)) continue;
+    if (name && seenNames.has(name)) continue;
+    seenIds.add(c.id);
+    if (name) seenNames.add(name);
+    result.push({
+      ...c,
+      client_name: c.client_name || c.company_name || "",
+      company_name: c.company_name || c.client_name || "",
+    });
+  }
+
+  return result;
+}
+
 export function getLocalClients(): Client[] {
   if (typeof window === "undefined") return [];
   try {
     const deleted = getDeletedClientIds();
     const raw = localStorage.getItem(LOCAL_CLIENTS_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    const customList = Array.isArray(parsed)
-      ? parsed.filter((c: Client) => !deleted.has(c.id) && !isMockId(c.id))
-      : [];
-    return customList;
+    if (!Array.isArray(parsed)) return [];
+
+    const seenIds = new Set<string>();
+    const seenNames = new Set<string>();
+    const deduped: Client[] = [];
+
+    for (const c of parsed) {
+      if (!c || !c.id || deleted.has(c.id) || isMockId(c.id)) continue;
+      const name = (c.client_name || c.company_name || "").trim().toLowerCase();
+      if (seenIds.has(c.id)) continue;
+      if (name && seenNames.has(name)) continue;
+      seenIds.add(c.id);
+      if (name) seenNames.add(name);
+      deduped.push({
+        ...c,
+        client_name: c.client_name || c.company_name,
+        company_name: c.company_name || c.client_name,
+      });
+    }
+
+    return deduped;
   } catch {
     return [];
   }

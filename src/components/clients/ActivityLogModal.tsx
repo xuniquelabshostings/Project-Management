@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/input";
 import { ActivityType, ActivityLogEntry } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { isValidUuid, generateUUID, saveLocalActivity } from "@/lib/mock-data";
+import { isValidUuid, generateUUID } from "@/lib/mock-data";
 
 interface ActivityLogModalProps {
   isOpen: boolean;
@@ -29,34 +29,6 @@ export function ActivityLogModal({ isOpen, onClose, clientId, onLogged }: Activi
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const saveLocally = (fullTimestamp: string) => {
-    const activeProfile = profile || {
-      id: "00000000-0000-0000-0000-000000000001",
-      email: "admin@xuniquelabs.com",
-      full_name: "Marcus Vance",
-      role: "admin" as const,
-      avatar_url: null,
-      phone: "+1 (555) 019-2831",
-      theme_preference: "system" as const,
-      created_at: "2026-01-01T00:00:00Z",
-      updated_at: "2026-01-01T00:00:00Z",
-    };
-    const mockActivity: ActivityLogEntry = {
-      id: generateUUID(),
-      client_id: clientId,
-      logged_by: activeProfile.id,
-      type,
-      summary: summary.trim(),
-      occurred_at: fullTimestamp,
-      created_at: new Date().toISOString(),
-      author: activeProfile,
-    };
-    saveLocalActivity(mockActivity);
-    onLogged(mockActivity);
-    setSummary("");
-    onClose();
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!summary.trim()) {
@@ -64,53 +36,38 @@ export function ActivityLogModal({ isOpen, onClose, clientId, onLogged }: Activi
       return;
     }
 
-    const activeProfile = profile || {
-      id: "00000000-0000-0000-0000-000000000001",
-      email: "admin@xuniquelabs.com",
-      full_name: "Marcus Vance",
-      role: "admin" as const,
-      avatar_url: null,
-      phone: "+1 (555) 019-2831",
-      theme_preference: "system" as const,
-      created_at: "2026-01-01T00:00:00Z",
-      updated_at: "2026-01-01T00:00:00Z",
-    };
-
     setIsLoading(true);
     setErrorMsg(null);
 
     const fullTimestamp = new Date(`${occurredAtDate}T${occurredAtTime}:00`).toISOString();
 
-    // If client ID is local or profile is demo, save directly to local store
-    if (!isValidUuid(clientId) || activeProfile.id.startsWith("00000000")) {
-      saveLocally(fullTimestamp);
-      setIsLoading(false);
-      return;
-    }
-
     try {
+      const activityId = generateUUID();
+      const payload: any = {
+        id: activityId,
+        client_id: clientId,
+        type,
+        summary: summary.trim(),
+        occurred_at: fullTimestamp,
+        created_at: new Date().toISOString(),
+      };
+      if (profile?.id && isValidUuid(profile.id)) {
+        payload.logged_by = profile.id;
+      }
+
       const { data, error } = await supabase
         .from("activity_log")
-        .insert({
-          client_id: clientId,
-          logged_by: activeProfile.id,
-          type,
-          summary: summary.trim(),
-          occurred_at: fullTimestamp,
-          created_at: new Date().toISOString(),
-        })
+        .insert(payload)
         .select("*, author:profiles(*)")
         .single();
 
       if (error) throw error;
-      saveLocalActivity(data as ActivityLogEntry);
       onLogged(data as ActivityLogEntry);
       setSummary("");
       onClose();
     } catch (err: any) {
-      console.warn("Falling back to local activity store:", err.message);
-      // Fallback on any error (foreign key, RLS, network, offline)
-      saveLocally(fullTimestamp);
+      console.error("Supabase activity write error:", err.message);
+      setErrorMsg(err.message || "Failed to log activity to Supabase.");
     } finally {
       setIsLoading(false);
     }

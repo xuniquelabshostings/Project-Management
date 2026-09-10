@@ -22,7 +22,6 @@ import { ProjectModal } from "@/components/projects/ProjectModal";
 import { Project, ProjectStatus } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
-import { getLocalProjects, saveLocalProject, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 function ProjectsContent() {
@@ -30,9 +29,7 @@ function ProjectsContent() {
   const defaultClientId = searchParams.get("newClient") || undefined;
 
   const { canCreateClients } = useRole();
-  const [projects, setProjects] = useState<Project[]>(() =>
-    typeof window !== "undefined" ? getLocalProjects() : []
-  );
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -46,30 +43,11 @@ function ProjectsContent() {
         .select("*, client:clients(*), members:project_members(*)")
         .order("created_at", { ascending: false });
 
-      const localProjects = getLocalProjects();
-      if (data && data.length > 0) {
-        // Merge remote with local using latest updated_at
-        const merged = (data as Project[]).map((remote) => {
-          const local = localProjects.find((lp) => lp.id === remote.id);
-          if (
-            local &&
-            local.updated_at &&
-            (!remote.updated_at ||
-              new Date(local.updated_at).getTime() >= new Date(remote.updated_at).getTime())
-          ) {
-            return { ...remote, ...local };
-          }
-          return remote;
-        });
-
-        const custom = localProjects.filter((lp) => !data.some((d) => d.id === lp.id));
-        setProjects([...custom, ...merged]);
-      } else {
-        setProjects(localProjects);
-      }
+      if (error) throw error;
+      setProjects((data as Project[]) || []);
     } catch (err: any) {
-      console.warn("Failed to load projects, using fallback data:", err.message);
-      setProjects(getLocalProjects());
+      console.error("Failed to load projects from Supabase:", err.message);
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }
@@ -82,26 +60,20 @@ function ProjectsContent() {
   ) => {
     e.stopPropagation();
     const nowIso = new Date().toISOString();
-    const updated: Project = {
-      ...project,
-      status: newStatus,
-      updated_at: nowIso,
-    };
 
-    // 1. Instant local UI update
-    setProjects((prev) => prev.map((p) => (p.id === project.id ? updated : p)));
-    saveLocalProject(updated);
+    // 1. Instant UI update
+    setProjects((prev) =>
+      prev.map((p) => (p.id === project.id ? { ...p, status: newStatus, updated_at: nowIso } : p))
+    );
 
-    // 2. Persist to Supabase if valid UUID
-    if (isValidUuid(project.id)) {
-      try {
-        await supabase
-          .from("projects")
-          .update({ status: newStatus, updated_at: nowIso })
-          .eq("id", project.id);
-      } catch (err) {
-        console.warn("Could not sync project status to Supabase:", err);
-      }
+    // 2. Direct Supabase update
+    try {
+      await supabase
+        .from("projects")
+        .update({ status: newStatus, updated_at: nowIso })
+        .eq("id", project.id);
+    } catch (err) {
+      console.error("Could not sync project status to Supabase:", err);
     }
   };
 
@@ -301,8 +273,7 @@ function ProjectsContent() {
       <ProjectModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
-        onSaved={(p) => {
-          saveLocalProject(p);
+        onSaved={() => {
           fetchProjects();
         }}
         defaultClientId={defaultClientId}

@@ -1,0 +1,90 @@
+import type { MetadataRoute } from "next";
+
+export const dynamic = "force-static";
+
+export default function robots(): MetadataRoute.Robots {
+  const baseUrl = "https://xuniquelabs.com";
+
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: [
+          "/",
+          "/blog",
+          "/blog/*",
+          "/assets/*",
+          "/landing.css",
+          "/landing-schema.json",
+          "/favicon.ico",
+          "/icon.png",
+          "/sitemap.xml",
+        ],
+        disallow: [
+          "/management",
+          "/management/*",
+          "/clients",
+          "/clients/*",
+          "/projects",
+          "/projects/*",
+          "/tasks",
+          "/tasks/*",
+          "/invoices",
+          "/invoices/*",
+          "/proposals",
+          "/proposals/*",
+          "/agreements",
+          "/agreements/*",
+          "/documents",
+          "/documents/*",
+          "/plans",
+          "/plans/*",
+          "/case-files",
+          "/case-files/*",
+          "/blogs",
+          "/blogs/*",
+          "/team",
+          "/team/*",
+          "/settings",
+          "/settings/*",
+          "/login",
+          "/api/*",
+          "/api",
+        ],
+      },
+      {
+        userAgent: "Googlebot",
+        allow: [
+          "/",
+          "/blog",
+          "/blog/*",
+          "/assets/*",
+          "/landing.css",
+          "/landing-schema.json",
+          "/favicon.ico",
+          "/icon.png",
+          "/sitemap.xml",
+        ],
+        disallow: [
+          "/management",
+          "/clients",
+          "/projects",
+          "/tasks",
+          "/invoices",
+          "/proposals",
+          "/agreements",
+          "/documents",
+          "/plans",
+          "/case-files",
+          "/blogs",
+          "/team",
+          "/settings",
+          "/login",
+          "/api",
+        ],
+      },
+    ],
+    sitemap: `${baseUrl}/sitemap.xml`,
+    host: baseUrl,
+  };
+}

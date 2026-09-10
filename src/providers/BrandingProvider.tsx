@@ -18,7 +18,7 @@ export interface AppBranding {
 export const DEFAULT_BRANDING: AppBranding = {
   companyName: "Xunique Labs",
   tagline: "Design & Engineering Studio",
-  logoUrl: null,
+  logoUrl: "/assets/logo-mark-nobg.png",
   signatureUrl: null,
   signatoryName: "Authorized Signatory",
   addressLine1: "Bharat Nagar, New Friends Colony",
@@ -39,19 +39,19 @@ interface BrandingContextType {
 const BrandingContext = createContext<BrandingContextType | undefined>(undefined);
 
 export function BrandingProvider({ children }: { children: React.ReactNode }) {
-  const [branding, setBranding] = useState<AppBranding>(DEFAULT_BRANDING);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(BRANDING_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setBranding((prev) => ({ ...prev, ...parsed }));
+  const [branding, setBranding] = useState<AppBranding>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem(BRANDING_STORAGE_KEY);
+        if (stored) {
+          return { ...DEFAULT_BRANDING, ...JSON.parse(stored) };
+        }
+      } catch (e) {
+        console.warn("Failed to load custom branding from storage:", e);
       }
-    } catch (e) {
-      console.warn("Failed to load custom branding from storage:", e);
     }
-  }, []);
+    return DEFAULT_BRANDING;
+  });
 
   const updateBranding = (updates: Partial<AppBranding>) => {
     setBranding((prev) => {

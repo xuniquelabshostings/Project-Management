@@ -1,0 +1,32 @@
+# ========================================================
+# Cloudflare Pages Security & Caching Headers
+# ========================================================
+
+# Global Security Headers
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  X-XSS-Protection: 1; mode=block
+
+# Immutable Static JS & CSS Assets
+/_next/static/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Static Public Assets (Images, Icons, SVG)
+/assets/*
+  Cache-Control: public, max-age=86400
+
+# CSS and Schema files
+/landing.css
+  Cache-Control: public, max-age=3600
+
+# XML Sitemap and Robots
+/sitemap.xml
+  Content-Type: application/xml
+  Cache-Control: public, max-age=3600
+
+/robots.txt
+  Content-Type: text/plain
+  Cache-Control: public, max-age=3600

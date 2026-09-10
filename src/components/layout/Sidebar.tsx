@@ -157,17 +157,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Brand / Logo */}
       <div className="h-16 flex items-center justify-between px-5 border-b border-border/50 shrink-0">
         <div className="flex items-center gap-3 overflow-hidden">
-          {branding.logoUrl ? (
-            <img
-              src={branding.logoUrl}
-              alt={branding.companyName}
-              className="w-8 h-8 rounded-md object-contain border border-border bg-white p-0.5 shrink-0 shadow-xs"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white shadow-xs shrink-0">
-              <Building2 className="w-4 h-4" />
-            </div>
-          )}
+          <img
+            src={branding.logoUrl || "/assets/logo-mark-nobg.png"}
+            alt={branding.companyName}
+            className="w-8 h-8 rounded-md object-contain border border-border bg-white p-0.5 shrink-0 shadow-xs"
+          />
           <div className="flex flex-col overflow-hidden">
             <span className="font-serif font-semibold text-base text-foreground tracking-tight truncate">
               {branding.companyName}

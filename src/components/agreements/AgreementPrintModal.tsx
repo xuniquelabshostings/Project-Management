@@ -226,17 +226,11 @@ export function AgreementPrintModal({ isOpen, onClose, agreement }: AgreementPri
             <div className="flex flex-row justify-between items-start gap-6 pb-6 border-b-2 border-slate-200">
               <div>
                 <div className="flex items-center gap-3">
-                  {branding.logoUrl ? (
-                    <img
-                      src={branding.logoUrl}
-                      alt={companyName}
-                      className="w-12 h-12 rounded-lg object-contain border border-slate-200 bg-white p-1 shrink-0 shadow-xs"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold text-lg font-serif shrink-0">
-                      {companyName.charAt(0) || "X"}
-                    </div>
-                  )}
+                  <img
+                    src={branding.logoUrl || "/assets/logo-mark-nobg.png"}
+                    alt={companyName}
+                    className="w-12 h-12 rounded-lg object-contain border border-slate-200 bg-white p-1 shrink-0 shadow-xs"
+                  />
                   <div>
                     <h1 className="font-serif text-2xl font-bold tracking-tight text-slate-900">
                       {companyName}

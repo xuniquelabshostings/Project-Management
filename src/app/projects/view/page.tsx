@@ -35,13 +35,6 @@ import { TaskModal } from "@/components/tasks/TaskModal";
 import { Project, Task, Milestone, ProjectMember, ProjectStatus, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useRole } from "@/lib/hooks/useRole";
-import {
-  getLocalProjects,
-  saveLocalProject,
-  getLocalClients,
-  getLocalTasks,
-  isValidUuid,
-} from "@/lib/mock-data";
 import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
 function getRenewalStatus(renewDateStr?: string | null, alertDays = 30) {
@@ -104,7 +97,7 @@ function ProjectWorkspaceContent() {
     if (!project) return;
     setIsAlertSending(true);
     try {
-      const clientForAlert = project.client || (project.client_id ? getLocalClients().find((c) => c.id === project.client_id) : undefined) || {
+      const clientForAlert = project.client || {
         id: project.client_id,
         company_name: project.name,
         client_name: project.name,
@@ -149,115 +142,46 @@ function ProjectWorkspaceContent() {
     try {
       setIsLoading(true);
 
-      const localProjects = getLocalProjects();
-      const localClients = getLocalClients();
-      const fallbackProj = localProjects.find((p) => p.id === projectId) || null;
+      // 1. Fetch project info from Supabase
+      const { data: pData, error: pErr } = await supabase
+        .from("projects")
+        .select("*, client:clients(*)")
+        .eq("id", projectId)
+        .maybeSingle();
 
-      // 1. Fetch project info from Supabase if valid UUID
-      let activeProj: Project | null = null;
-      if (isValidUuid(projectId)) {
-        try {
-          const { data: pData, error: pErr } = await supabase
-            .from("projects")
-            .select("*, client:clients(*)")
-            .eq("id", projectId)
-            .single();
-
-          if (!pErr && pData) {
-            activeProj = pData as Project;
-          }
-        } catch {
-          // use fallback
-        }
-      }
-
-      if (fallbackProj) {
-        if (!activeProj) {
-          activeProj = { ...fallbackProj };
-        } else if (fallbackProj.updated_at && activeProj.updated_at) {
-          // If local copy was edited more recently, keep the latest local status & edits!
-          if (new Date(fallbackProj.updated_at).getTime() >= new Date(activeProj.updated_at).getTime()) {
-            activeProj = {
-              ...activeProj,
-              ...fallbackProj,
-              client: activeProj.client || fallbackProj.client,
-            };
-          }
-        }
-      }
-
-      if (activeProj) {
-        if (!activeProj.client && activeProj.client_id) {
-          activeProj.client =
-            localClients.find((c) => c.id === activeProj!.client_id) || undefined;
-        }
-        setProject(activeProj);
-      } else {
+      if (pErr || !pData) {
         setProject(null);
+        return;
       }
+      setProject(pData as Project);
 
       // 2. Fetch tasks
-      const localTasks = getLocalTasks(projectId);
-      let fetchedTasks: Task[] = [];
-      if (isValidUuid(projectId)) {
-        try {
-          const { data: tData } = await supabase
-            .from("tasks")
-            .select("*")
-            .eq("project_id", projectId)
-            .order("column_order", { ascending: true })
-            .order("created_at", { ascending: false });
-
-          if (tData && tData.length > 0) {
-            fetchedTasks = tData as Task[];
-          }
-        } catch {}
-      }
-
-      if (fetchedTasks.length > 0) {
-        const customT = localTasks.filter((lt) => !fetchedTasks.some((ft) => ft.id === lt.id));
-        setTasks([...fetchedTasks, ...customT]);
-      } else {
-        setTasks(localTasks);
-      }
+      const { data: tData } = await supabase
+        .from("tasks")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("column_order", { ascending: true })
+        .order("created_at", { ascending: false });
+      setTasks((tData as Task[]) || []);
 
       // 3. Fetch milestones
-      let fetchedMilestones: Milestone[] = [];
-      if (isValidUuid(projectId)) {
-        try {
-          const { data: mData } = await supabase
-            .from("milestones")
-            .select("*")
-            .eq("project_id", projectId)
-            .order("due_date", { ascending: true });
-
-          if (mData && mData.length > 0) {
-            fetchedMilestones = mData as Milestone[];
-          }
-        } catch {}
-      }
-      setMilestones(fetchedMilestones);
+      const { data: mData } = await supabase
+        .from("milestones")
+        .select("*")
+        .eq("project_id", projectId)
+        .order("due_date", { ascending: true });
+      setMilestones((mData as Milestone[]) || []);
 
       // 4. Fetch team members
-      let fetchedMembers: ProjectMember[] = [];
-      if (isValidUuid(projectId)) {
-        try {
-          const { data: memData } = await supabase
-            .from("project_members")
-            .select("*, user:profiles(*)")
-            .eq("project_id", projectId);
-
-          if (memData && memData.length > 0) {
-            fetchedMembers = memData as ProjectMember[];
-          }
-        } catch {}
-      }
-      setMembers(fetchedMembers);
+      const { data: memData } = await supabase
+        .from("project_members")
+        .select("*, user:profiles(*)")
+        .eq("project_id", projectId);
+      setMembers((memData as ProjectMember[]) || []);
     } catch (err: any) {
       console.warn("Failed to fetch project workspace data:", err.message);
-      const fallbackProj = getLocalProjects().find((p) => p.id === projectId) || null;
-      setProject(fallbackProj);
-      setTasks(getLocalTasks(projectId));
+      setProject(null);
+      setTasks([]);
       setMilestones([]);
       setMembers([]);
     } finally {
@@ -278,20 +202,15 @@ function ProjectWorkspaceContent() {
       updated_at: nowIso,
     };
 
-    // 1. Instant local update
     setProject(updated);
-    saveLocalProject(updated);
 
-    // 2. Persist to Supabase if valid UUID
-    if (isValidUuid(project.id)) {
-      try {
-        await supabase
-          .from("projects")
-          .update({ status: newStatus, updated_at: nowIso })
-          .eq("id", project.id);
-      } catch (err) {
-        console.warn("Could not sync project status to Supabase:", err);
-      }
+    try {
+      await supabase
+        .from("projects")
+        .update({ status: newStatus, updated_at: nowIso })
+        .eq("id", project.id);
+    } catch (err) {
+      console.warn("Could not sync project status to Supabase:", err);
     }
   };
 

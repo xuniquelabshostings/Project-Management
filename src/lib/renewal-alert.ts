@@ -1,7 +1,6 @@
 import { Client, Contact, getClientName } from "@/types/database.types";
 import { lookupDomainWhois, DomainWhoisResult } from "@/lib/domain-whois";
 import { supabase } from "@/lib/supabase/client";
-import { getLocalClients, saveLocalClient, isValidUuid } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 
 export interface SendWhatsAppAlertResult {
@@ -26,32 +25,22 @@ export async function resolveClientPhone(
       ? providedContacts
       : client.contacts || [];
 
-  // B. If no contacts on client, check local store
+  // B. If empty, query Supabase
   if (!contactsList || contactsList.length === 0) {
-    const local = getLocalClients().find((c) => c.id === client.id);
-    if (local?.contacts && local.contacts.length > 0) {
-      contactsList = local.contacts;
-    }
-  }
-
-  // C. If still empty, query Supabase
-  if (!contactsList || contactsList.length === 0) {
-    if (isValidUuid(client.id)) {
-      try {
-        const { data } = await supabase
-          .from("contacts")
-          .select("*")
-          .eq("client_id", client.id);
-        if (data && data.length > 0) {
-          contactsList = data as Contact[];
-        }
-      } catch (err) {
-        console.warn("Could not query contacts for client:", err);
+    try {
+      const { data } = await supabase
+        .from("contacts")
+        .select("*")
+        .eq("client_id", client.id);
+      if (data && data.length > 0) {
+        contactsList = data as Contact[];
       }
+    } catch (err) {
+      console.warn("Could not query contacts for client:", err);
     }
   }
 
-  // D. Find best contact: preferred WhatsApp first, then any contact with phone
+  // C. Find best contact: preferred WhatsApp first, then any contact with phone
   const preferredWhatsapp = contactsList.find(
     (c) => c.preferred_channel === "whatsapp" && Boolean(c.phone)
   );
@@ -101,25 +90,19 @@ export async function fetchAndSyncDomainWhois(
       updatedClient.domain_renew_at = whoisResult.expiresAt;
     }
 
-    // Persist to local storage
-    saveLocalClient(updatedClient);
-
-    // Try persisting to Supabase if accessible
-    if (isValidUuid(client.id)) {
-      try {
-        await supabase
-          .from("clients")
-          .update({
-            domain_name: updatedClient.domain_name,
-            domain_registrar: updatedClient.domain_registrar,
-            domain_registered_at: updatedClient.domain_registered_at,
-            domain_renew_at: updatedClient.domain_renew_at,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", client.id);
-      } catch (err) {
-        // Ignored if demo mode or offline
-      }
+    try {
+      await supabase
+        .from("clients")
+        .update({
+          domain_name: updatedClient.domain_name,
+          domain_registrar: updatedClient.domain_registrar,
+          domain_registered_at: updatedClient.domain_registered_at,
+          domain_renew_at: updatedClient.domain_renew_at,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", client.id);
+    } catch (err) {
+      // Ignored
     }
   }
 

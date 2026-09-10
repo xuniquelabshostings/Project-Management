@@ -19,7 +19,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { cn, formatINR } from "@/lib/utils";
-import { getNextAgreementNumber } from "@/lib/mock-data";
+import { getNextAgreementNumber, generateUUID } from "@/lib/mock-data";
 
 interface AgreementModalProps {
   isOpen: boolean;
@@ -155,7 +155,7 @@ export function AgreementModal({
       getNextAgreementNumber(existingAgreements);
 
     const savedAgreement: Agreement = {
-      id: initialData?.id || `agr-${Date.now()}`,
+      id: initialData?.id || generateUUID(),
       agreement_number: finalAgreementNumber,
       client_id: clientId,
       project_name: projectName.trim(),

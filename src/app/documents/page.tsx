@@ -26,7 +26,6 @@ import { DocumentUploadModal } from "@/components/documents/DocumentUploadModal"
 import { Document, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { getLocalClients } from "@/lib/mock-data";
 
 function DocumentsContent() {
   const searchParams = useSearchParams();
@@ -34,9 +33,7 @@ function DocumentsContent() {
   const { profile } = useAuth();
 
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [clients, setClients] = useState<Client[]>(() =>
-    typeof window !== "undefined" ? getLocalClients() : []
-  );
+  const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<string>(filterClientId);
@@ -51,20 +48,13 @@ function DocumentsContent() {
           .from("documents")
           .select("*, uploader:profiles(*)")
           .order("created_at", { ascending: false }),
-        supabase.from("clients").select("id, company_name").order("company_name", { ascending: true }),
+        supabase.from("clients").select("id, company_name, client_name").order("company_name", { ascending: true }),
       ]);
 
       if (docsRes.data) setDocuments(docsRes.data as Document[]);
-      const localList = getLocalClients();
-      if (clientsRes.data && clientsRes.data.length > 0) {
-        const custom = localList.filter((c) => !clientsRes.data!.some((d) => d.id === c.id));
-        setClients([...custom, ...(clientsRes.data as Client[])]);
-      } else {
-        setClients(localList);
-      }
+      if (clientsRes.data) setClients(clientsRes.data as Client[]);
     } catch (err: any) {
       console.warn("Failed to load documents:", err.message);
-      setClients(getLocalClients());
     } finally {
       setIsLoading(false);
     }
@@ -193,8 +183,8 @@ function DocumentsContent() {
                             <p className="text-sm font-medium text-foreground">
                               {doc.file_name}
                             </p>
-                            <span className="text-[10px] text-muted font-mono">
-                              v{doc.version} &bull; {doc.storage_path}
+                            <span className="text-[10px] text-muted font-mono truncate max-w-xs block">
+                              v{doc.version} &bull; {doc.storage_path.startsWith("https://res.cloudinary.com") ? "Cloudinary CDN" : doc.storage_path}
                             </span>
                           </div>
                         </div>

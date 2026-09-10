@@ -2,13 +2,12 @@
 
 import React, { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Building2, Lock, Mail, AlertCircle, ArrowRight, UserCheck, Shield } from "lucide-react";
+import { Building2, Lock, Mail, AlertCircle, ArrowRight } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { UserRole } from "@/types/database.types";
 
 function LoginForm() {
   const router = useRouter();
@@ -16,7 +15,7 @@ function LoginForm() {
   const redirectParam = searchParams.get("redirect");
   const redirectUrl = redirectParam && redirectParam !== "/" ? redirectParam : "/management";
 
-  const { signIn, signInAsDemo, user } = useAuth();
+  const { signIn, user } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -41,11 +40,6 @@ function LoginForm() {
     } else {
       router.push(redirectUrl);
     }
-  };
-
-  const handleDemoLogin = (role: UserRole) => {
-    signInAsDemo(role);
-    router.push(redirectUrl);
   };
 
   return (
@@ -111,37 +105,6 @@ function LoginForm() {
             Sign In <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </form>
-
-        {/* Quick Demo Access for Testing */}
-        <div className="mt-6 pt-5 border-t border-border/50">
-          <div className="text-center mb-3">
-            <span className="text-[11px] font-medium text-muted uppercase tracking-wider">
-              Quick Test Sign-In
-            </span>
-          </div>
-          <div>
-            <button
-              type="button"
-              onClick={() => handleDemoLogin("admin")}
-              className="w-full px-3 py-2.5 text-xs rounded-md border border-border bg-surface-elevated hover:bg-surface-hover hover:border-accent/40 transition-colors text-foreground flex items-center justify-between"
-            >
-              <div className="flex items-center gap-2">
-                <Shield className="w-4 h-4 text-accent" />
-                <div className="text-left">
-                  <div className="font-semibold text-accent">Administrator</div>
-                  <div className="text-[10px] text-muted">Single-user mode &bull; Full unrestricted access</div>
-                </div>
-              </div>
-              <ArrowRight className="w-4 h-4 text-muted" />
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-5 pt-4 border-t border-border/40 text-center">
-          <p className="text-[11px] text-muted leading-relaxed">
-            Single-user workspace &bull; All administrative privileges enabled
-          </p>
-        </div>
       </div>
     </Card>
   );
@@ -153,9 +116,11 @@ export default function LoginPage() {
       {/* Top Bar with Brand & Theme Toggle */}
       <div className="flex items-center justify-between w-full max-w-5xl mx-auto">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-md bg-accent flex items-center justify-center text-white shadow-xs">
-            <Building2 className="w-4 h-4" />
-          </div>
+          <img
+            src="/assets/logo-mark-nobg.png"
+            alt="Xunique Labs"
+            className="w-8 h-8 object-contain"
+          />
           <span className="font-serif font-semibold text-foreground text-base tracking-tight">
             Xunique Labs
           </span>

@@ -30,7 +30,6 @@ import {
   getLocalAgreements,
   saveLocalAgreement,
   deleteLocalAgreement,
-  getLocalClients,
 } from "@/lib/mock-data";
 import { supabase } from "@/lib/supabase/client";
 import { AgreementModal } from "@/components/agreements/AgreementModal";
@@ -51,30 +50,21 @@ export default function AgreementsPage() {
   const loadData = async () => {
     try {
       setIsLoading(true);
-      // Fetch clients first
+      // Fetch clients directly from Supabase
       const { data: dbClients } = await supabase
         .from("clients")
-        .select("id, company_name, industry, website")
+        .select("*")
         .order("company_name", { ascending: true });
 
-      const localClients = getLocalClients();
-      if (dbClients && dbClients.length > 0) {
-        const merged = [
-          ...localClients.filter((c) => !dbClients.some((d) => d.id === c.id)),
-          ...(dbClients as Client[]),
-        ];
-        setClients(merged);
-      } else {
-        setClients(localClients);
-      }
+      setClients((dbClients as Client[]) || []);
 
-      // Fetch agreements (from localStorage or mock)
+      // Fetch agreements (from agreement storage)
       const localList = getLocalAgreements();
       setAgreements(localList);
     } catch (err) {
-      console.warn("Error loading agreements:", err);
+      console.warn("Error loading agreements data:", err);
       setAgreements(getLocalAgreements());
-      setClients(getLocalClients());
+      setClients([]);
     } finally {
       setIsLoading(false);
     }

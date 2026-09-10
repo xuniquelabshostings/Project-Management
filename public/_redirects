@@ -1,0 +1,6 @@
+# ========================================================
+# Cloudflare Pages Redirects & SPA Clean Routing
+# ========================================================
+
+# Clean Canonical Redirects
+/home   /   301

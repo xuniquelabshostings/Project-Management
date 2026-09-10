@@ -7,7 +7,6 @@ import { TaskCard } from "@/components/tasks/TaskCard";
 import { TaskModal } from "@/components/tasks/TaskModal";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase/client";
-import { saveLocalTask, deleteLocalTask, isValidUuid } from "@/lib/mock-data";
 
 interface KanbanBoardProps {
   projectId: string;
@@ -44,39 +43,30 @@ export function KanbanBoard({
   const handleMoveColumn = async (task: Task, targetColumn: string) => {
     if (task.kanban_column === targetColumn) return;
 
-    // Optimistically update
-    task.kanban_column = targetColumn;
-    saveLocalTask(task);
-    onTasksUpdated();
-
     try {
-      if (isValidUuid(task.id) && !task.id.startsWith("a0000000")) {
-        const { error } = await supabase
-          .from("tasks")
-          .update({
-            kanban_column: targetColumn,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", task.id);
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          kanban_column: targetColumn,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", task.id);
 
-        if (error) {
-          console.warn("Could not update task column in database:", error.message);
-        }
+      if (error) {
+        console.warn("Could not update task column in database:", error.message);
       }
     } catch (err: any) {
       console.warn("Failed to move task in database:", err.message);
     }
+    onTasksUpdated();
   };
 
   const handleDeleteTask = async (taskId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!confirm("Are you sure you want to delete this task?")) return;
 
-    deleteLocalTask(taskId);
     try {
-      if (isValidUuid(taskId)) {
-        await supabase.from("tasks").delete().eq("id", taskId);
-      }
+      await supabase.from("tasks").delete().eq("id", taskId);
     } catch (err: any) {
       console.warn("Failed to delete task in database:", err.message);
     }

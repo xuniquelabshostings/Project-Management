@@ -250,17 +250,11 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
             <div className="flex flex-row justify-between items-start gap-6 pb-8 border-b-2 border-slate-100">
               <div>
                 <div className="flex items-center gap-3">
-                  {branding.logoUrl ? (
-                    <img
-                      src={branding.logoUrl}
-                      alt={branding.companyName}
-                      className="w-12 h-12 rounded-lg object-contain border border-slate-200 bg-white p-1 shrink-0 shadow-xs"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold text-lg font-serif shrink-0">
-                      {branding.companyName.charAt(0) || "X"}
-                    </div>
-                  )}
+                  <img
+                    src={branding.logoUrl || "/assets/logo-mark-nobg.png"}
+                    alt={branding.companyName}
+                    className="w-12 h-12 rounded-lg object-contain border border-slate-200 bg-white p-1 shrink-0 shadow-xs"
+                  />
                   <div>
                     <h1 className="font-serif text-2xl font-bold tracking-tight text-slate-900">
                       {branding.companyName}
@@ -404,7 +398,7 @@ export function InvoicePrintModal({ isOpen, onClose, invoice }: InvoicePrintModa
               <div className="max-w-xs text-xs text-slate-500 space-y-1">
                 <p className="font-semibold text-slate-700">Payment Notes:</p>
                 <p className="text-slate-600 italic">
-                  {invoice.notes || "Thank you for partnering with Xunique Labs. Prompt payment is appreciated."}
+                  {invoice.notes || "Thank you for partnering with Xunique Labs."}
                 </p>
               </div>
 

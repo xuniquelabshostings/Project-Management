@@ -7,7 +7,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Task, TaskPriority, Profile, Project } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { saveLocalTask, isValidUuid, generateUUID } from "@/lib/mock-data";
+import { isValidUuid, generateUUID } from "@/lib/mock-data";
 
 interface TaskModalProps {
   isOpen: boolean;
@@ -26,13 +26,13 @@ export function TaskModal({
   columns = ["To Do", "In Progress", "Review", "Done"],
   onSaved,
   taskToEdit,
-  defaultColumn = "To Do",
+  defaultColumn,
 }: TaskModalProps) {
   const { profile } = useAuth();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("medium");
-  const [column, setColumn] = useState(defaultColumn);
+  const [column, setColumn] = useState<string>("To Do");
   const [dueDate, setDueDate] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -64,33 +64,6 @@ export function TaskModal({
     setIsLoading(true);
     setErrorMsg(null);
 
-    const authorId = profile?.id || "00000000-0000-0000-0000-000000000001";
-
-    const saveLocally = () => {
-      const mockTask: Task = {
-        id: taskToEdit?.id || generateUUID(),
-        project_id: projectId,
-        title: title.trim(),
-        description: description.trim() || null,
-        priority,
-        kanban_column: column,
-        due_date: dueDate || null,
-        column_order: taskToEdit?.column_order || 0,
-        created_by: authorId,
-        created_at: taskToEdit?.created_at || new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      saveLocalTask(mockTask);
-      onSaved(mockTask);
-      onClose();
-    };
-
-    if (!isValidUuid(projectId) || authorId.startsWith("00000000")) {
-      saveLocally();
-      setIsLoading(false);
-      return;
-    }
-
     const payload = {
       project_id: projectId,
       title: title.trim(),
@@ -102,7 +75,7 @@ export function TaskModal({
     };
 
     try {
-      if (taskToEdit) {
+      if (taskToEdit && isValidUuid(taskToEdit.id)) {
         const { data, error } = await supabase
           .from("tasks")
           .update(payload)
@@ -111,28 +84,27 @@ export function TaskModal({
           .single();
 
         if (error) throw error;
-        saveLocalTask(data as Task);
         onSaved(data as Task);
       } else {
+        const taskIdToSave = taskToEdit?.id && isValidUuid(taskToEdit.id) ? taskToEdit.id : generateUUID();
         const { data, error } = await supabase
           .from("tasks")
           .insert({
+            id: taskIdToSave,
             ...payload,
             column_order: 0,
-            created_by: authorId,
             created_at: new Date().toISOString(),
           })
           .select()
           .single();
 
         if (error) throw error;
-        saveLocalTask(data as Task);
         onSaved(data as Task);
       }
       onClose();
     } catch (err: any) {
-      console.warn("Falling back to local task store:", err.message);
-      saveLocally();
+      console.error("Supabase task write error:", err.message);
+      setErrorMsg(err.message || "Failed to save task to Supabase.");
     } finally {
       setIsLoading(false);
     }

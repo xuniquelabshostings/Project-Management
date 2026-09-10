@@ -4,23 +4,30 @@ import { useAuth } from "@/providers/AuthProvider";
 import { UserRole } from "@/types/database.types";
 
 export function useRole() {
-  const { profile, loading } = useAuth();
+  const { user, profile, loading, role } = useAuth();
 
-  const role: UserRole = "admin";
-  const isAdmin = true;
-  const isAccountManager = true;
-  const isDeveloper = false;
+  const userRole: UserRole = (role || profile?.role || "admin") as UserRole;
+  const isAuthenticated = Boolean(user);
 
-  const hasRole = (_allowed: UserRole | UserRole[]) => true;
+  const isAdmin = isAuthenticated && (userRole === "admin" || !profile?.role);
+  const isAccountManager = isAuthenticated && (isAdmin || userRole === "account_manager");
+  const isDeveloper = isAuthenticated && userRole === "developer";
 
-  const canAccessFinancials = true;
-  const canManageTeam = true;
-  const canCreateClients = true;
+  const hasRole = (allowed: UserRole | UserRole[]) => {
+    if (!isAuthenticated) return false;
+    const allowedList = Array.isArray(allowed) ? allowed : [allowed];
+    return allowedList.includes(userRole) || isAdmin;
+  };
+
+  const canAccessFinancials = isAuthenticated && (isAdmin || isAccountManager);
+  const canManageTeam = isAuthenticated && isAdmin;
+  const canCreateClients = isAuthenticated && (isAdmin || isAccountManager);
 
   return {
-    role,
+    role: userRole,
     profile,
     loading,
+    isAuthenticated,
     isAdmin,
     isAccountManager,
     isDeveloper,

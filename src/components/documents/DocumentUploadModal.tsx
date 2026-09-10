@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Document, Client, Project } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import { getLocalClients, getLocalProjects, isValidUuid } from "@/lib/mock-data";
+import { uploadFileToCloudinary } from "@/lib/upload";
+import { UploadCloud, CheckCircle2, FileText, Loader2, X } from "lucide-react";
 
 interface DocumentUploadModalProps {
   isOpen: boolean;
@@ -25,47 +26,30 @@ export function DocumentUploadModal({
   defaultProjectId,
 }: DocumentUploadModalProps) {
   const { profile } = useAuth();
-  const [fileName, setFileName] = useState("");
-  const [filePath, setFilePath] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [clientId, setClientId] = useState(defaultClientId || "");
   const [projectId, setProjectId] = useState(defaultProjectId || "");
+  const [fileName, setFileName] = useState("");
+  const [filePath, setFilePath] = useState("");
+  const [uploadedBytes, setUploadedBytes] = useState<number | null>(null);
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isSensitive, setIsSensitive] = useState(false);
-  const [clients, setClients] = useState<Client[]>(() =>
-    typeof window !== "undefined" ? getLocalClients() : []
-  );
-  const [projects, setProjects] = useState<Project[]>(() =>
-    typeof window !== "undefined" ? getLocalProjects() : []
-  );
+  const [clients, setClients] = useState<Client[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadScope() {
-      const localClients = getLocalClients();
-      const localProjects = getLocalProjects();
-      if (clients.length === 0) setClients(localClients);
-      if (projects.length === 0) setProjects(localProjects);
-
       try {
         const [cRes, pRes] = await Promise.all([
-          supabase.from("clients").select("id, company_name"),
+          supabase.from("clients").select("*").order("company_name", { ascending: true }),
           supabase.from("projects").select("id, name, client_id"),
         ]);
-        if (cRes.data && cRes.data.length > 0) {
-          const customC = localClients.filter((c) => !cRes.data!.some((d) => d.id === c.id));
-          setClients([...customC, ...(cRes.data as Client[])]);
-        } else {
-          setClients(localClients);
-        }
-        if (pRes.data && pRes.data.length > 0) {
-          const customP = localProjects.filter((p) => !pRes.data!.some((d) => d.id === p.id));
-          setProjects([...customP, ...(pRes.data as Project[])]);
-        } else {
-          setProjects(localProjects);
-        }
-      } catch {
-        setClients(localClients);
-        setProjects(localProjects);
+        if (cRes.data) setClients(cRes.data as Client[]);
+        if (pRes.data) setProjects(pRes.data as Project[]);
+      } catch (err: any) {
+        console.warn("Could not load scope for document upload:", err.message);
       }
     }
     if (isOpen) loadScope();
@@ -75,6 +59,65 @@ export function DocumentUploadModal({
     if (defaultClientId) setClientId(defaultClientId);
     if (defaultProjectId) setProjectId(defaultProjectId);
   }, [defaultClientId, defaultProjectId]);
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    setErrorMsg(null);
+
+    try {
+      if (!fileName.trim()) {
+        setFileName(file.name);
+      }
+
+      const uploadRes = await uploadFileToCloudinary(file, "xunique-management/documents");
+      setFilePath(uploadRes.secure_url);
+      setUploadedBytes(uploadRes.bytes);
+      if (!fileName.trim()) {
+        setFileName(uploadRes.original_filename || file.name);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to upload file to Cloudinary.");
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    setIsUploadingFile(true);
+    setErrorMsg(null);
+
+    try {
+      if (!fileName.trim()) {
+        setFileName(file.name);
+      }
+
+      const uploadRes = await uploadFileToCloudinary(file, "xunique-management/documents");
+      setFilePath(uploadRes.secure_url);
+      setUploadedBytes(uploadRes.bytes);
+      if (!fileName.trim()) {
+        setFileName(uploadRes.original_filename || file.name);
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to upload file to Cloudinary.");
+    } finally {
+      setIsUploadingFile(false);
+    }
+  };
+
+  const handleClearUploadedFile = () => {
+    setFilePath("");
+    setUploadedBytes(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,34 +133,6 @@ export function DocumentUploadModal({
 
     setIsLoading(true);
     setErrorMsg(null);
-
-    const saveLocally = () => {
-      const mockDoc: Document = {
-        id: `doc-${Date.now()}`,
-        client_id: clientId,
-        project_id: projectId || null,
-        file_name: fileName.trim(),
-        storage_path: filePath.trim() || `documents/${Date.now()}_${fileName.trim()}`,
-        mime_type: "application/pdf",
-        file_size: 1024 * 128,
-        is_sensitive: isSensitive,
-        uploaded_by: profile.id,
-        version: 1,
-        created_at: new Date().toISOString(),
-        uploader: profile,
-      };
-      onUploaded(mockDoc);
-      setFileName("");
-      setFilePath("");
-      setIsSensitive(false);
-      onClose();
-    };
-
-    if (!isValidUuid(clientId) || (projectId && !isValidUuid(projectId))) {
-      saveLocally();
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const { data, error } = await supabase
@@ -139,18 +154,10 @@ export function DocumentUploadModal({
       onUploaded(data as Document);
       setFileName("");
       setFilePath("");
+      setUploadedBytes(null);
       setIsSensitive(false);
       onClose();
     } catch (err: any) {
-      if (
-        err.message?.toLowerCase().includes("row-level security") ||
-        err.code === "42501" ||
-        err.code === "22P02" ||
-        err.status === 403
-      ) {
-        saveLocally();
-        return;
-      }
       setErrorMsg(err.message || "Failed to register document.");
     } finally {
       setIsLoading(false);
@@ -166,7 +173,7 @@ export function DocumentUploadModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Upload / Register Document"
-      description="Store contract files, SOWs, architecture briefs, or client credentials."
+      description="Store contract files, SOWs, architecture briefs, or client deliverables via Cloudinary."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {errorMsg && (
@@ -174,6 +181,69 @@ export function DocumentUploadModal({
             {errorMsg}
           </div>
         )}
+
+        {/* Cloudinary File Dropzone */}
+        <div>
+          <label className="block text-xs font-medium text-foreground mb-1.5">
+            Document File (Upload to Cloudinary)
+          </label>
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={handleFileSelected}
+            className="hidden"
+          />
+
+          {!filePath && !isUploadingFile ? (
+            <div
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className="border-2 border-dashed border-border hover:border-accent/60 bg-surface hover:bg-surface-elevated/60 transition-colors rounded-lg p-6 text-center cursor-pointer group"
+            >
+              <UploadCloud className="w-8 h-8 text-muted group-hover:text-accent mx-auto mb-2 transition-colors" />
+              <p className="text-xs font-medium text-foreground">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-[11px] text-muted mt-1">
+                PDF, DOCX, XLSX, Images, ZIP up to 25MB (Securely hosted on Cloudinary CDN)
+              </p>
+            </div>
+          ) : isUploadingFile ? (
+            <div className="border border-border bg-surface rounded-lg p-6 text-center flex flex-col items-center justify-center">
+              <Loader2 className="w-7 h-7 text-accent animate-spin mb-2" />
+              <p className="text-xs font-medium text-foreground">
+                Uploading to Cloudinary...
+              </p>
+              <p className="text-[11px] text-muted mt-0.5">Please wait a moment</p>
+            </div>
+          ) : (
+            <div className="border border-emerald-500/30 bg-emerald-500/5 rounded-lg p-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">
+                    {fileName || "Uploaded File"}
+                  </p>
+                  <p className="text-[11px] text-muted truncate">
+                    Cloudinary CDN • {uploadedBytes ? `${(uploadedBytes / 1024).toFixed(1)} KB` : "Stored"}
+                  </p>
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleClearUploadedFile}
+                className="text-muted hover:text-danger h-7 w-7 p-0 shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          )}
+        </div>
 
         <div>
           <label className="block text-xs font-medium text-foreground mb-1.5">
@@ -217,7 +287,7 @@ export function DocumentUploadModal({
 
         <div>
           <label className="block text-xs font-medium text-foreground mb-1.5">
-            Document Title / File Name *
+            Document Title / Display Name *
           </label>
           <Input
             required
@@ -229,10 +299,10 @@ export function DocumentUploadModal({
 
         <div>
           <label className="block text-xs font-medium text-foreground mb-1.5">
-            Cloud Storage Path or File URL
+            Cloudinary / File Storage URL
           </label>
           <Input
-            placeholder="https://drive.google.com/... or supabase/bucket/path"
+            placeholder="https://res.cloudinary.com/..."
             value={filePath}
             onChange={(e) => setFilePath(e.target.value)}
           />
@@ -254,7 +324,7 @@ export function DocumentUploadModal({
               Mark as Sensitive / Confidential
             </label>
             <p className="text-[11px] text-muted mt-0.5">
-              Sensitive documents (such as master contracts and credentials) are restricted to Administrators and Account Managers.
+              Sensitive documents are restricted to Administrators and Account Managers.
             </p>
           </div>
         </div>
@@ -263,7 +333,7 @@ export function DocumentUploadModal({
           <Button type="button" variant="secondary" size="sm" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary" size="sm" isLoading={isLoading}>
+          <Button type="submit" variant="primary" size="sm" isLoading={isLoading || isUploadingFile}>
             Register Document
           </Button>
         </div>

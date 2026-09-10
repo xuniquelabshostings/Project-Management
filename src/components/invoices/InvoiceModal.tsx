@@ -7,14 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Invoice, InvoiceLineItem, InvoiceStatus, Client, Project, Milestone } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import {
-  isValidUuid,
-  getLocalClients,
-  getLocalProjects,
-  saveLocalInvoice,
-  generateUUID,
-  getNextInvoiceNumber,
-} from "@/lib/mock-data";
+import { isValidUuid, generateUUID, getNextInvoiceNumber } from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 import { useAuth } from "@/providers/AuthProvider";
 
@@ -55,9 +48,7 @@ export function InvoiceModal({
     { description: "Sprint Milestone Delivery", quantity: 1, unit_price: 5000 },
   ]);
 
-  const [clients, setClients] = useState<Client[]>(() =>
-    typeof window !== "undefined" ? getLocalClients() : []
-  );
+  const [clients, setClients] = useState<Client[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,23 +56,14 @@ export function InvoiceModal({
 
   useEffect(() => {
     async function loadClients() {
-      const localList = getLocalClients();
-      if (clients.length === 0 && localList.length > 0) {
-        setClients(localList);
-      }
       try {
         const { data } = await supabase
           .from("clients")
-          .select("id, company_name")
+          .select("id, company_name, client_name")
           .order("company_name", { ascending: true });
-        if (data && data.length > 0) {
-          const custom = localList.filter((c) => !data.some((d) => d.id === c.id));
-          setClients([...custom, ...(data as Client[])]);
-        } else {
-          setClients(localList);
-        }
-      } catch {
-        setClients(localList);
+        setClients((data as Client[]) || []);
+      } catch (err) {
+        console.error("Failed to load clients:", err);
       }
     }
     if (isOpen) loadClients();
@@ -94,24 +76,15 @@ export function InvoiceModal({
         setMilestones([]);
         return;
       }
-      const localProjs = getLocalProjects().filter((p) => p.client_id === clientId);
-      if (!isValidUuid(clientId)) {
-        setProjects(localProjs);
-        return;
-      }
       try {
         const { data } = await supabase
           .from("projects")
           .select("id, name")
-          .eq("client_id", clientId);
-        if (data && data.length > 0) {
-          const custom = localProjs.filter((lp) => !data.some((d) => d.id === lp.id));
-          setProjects([...custom, ...(data as Project[])]);
-        } else {
-          setProjects(localProjs);
-        }
-      } catch {
-        setProjects(localProjs);
+          .eq("client_id", clientId)
+          .order("name", { ascending: true });
+        setProjects((data as Project[]) || []);
+      } catch (err) {
+        console.error("Failed to load projects:", err);
       }
     }
     loadProjects();
@@ -150,25 +123,32 @@ export function InvoiceModal({
             id: li.id,
             description: li.description,
             quantity: li.quantity,
-            unit_price: Number(li.unit_price),
+            unit_price: li.unit_price,
           }))
         );
+      } else {
+        setLineItems([
+          { description: "Sprint Milestone Delivery", quantity: 1, unit_price: Number(invoiceToEdit.total_amount) || 0 },
+        ]);
       }
     } else {
-      setClientId("");
+      setClientId(clients[0]?.id || "");
       setProjectId("");
       setMilestoneId("");
       setInvoiceNumber(getNextInvoiceNumber(existingInvoices));
       setStatus("draft");
-      const in30Days = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
-      setDueDate(in30Days);
+      const defaultDue = new Date();
+      defaultDue.setDate(defaultDue.getDate() + 14);
+      setDueDate(defaultDue.toISOString().split("T")[0]);
       setIsRecurring(false);
       setRecurrenceInterval("monthly");
       setNotes("");
-      setLineItems([{ description: "Sprint Deliverables", quantity: 1, unit_price: 3500 }]);
+      setLineItems([
+        { description: "Sprint Milestone Delivery", quantity: 1, unit_price: 5000 },
+      ]);
     }
     setErrorMsg(null);
-  }, [invoiceToEdit, isOpen, existingInvoices]);
+  }, [invoiceToEdit, isOpen, clients, existingInvoices]);
 
   const handleAddLineItem = () => {
     setLineItems((prev) => [
@@ -179,67 +159,26 @@ export function InvoiceModal({
 
   const handleRemoveLineItem = (index: number) => {
     if (lineItems.length === 1) return;
-    setLineItems((prev) => prev.filter((_, idx) => idx !== index));
+    setLineItems((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleLineItemChange = (
     index: number,
     field: keyof LineItemDraft,
-    val: any
+    value: string | number
   ) => {
-    setLineItems((prev) =>
-      prev.map((item, idx) => (idx === index ? { ...item, [field]: val } : item))
-    );
+    setLineItems((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], [field]: value };
+      return next;
+    });
   };
 
-  const grandTotal = lineItems.reduce(
-    (acc, li) => acc + (Number(li.quantity) || 0) * (Number(li.unit_price) || 0),
-    0
-  );
-
-  const saveLocally = () => {
-    const selectedClient =
-      clients.find((c) => c.id === clientId) ||
-      getLocalClients().find((c) => c.id === clientId) ||
-      undefined;
-    const selectedProject =
-      projects.find((p) => p.id === projectId) ||
-      getLocalProjects().find((p) => p.id === projectId) ||
-      undefined;
-
-    const invoiceId = invoiceToEdit?.id || generateUUID();
-    const localItems: InvoiceLineItem[] = lineItems.map((li, idx) => ({
-      id: li.id || `li-${Date.now()}-${idx}`,
-      invoice_id: invoiceId,
-      description: li.description.trim() || "Service Deliverable",
-      quantity: Number(li.quantity) || 1,
-      unit_price: Number(li.unit_price) || 0,
-      line_total: (Number(li.quantity) || 1) * (Number(li.unit_price) || 0),
-    }));
-
-    const mockInvoice: Invoice = {
-      id: invoiceId,
-      client_id: clientId,
-      project_id: projectId || null,
-      milestone_id: milestoneId || null,
-      invoice_number: invoiceNumber.trim(),
-      status,
-      total_amount: grandTotal,
-      due_date: dueDate,
-      is_recurring: isRecurring,
-      recurrence_interval: isRecurring ? recurrenceInterval : null,
-      notes: notes.trim() || null,
-      created_at: invoiceToEdit?.created_at || new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      client: selectedClient,
-      project: selectedProject,
-      line_items: localItems,
-    };
-
-    saveLocalInvoice(mockInvoice);
-    onSaved();
-    onClose();
-  };
+  const grandTotal = lineItems.reduce((sum, item) => {
+    const q = Number(item.quantity) || 0;
+    const p = Number(item.unit_price) || 0;
+    return sum + q * p;
+  }, 0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -259,24 +198,16 @@ export function InvoiceModal({
     setIsLoading(true);
     setErrorMsg(null);
 
-    const isDemo =
-      !session ||
-      (profile?.id && profile.id.startsWith("00000000")) ||
-      !isValidUuid(clientId) ||
-      (invoiceToEdit && !isValidUuid(invoiceToEdit.id)) ||
-      (projectId && !isValidUuid(projectId));
-
-    if (isDemo) {
-      saveLocally();
-      setIsLoading(false);
-      return;
-    }
+    const safeProjectId = projectId && isValidUuid(projectId) ? projectId : null;
+    const safeMilestoneId = milestoneId && isValidUuid(milestoneId) ? milestoneId : null;
+    const targetInvoiceId = invoiceToEdit?.id && isValidUuid(invoiceToEdit.id) ? invoiceToEdit.id : generateUUID();
 
     try {
       const invoicePayload = {
+        id: targetInvoiceId,
         client_id: clientId,
-        project_id: projectId || null,
-        milestone_id: milestoneId || null,
+        project_id: safeProjectId,
+        milestone_id: safeMilestoneId,
         invoice_number: invoiceNumber.trim(),
         status,
         total_amount: grandTotal,
@@ -287,37 +218,31 @@ export function InvoiceModal({
         updated_at: new Date().toISOString(),
       };
 
-      let currentInvoiceId = invoiceToEdit?.id;
-
-      if (invoiceToEdit) {
+      if (invoiceToEdit && isValidUuid(invoiceToEdit.id)) {
         const { error: invErr } = await supabase
           .from("invoices")
           .update(invoicePayload)
           .eq("id", invoiceToEdit.id);
         if (invErr) throw invErr;
 
-        // Delete existing items to replace
         await supabase
           .from("invoice_line_items")
           .delete()
           .eq("invoice_id", invoiceToEdit.id);
       } else {
-        const { data: newInv, error: invErr } = await supabase
+        const { error: invErr } = await supabase
           .from("invoices")
           .insert({
             ...invoicePayload,
             created_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
+          });
 
         if (invErr) throw invErr;
-        currentInvoiceId = newInv.id;
       }
 
-      // Insert line items
       const itemsToInsert = lineItems.map((li) => ({
-        invoice_id: currentInvoiceId!,
+        id: isValidUuid(li.id) ? li.id : generateUUID(),
+        invoice_id: targetInvoiceId,
         description: li.description.trim() || "Item",
         quantity: Number(li.quantity) || 1,
         unit_price: Number(li.unit_price) || 0,
@@ -333,8 +258,8 @@ export function InvoiceModal({
       onSaved();
       onClose();
     } catch (err: any) {
-      console.warn("Supabase invoice operation blocked or failed, saving locally:", err.message);
-      saveLocally();
+      console.error("Supabase invoice operation error:", err.message);
+      setErrorMsg(err.message || "Failed to save invoice to database.");
     } finally {
       setIsLoading(false);
     }

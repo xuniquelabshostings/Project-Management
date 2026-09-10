@@ -26,6 +26,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://xuniquelabs.com"),
   title: "Xunique Labs | Internal Client Management",
   description: "Unified client, project, financial, and team management for Xunique Labs",
   icons: {

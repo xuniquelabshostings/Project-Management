@@ -22,13 +22,9 @@ import { Input } from "@/components/ui/input";
 import { TaskCard } from "@/components/tasks/TaskCard";
 import { Task, TaskPriority, Project } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import { getLocalTasks, getLocalProjects } from "@/lib/mock-data";
-
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [projects, setProjects] = useState<Project[]>(() =>
-    typeof window !== "undefined" ? getLocalProjects() : []
-  );
+  const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState<string>("all");
@@ -50,23 +46,12 @@ export default function TasksPage() {
         supabase.from("projects").select("id, name").order("name", { ascending: true }),
       ]);
 
-      if (tasksRes.data && tasksRes.data.length > 0) {
-        setTasks(tasksRes.data as Task[]);
-      } else {
-        setTasks(getLocalTasks());
-      }
-
-      const localProjects = getLocalProjects();
-      if (projectsRes.data && projectsRes.data.length > 0) {
-        const custom = localProjects.filter((p) => !projectsRes.data!.some((d) => d.id === p.id));
-        setProjects([...custom, ...(projectsRes.data as Project[])]);
-      } else {
-        setProjects(localProjects);
-      }
+      setTasks((tasksRes.data as Task[]) || []);
+      setProjects((projectsRes.data as Project[]) || []);
     } catch (err: any) {
-      console.warn("Failed to load tasks, using fallback:", err.message);
-      setTasks(getLocalTasks());
-      setProjects(getLocalProjects());
+      console.error("Failed to load tasks from Supabase:", err.message);
+      setTasks([]);
+      setProjects([]);
     } finally {
       setIsLoading(false);
     }
@@ -101,20 +86,18 @@ export default function TasksPage() {
       prev.map((t) => (t.id === taskId ? { ...t, kanban_column: targetColumn } : t))
     );
 
-    // 2. Sync to Supabase if it's a live database UUID
+    // 2. Sync to Supabase
     try {
-      if (!taskId.startsWith("a0000000")) {
-        const { error } = await supabase
-          .from("tasks")
-          .update({
-            kanban_column: targetColumn,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", taskId);
+      const { error } = await supabase
+        .from("tasks")
+        .update({
+          kanban_column: targetColumn,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", taskId);
 
-        if (error) {
-          console.warn("Could not persist task move to Supabase:", error.message);
-        }
+      if (error) {
+        console.warn("Could not persist task move to Supabase:", error.message);
       }
     } catch (err: any) {
       console.warn("Error moving task:", err.message);

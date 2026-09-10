@@ -32,13 +32,6 @@ import { ClientModal } from "@/components/clients/ClientModal";
 import { Client, ClientStatus, LeadSource } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/providers/AuthProvider";
-import {
-  getLocalClients,
-  saveLocalClient,
-  deleteLocalClient,
-  getDeletedClientIds,
-  isValidUuid,
-} from "@/lib/mock-data";
 import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
 function getClientRenewalAlert(client: Client) {
@@ -83,21 +76,11 @@ export default function ClientsPage() {
         .select("*, account_manager:profiles(*), contacts(*)")
         .order("created_at", { ascending: false });
 
-      const deleted = getDeletedClientIds();
-      if (data && data.length > 0) {
-        const nonDeletedData = (data as Client[]).filter((c) => !deleted.has(c.id));
-        const localCustom = getLocalClients().filter((c) => (c.id.includes("-local") || !isValidUuid(c.id)) && !deleted.has(c.id));
-        const combined = [
-          ...localCustom.filter((lc) => !nonDeletedData.some((d) => d.id === lc.id)),
-          ...nonDeletedData,
-        ];
-        setClients(combined);
-      } else {
-        setClients(getLocalClients());
-      }
+      if (error) throw error;
+      setClients((data as Client[]) || []);
     } catch (err: any) {
-      console.warn("Failed to fetch clients, using local store:", err.message);
-      setClients(getLocalClients());
+      console.error("Failed to fetch clients from Supabase:", err.message);
+      setClients([]);
     } finally {
       setIsLoading(false);
     }
@@ -117,15 +100,12 @@ export default function ClientsPage() {
       return;
     }
 
-    deleteLocalClient(clientId);
-    setClients((prev) => prev.filter((c) => c.id !== clientId));
-
-    if (isValidUuid(clientId)) {
-      try {
-        await supabase.from("clients").delete().eq("id", clientId);
-      } catch (err: any) {
-        console.warn("Could not delete client from Supabase:", err.message);
-      }
+    try {
+      await supabase.from("clients").delete().eq("id", clientId);
+      setClients((prev) => prev.filter((c) => c.id !== clientId));
+    } catch (err: any) {
+      console.error("Could not delete client from Supabase:", err.message);
+      alert("Failed to delete client: " + err.message);
     }
   };
 
@@ -172,26 +152,22 @@ export default function ClientsPage() {
   ];
 
   const handleStatusChange = async (clientId: string, newStatus: ClientStatus) => {
-    // 1. Optimistic update in state & localStorage
+    // 1. Optimistic update in state
     setClients((prev) =>
       prev.map((c) => {
         if (c.id === clientId) {
-          const updated = { ...c, status: newStatus, updated_at: new Date().toISOString() };
-          saveLocalClient(updated);
-          return updated;
+          return { ...c, status: newStatus, updated_at: new Date().toISOString() };
         }
         return c;
       })
     );
 
-    // 2. Sync to Supabase if valid UUID
+    // 2. Sync to Supabase
     try {
-      if (isValidUuid(clientId) && !clientId.includes("-local")) {
-        await supabase
-          .from("clients")
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
-          .eq("id", clientId);
-      }
+      await supabase
+        .from("clients")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", clientId);
     } catch (err: any) {
       console.warn("Could not sync status to Supabase:", err.message);
     }
@@ -773,7 +749,6 @@ export default function ClientsPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSaved={(savedClient) => {
-            saveLocalClient(savedClient);
             setClients((prev) => [savedClient, ...prev.filter((c) => c.id !== savedClient.id)]);
           }}
         />

@@ -31,13 +31,6 @@ import { Button } from "@/components/ui/button";
 import { RevenueChart } from "@/components/dashboard/RevenueChart";
 import { supabase } from "@/lib/supabase/client";
 import { Client, Project, Task, Invoice, ActivityLogEntry } from "@/types/database.types";
-import {
-  getLocalClients,
-  getLocalProjects,
-  getLocalTasks,
-  getLocalInvoices,
-  getLocalActivities,
-} from "@/lib/mock-data";
 import { formatINR } from "@/lib/utils";
 import { sendClientWhatsAppRenewalAlert } from "@/lib/renewal-alert";
 
@@ -130,23 +123,13 @@ export default function DashboardPage() {
       try {
         setIsLoading(true);
 
-        const localClients = getLocalClients();
-        const localProjects = getLocalProjects();
-        const localInvoices = getLocalInvoices();
-        const localTasks = getLocalTasks();
-        const localActivities = getLocalActivities();
-
         if (isAdmin || isAccountManager) {
           const { count: cCount, data: clientsData } = await supabase
             .from("clients")
             .select("*", { count: "exact" });
           
-          const clientList =
-            clientsData && clientsData.length > 0
-              ? (clientsData as Client[])
-              : localClients;
-
-          setClientsCount(cCount !== null && cCount > 0 ? cCount : clientList.length);
+          const clientList = (clientsData as Client[]) || [];
+          setClientsCount(cCount ?? clientList.length);
           setExpiringRenewals(computeExpiringRenewals(clientList));
 
           const { data: leadProjects } = await supabase
@@ -154,11 +137,7 @@ export default function DashboardPage() {
             .select("budget, status")
             .in("status", ["planning"]);
 
-          const planningProjects =
-            leadProjects && leadProjects.length > 0
-              ? (leadProjects as Array<{ budget: number | null }>)
-              : localProjects.filter((p) => p.status === "planning");
-
+          const planningProjects = (leadProjects as Array<{ budget: number | null }>) || [];
           const sum = planningProjects.reduce(
             (acc, p) => acc + (Number(p.budget) || 0),
             0
@@ -171,22 +150,13 @@ export default function DashboardPage() {
             .eq("status", "overdue")
             .limit(4);
 
-          if (overdue && overdue.length > 0) {
-            setOverdueInvoices(overdue as Invoice[]);
-          } else {
-            setOverdueInvoices(localInvoices.filter((i) => i.status === "overdue"));
-          }
+          setOverdueInvoices((overdue as Invoice[]) || []);
 
           const { data: allInvs } = await supabase
             .from("invoices")
             .select("*");
 
-          const invList =
-            allInvs && allInvs.length > 0
-              ? (allInvs as Invoice[])
-              : localInvoices;
-
-          setRevenueData(computeMonthlyRevenue(invList));
+          setRevenueData(computeMonthlyRevenue((allInvs as Invoice[]) || []));
 
           const { data: acts } = await supabase
             .from("activity_log")
@@ -194,11 +164,7 @@ export default function DashboardPage() {
             .order("occurred_at", { ascending: false })
             .limit(5);
 
-          if (acts && acts.length > 0) {
-            setRecentActivities(acts as ActivityLogEntry[]);
-          } else {
-            setRecentActivities(localActivities);
-          }
+          setRecentActivities((acts as ActivityLogEntry[]) || []);
         }
 
         const { count: pCount } = await supabase
@@ -206,11 +172,7 @@ export default function DashboardPage() {
           .select("*", { count: "exact", head: true })
           .eq("status", "active");
 
-        if (pCount !== null && pCount > 0) {
-          setProjectsCount(pCount);
-        } else {
-          setProjectsCount(localProjects.filter((p) => p.status === "active").length);
-        }
+        setProjectsCount(pCount ?? 0);
 
         const { data: tasks, count: tCount } = await supabase
           .from("tasks")
@@ -218,32 +180,10 @@ export default function DashboardPage() {
           .order("due_date", { ascending: true })
           .limit(5);
 
-        if (tCount !== null && tCount > 0) {
-          setTasksCount(tCount);
-          setUpcomingTasks(tasks as Task[]);
-        } else {
-          setTasksCount(localTasks.length);
-          setUpcomingTasks(localTasks.slice(0, 5));
-        }
+        setTasksCount(tCount ?? 0);
+        setUpcomingTasks((tasks as Task[]) || []);
       } catch (err) {
-        console.warn("Notice loading dashboard data, using actual local store:", err);
-        const lClients = getLocalClients();
-        const lProjects = getLocalProjects();
-        const lTasks = getLocalTasks();
-        const lInvoices = getLocalInvoices();
-        setClientsCount(lClients.length);
-        setProjectsCount(lProjects.filter((p) => p.status === "active").length);
-        setTasksCount(lTasks.length);
-        setPipelineValue(
-          lProjects
-            .filter((p) => p.status === "planning")
-            .reduce((acc, p) => acc + (Number(p.budget) || 0), 0)
-        );
-        setOverdueInvoices(lInvoices.filter((i) => i.status === "overdue"));
-        setRevenueData(computeMonthlyRevenue(lInvoices));
-        setExpiringRenewals(computeExpiringRenewals(lClients));
-        setUpcomingTasks(lTasks.slice(0, 5));
-        setRecentActivities(getLocalActivities());
+        console.warn("Notice loading dashboard data:", err);
       } finally {
         setIsLoading(false);
       }

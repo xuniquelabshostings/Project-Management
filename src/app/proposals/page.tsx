@@ -24,23 +24,16 @@ import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { Proposal, ProposalStatus, Client } from "@/types/database.types";
 import { supabase } from "@/lib/supabase/client";
-import {
-  getLocalClients,
-  getLocalProposals,
-  saveLocalProposal,
-  isValidUuid,
-  generateUUID,
-} from "@/lib/mock-data";
 
 export default function ProposalsPage() {
   const [proposals, setProposals] = useState<Proposal[]>([]);
-  const [clients, setClients] = useState<Client[]>(() =>
-    typeof window !== "undefined" ? getLocalClients() : []
-  );
+  const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Form states
   const [clientId, setClientId] = useState("");
@@ -48,64 +41,30 @@ export default function ProposalsPage() {
   const [content, setContent] = useState("");
   const [fileUrl, setFileUrl] = useState("");
   const [status, setStatus] = useState<ProposalStatus>("draft");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const fetchProposalsAndClients = async () => {
     try {
       setIsLoading(true);
-      const [pRes, cRes] = await Promise.allSettled([
+      const [pRes, cRes] = await Promise.all([
         supabase
           .from("proposals")
           .select("*, client:clients(*)")
           .order("created_at", { ascending: false }),
         supabase
           .from("clients")
-          .select("id, client_name, company_name")
+          .select("*")
           .order("company_name", { ascending: true }),
       ]);
 
-      const localClients = getLocalClients();
-      let mergedClients: Client[] = [...localClients];
-      if (cRes.status === "fulfilled" && cRes.value.data && cRes.value.data.length > 0) {
-        const remoteClients = cRes.value.data as Client[];
-        const customOnly = localClients.filter(
-          (c) => !remoteClients.some((d) => d.id === c.id)
-        );
-        mergedClients = [...customOnly, ...remoteClients];
-      }
-      setClients(mergedClients);
-
-      const localProposals = getLocalProposals();
-      let mergedProposals: Proposal[] = [];
-      if (pRes.status === "fulfilled" && pRes.value.data) {
-        const remoteProposals = pRes.value.data as Proposal[];
-        const remoteIds = new Set(remoteProposals.map((p) => p.id));
-        const localOnly = localProposals.filter((p) => !remoteIds.has(p.id));
-        mergedProposals = [...remoteProposals, ...localOnly];
-      } else {
-        mergedProposals = [...localProposals];
+      if (cRes.data) {
+        setClients(cRes.data as Client[]);
       }
 
-      // Attach client references for any proposals lacking it
-      mergedProposals = mergedProposals.map((p) => {
-        if (!p.client) {
-          const matchedClient = mergedClients.find((c) => c.id === p.client_id);
-          if (matchedClient) return { ...p, client: matchedClient };
-        }
-        return p;
-      });
-
-      mergedProposals.sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
-      setProposals(mergedProposals);
+      if (pRes.data) {
+        setProposals(pRes.data as Proposal[]);
+      }
     } catch (err: any) {
       console.warn("Failed to load proposals:", err.message);
-      const localProposals = getLocalProposals();
-      const localClients = getLocalClients();
-      setClients(localClients);
-      setProposals(localProposals);
     } finally {
       setIsLoading(false);
     }
@@ -137,35 +96,6 @@ export default function ProposalsPage() {
     setIsSubmitting(true);
     setErrorMsg(null);
 
-    const clientObj = clients.find((c) => c.id === clientId);
-
-    // If client ID is local / non-UUID, save directly to local storage to avoid Postgres UUID syntax errors
-    if (!isValidUuid(clientId) || clientId.includes("-local")) {
-      const newProposal: Proposal = {
-        id: generateUUID(),
-        client_id: clientId,
-        title: title.trim(),
-        content: content.trim(),
-        file_url: fileUrl.trim() || null,
-        version: 1,
-        status,
-        template_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        client: clientObj,
-      };
-
-      saveLocalProposal(newProposal);
-      setProposals((prev) => [newProposal, ...prev]);
-      setIsModalOpen(false);
-      setTitle("");
-      setContent("");
-      setFileUrl("");
-      setClientId("");
-      setIsSubmitting(false);
-      return;
-    }
-
     try {
       const { data, error } = await supabase
         .from("proposals")
@@ -183,23 +113,10 @@ export default function ProposalsPage() {
         .single();
 
       if (error) {
-        console.warn("Supabase proposal insert error, falling back locally:", error.message);
-        const newProposal: Proposal = {
-          id: generateUUID(),
-          client_id: clientId,
-          title: title.trim(),
-          content: content.trim(),
-          file_url: fileUrl.trim() || null,
-          version: 1,
-          status,
-          template_id: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          client: clientObj,
-        };
-        saveLocalProposal(newProposal);
-        setProposals((prev) => [newProposal, ...prev]);
-      } else if (data) {
+        throw error;
+      }
+
+      if (data) {
         setProposals((prev) => [data as Proposal, ...prev]);
       }
 
@@ -209,34 +126,14 @@ export default function ProposalsPage() {
       setFileUrl("");
       setClientId("");
     } catch (err: any) {
-      console.warn("Supabase catch error creating proposal, saving locally:", err?.message);
-      const newProposal: Proposal = {
-        id: generateUUID(),
-        client_id: clientId,
-        title: title.trim(),
-        content: content.trim(),
-        file_url: fileUrl.trim() || null,
-        version: 1,
-        status,
-        template_id: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        client: clientObj,
-      };
-      saveLocalProposal(newProposal);
-      setProposals((prev) => [newProposal, ...prev]);
-      setIsModalOpen(false);
-      setTitle("");
-      setContent("");
-      setFileUrl("");
-      setClientId("");
+      setErrorMsg(err.message || "Failed to create proposal");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleUpdateStatus = async (proposalId: string, newStatus: ProposalStatus) => {
-    // Update local state first
+    // Update local state
     setProposals((prev) =>
       prev.map((p) =>
         p.id === proposalId
@@ -245,26 +142,13 @@ export default function ProposalsPage() {
       )
     );
 
-    // If present in local proposals, update it there too
-    const local = getLocalProposals();
-    const existingLocal = local.find((p) => p.id === proposalId);
-    if (existingLocal) {
-      saveLocalProposal({
-        ...existingLocal,
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-      });
-    }
-
-    if (isValidUuid(proposalId) && !proposalId.includes("-local")) {
-      try {
-        await supabase
-          .from("proposals")
-          .update({ status: newStatus, updated_at: new Date().toISOString() })
-          .eq("id", proposalId);
-      } catch (err: any) {
-        console.warn("Failed to update status in Supabase:", err.message);
-      }
+    try {
+      await supabase
+        .from("proposals")
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .eq("id", proposalId);
+    } catch (err: any) {
+      console.warn("Failed to update status in Supabase:", err.message);
     }
   };
 

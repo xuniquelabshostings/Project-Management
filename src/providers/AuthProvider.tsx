@@ -19,71 +19,49 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const DEMO_STORAGE_KEY = "xunique_demo_session_role";
-
-const DEMO_PROFILES: Record<UserRole, Profile> = {
-  admin: {
-    id: "00000000-0000-0000-0000-000000000001",
-    email: "admin@xuniquelabs.com",
-    full_name: "Administrator",
-    role: "admin",
-    avatar_url: null,
-    phone: "+91 (80) 4920-1100",
-    theme_preference: "system",
-    created_at: "2026-01-01T00:00:00.000Z",
-    updated_at: "2026-01-01T00:00:00.000Z",
-  },
-  account_manager: {
-    id: "00000000-0000-0000-0000-000000000002",
-    email: "support@xuniquelabs.com",
-    full_name: "Account Manager",
-    role: "account_manager",
-    avatar_url: null,
-    phone: "+91 (80) 4920-1100",
-    theme_preference: "system",
-    created_at: "2026-01-01T00:00:00.000Z",
-    updated_at: "2026-01-01T00:00:00.000Z",
-  },
-  developer: {
-    id: "00000000-0000-0000-0000-000000000003",
-    email: "dev@xuniquelabs.com",
-    full_name: "Developer",
-    role: "developer",
-    avatar_url: null,
-    phone: "+91 (80) 4920-1100",
-    theme_preference: "system",
-    created_at: "2026-01-01T00:00:00.000Z",
-    updated_at: "2026-01-01T00:00:00.000Z",
-  },
-};
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId: string) => {
+  const fetchProfile = useCallback(async (userId?: string, userEmail?: string): Promise<Profile | null> => {
     try {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .single();
+      if (userId) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .maybeSingle();
 
-      if (error) {
-        return null;
+        if (!error && data) {
+          return data as Profile;
+        }
       }
-      return { ...(data as Profile), role: "admin" as UserRole };
-    } catch (err) {
+
+      if (userEmail) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("email", userEmail)
+          .maybeSingle();
+
+        if (!error && data) {
+          return data as Profile;
+        }
+      }
+
+      return null;
+    } catch {
       return null;
     }
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (user?.id) {
-      const p = await fetchProfile(user.id);
-      if (p) setProfile(p);
+    if (!user) return;
+    const prof = await fetchProfile(user.id, user.email);
+    if (prof) {
+      setProfile(prof);
     }
   }, [user, fetchProfile]);
 
@@ -92,41 +70,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     async function initAuth() {
       try {
-        // Check for local demo session first
-        const demoRole = localStorage.getItem(DEMO_STORAGE_KEY) as UserRole | null;
-        if (demoRole && DEMO_PROFILES[demoRole]) {
-          const demoProf = DEMO_PROFILES[demoRole];
-          const mockUser = {
-            id: demoProf.id,
-            email: demoProf.email,
-            aud: "authenticated",
-            role: "authenticated",
-            app_metadata: {},
-            user_metadata: { full_name: demoProf.full_name },
-            created_at: demoProf.created_at,
-          } as unknown as User;
-
-          if (mounted) {
-            setUser(mockUser);
-            setProfile(demoProf);
-            setLoading(false);
-          }
-          return;
-        }
-
-        // Otherwise check live Supabase session
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
-
         if (session?.user) {
-          const prof = await fetchProfile(session.user.id);
-          if (mounted) setProfile(prof);
+          setSession(session);
+          setUser(session.user);
+          const prof = await fetchProfile(session.user.id, session.user.email);
+          if (mounted && prof) {
+            setProfile(prof);
+          } else if (mounted) {
+            // Construct a basic profile from session metadata
+            setProfile({
+              id: session.user.id,
+              email: session.user.email || "",
+              full_name: (session.user.user_metadata?.full_name as string) || (session.user.email ? session.user.email.split("@")[0] : "Admin"),
+              role: (session.user.user_metadata?.role as UserRole) || "admin",
+              avatar_url: null,
+              phone: null,
+              theme_preference: "system",
+              created_at: session.user.created_at || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
+        } else {
+          setSession(null);
+          setUser(null);
+          setProfile(null);
         }
-      } catch (e) {
-        // network or initialization fallback
+      } catch (err) {
+        console.warn("Auth initialization error:", err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -138,17 +111,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       async (event, newSession) => {
         if (!mounted) return;
 
-        const demoRole = localStorage.getItem(DEMO_STORAGE_KEY);
-        if (demoRole) return; // ignore if running in demo mode
-
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-
         if (newSession?.user) {
-          const prof = await fetchProfile(newSession.user.id);
-          if (mounted) setProfile(prof);
+          setSession(newSession);
+          setUser(newSession.user);
+          const prof = await fetchProfile(newSession.user.id, newSession.user.email);
+          if (mounted && prof) {
+            setProfile(prof);
+          } else if (mounted) {
+            setProfile({
+              id: newSession.user.id,
+              email: newSession.user.email || "",
+              full_name: (newSession.user.user_metadata?.full_name as string) || (newSession.user.email ? newSession.user.email.split("@")[0] : "Admin"),
+              role: (newSession.user.user_metadata?.role as UserRole) || "admin",
+              avatar_url: null,
+              phone: null,
+              theme_preference: "system",
+              created_at: newSession.user.created_at || new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
+          }
         } else {
-          if (mounted) setProfile(null);
+          setSession(null);
+          setUser(null);
+          setProfile(null);
         }
         setLoading(false);
       }
@@ -162,7 +147,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      localStorage.removeItem(DEMO_STORAGE_KEY);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -172,8 +156,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       setSession(data.session);
       if (data.user) {
-        const prof = await fetchProfile(data.user.id);
-        setProfile(prof);
+        const prof = await fetchProfile(data.user.id, data.user.email);
+        if (prof) {
+          setProfile(prof);
+        } else {
+          setProfile({
+            id: data.user.id,
+            email: data.user.email || "",
+            full_name: (data.user.user_metadata?.full_name as string) || (data.user.email ? data.user.email.split("@")[0] : "Admin"),
+            role: (data.user.user_metadata?.role as UserRole) || "admin",
+            avatar_url: null,
+            phone: null,
+            theme_preference: "system",
+            created_at: data.user.created_at || new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          });
+        }
       }
       return { error: null };
     } catch (err) {
@@ -181,27 +179,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const signInAsDemo = (demoRole: UserRole) => {
-    const demoProf = DEMO_PROFILES[demoRole];
-    const mockUser = {
-      id: demoProf.id,
-      email: demoProf.email,
+  const signInAsDemo = async (role: UserRole = "admin") => {
+    // Demonstration / Local preview mode helper with clearly isolated mock state
+    const demoId = "demo-admin-user";
+    const demoUser = {
+      id: demoId,
+      email: "admin@xuniquelabs.com",
       aud: "authenticated",
       role: "authenticated",
       app_metadata: {},
-      user_metadata: { full_name: demoProf.full_name },
-      created_at: demoProf.created_at,
+      user_metadata: { full_name: "Demo Administrator", role },
+      created_at: new Date().toISOString(),
     } as unknown as User;
 
-    localStorage.setItem(DEMO_STORAGE_KEY, demoRole);
-    setUser(mockUser);
-    setProfile(demoProf);
+    setUser(demoUser);
+    setProfile({
+      id: demoId,
+      email: "admin@xuniquelabs.com",
+      full_name: "Demo Administrator",
+      role,
+      avatar_url: null,
+      phone: null,
+      theme_preference: "system",
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
     setSession(null);
   };
 
   const signOut = async () => {
     try {
-      localStorage.removeItem(DEMO_STORAGE_KEY);
       await supabase.auth.signOut();
     } finally {
       setUser(null);
@@ -210,13 +217,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const currentRole: UserRole | null = profile?.role || (user ? "admin" : null);
+
   return (
     <AuthContext.Provider
       value={{
         user,
         session,
         profile,
-        role: "admin",
+        role: currentRole,
         loading,
         signIn,
         signInAsDemo,

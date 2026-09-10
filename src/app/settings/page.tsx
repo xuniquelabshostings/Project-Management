@@ -16,6 +16,11 @@ import {
   Receipt,
   FileText,
   PenTool,
+  Database,
+  Cloud,
+  Download,
+  RefreshCw,
+  Loader2,
 } from "lucide-react";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
@@ -26,6 +31,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useTheme } from "@/providers/ThemeProvider";
 import { useBranding } from "@/providers/BrandingProvider";
 import { supabase } from "@/lib/supabase/client";
+import { uploadFileToCloudinary } from "@/lib/upload";
 
 export default function SettingsPage() {
   const { profile, refreshProfile } = useAuth();
@@ -53,6 +59,8 @@ export default function SettingsPage() {
   const [brandingSaved, setBrandingSaved] = useState(false);
   const [logoFileError, setLogoFileError] = useState<string | null>(null);
   const [signatureFileError, setSignatureFileError] = useState<string | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingSignature, setIsUploadingSignature] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
 
@@ -79,14 +87,14 @@ export default function SettingsPage() {
     });
   }, [branding]);
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setLogoFileError(null);
 
-    if (file.size > 2 * 1024 * 1024) {
-      setLogoFileError("Logo image file size must be under 2MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setLogoFileError("Logo image file size must be under 10MB.");
       return;
     }
 
@@ -95,15 +103,15 @@ export default function SettingsPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setBrandingForm((prev) => ({ ...prev, logoUrl: result }));
-    };
-    reader.onerror = () => {
-      setLogoFileError("Failed to read image file.");
-    };
-    reader.readAsDataURL(file);
+    setIsUploadingLogo(true);
+    try {
+      const res = await uploadFileToCloudinary(file, "xunique-management/branding");
+      setBrandingForm((prev) => ({ ...prev, logoUrl: res.secure_url }));
+    } catch (err: any) {
+      setLogoFileError(err.message || "Failed to upload logo to Cloudinary.");
+    } finally {
+      setIsUploadingLogo(false);
+    }
   };
 
   const handleRemoveLogo = () => {
@@ -113,14 +121,14 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSignatureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSignatureUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setSignatureFileError(null);
 
-    if (file.size > 2 * 1024 * 1024) {
-      setSignatureFileError("Signature image file size must be under 2MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      setSignatureFileError("Signature image file size must be under 10MB.");
       return;
     }
 
@@ -129,15 +137,15 @@ export default function SettingsPage() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      setBrandingForm((prev) => ({ ...prev, signatureUrl: result }));
-    };
-    reader.onerror = () => {
-      setSignatureFileError("Failed to read signature image file.");
-    };
-    reader.readAsDataURL(file);
+    setIsUploadingSignature(true);
+    try {
+      const res = await uploadFileToCloudinary(file, "xunique-management/branding");
+      setBrandingForm((prev) => ({ ...prev, signatureUrl: res.secure_url }));
+    } catch (err: any) {
+      setSignatureFileError(err.message || "Failed to upload signature to Cloudinary.");
+    } finally {
+      setIsUploadingSignature(false);
+    }
   };
 
   const handleRemoveSignature = () => {
@@ -206,6 +214,70 @@ export default function SettingsPage() {
       setStatusMessage({ text: err.message || "Failed to update profile.", isError: true });
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const [syncCounts, setSyncCounts] = useState({
+    clients: 0,
+    projects: 0,
+    tasks: 0,
+    invoices: 0,
+    proposals: 0,
+  });
+
+  const refreshSyncCounts = async () => {
+    try {
+      const [cRes, pRes, tRes, iRes, propRes] = await Promise.all([
+        supabase.from("clients").select("*", { count: "exact", head: true }),
+        supabase.from("projects").select("*", { count: "exact", head: true }),
+        supabase.from("tasks").select("*", { count: "exact", head: true }),
+        supabase.from("invoices").select("*", { count: "exact", head: true }),
+        supabase.from("proposals").select("*", { count: "exact", head: true }),
+      ]);
+
+      setSyncCounts({
+        clients: cRes.count || 0,
+        projects: pRes.count || 0,
+        tasks: tRes.count || 0,
+        invoices: iRes.count || 0,
+        proposals: propRes.count || 0,
+      });
+    } catch (err) {
+      console.warn("Could not load table counts from Supabase:", err);
+    }
+  };
+
+  useEffect(() => {
+    refreshSyncCounts();
+  }, []);
+
+  const handleExportBackup = async () => {
+    try {
+      const [cRes, pRes, tRes, iRes, propRes] = await Promise.all([
+        supabase.from("clients").select("*"),
+        supabase.from("projects").select("*"),
+        supabase.from("tasks").select("*"),
+        supabase.from("invoices").select("*"),
+        supabase.from("proposals").select("*"),
+      ]);
+
+      const data = {
+        clients: cRes.data || [],
+        projects: pRes.data || [],
+        tasks: tRes.data || [],
+        invoices: iRes.data || [],
+        proposals: propRes.data || [],
+        exportedAt: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `xunique-database-backup-${new Date().toISOString().split("T")[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert(`Export failed: ${err.message}`);
     }
   };
 
@@ -396,14 +468,24 @@ export default function SettingsPage() {
                         type="button"
                         variant="outline"
                         size="sm"
+                        disabled={isUploadingLogo}
                         onClick={() => fileInputRef.current?.click()}
                         className="text-xs"
                       >
-                        <Upload className="w-3.5 h-3.5 mr-1.5" />
-                        Upload Logo Image
+                        {isUploadingLogo ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            Uploading to Cloudinary...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5 mr-1.5" />
+                            Upload Logo Image
+                          </>
+                        )}
                       </Button>
 
-                      {brandingForm.logoUrl && (
+                      {brandingForm.logoUrl && !isUploadingLogo && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -418,7 +500,7 @@ export default function SettingsPage() {
                     </div>
 
                     <p className="text-[11px] text-muted">
-                      Recommended: Square or horizontal PNG, SVG, or JPG under 2MB. Logo appears in the sidebar and top of invoice bills.
+                      Recommended: Square or horizontal PNG, SVG, or JPG under 10MB. Automatically hosted on Cloudinary CDN.
                     </p>
 
                     {logoFileError && (
@@ -438,16 +520,16 @@ export default function SettingsPage() {
                   <div className="relative">
                     <Input
                       type="url"
-                      placeholder="https://example.com/logo.png"
+                      placeholder="https://res.cloudinary.com/..."
                       value={brandingForm.logoUrl.startsWith("data:") ? "" : brandingForm.logoUrl}
                       onChange={(e) => setBrandingForm((prev) => ({ ...prev, logoUrl: e.target.value }))}
                       className="pl-8 text-xs font-mono"
                     />
                     <ImageIcon className="w-3.5 h-3.5 text-muted absolute left-2.5 top-2.5 pointer-events-none" />
                   </div>
-                  {brandingForm.logoUrl.startsWith("data:") && (
-                    <span className="inline-block mt-1 text-[10px] text-accent font-medium">
-                      ✓ Custom image uploaded from local storage (Base64)
+                  {brandingForm.logoUrl.startsWith("https://res.cloudinary.com") && (
+                    <span className="inline-block mt-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                      ✓ Hosted on Cloudinary Global CDN
                     </span>
                   )}
                 </div>
@@ -497,14 +579,24 @@ export default function SettingsPage() {
                         type="button"
                         variant="outline"
                         size="sm"
+                        disabled={isUploadingSignature}
                         onClick={() => signatureInputRef.current?.click()}
                         className="text-xs"
                       >
-                        <Upload className="w-3.5 h-3.5 mr-1.5" />
-                        Upload Signature Image
+                        {isUploadingSignature ? (
+                          <>
+                            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+                            Uploading to Cloudinary...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-3.5 h-3.5 mr-1.5" />
+                            Upload Signature Image
+                          </>
+                        )}
                       </Button>
 
-                      {brandingForm.signatureUrl && (
+                      {brandingForm.signatureUrl && !isUploadingSignature && (
                         <Button
                           type="button"
                           variant="ghost"
@@ -519,7 +611,7 @@ export default function SettingsPage() {
                     </div>
 
                     <p className="text-[11px] text-muted">
-                      Recommended: Transparent PNG, SVG, or JPG under 2MB. Placed right above the Authorized Signatory line on all invoice bills.
+                      Recommended: Transparent PNG, SVG, or JPG under 10MB. Automatically hosted on Cloudinary CDN.
                     </p>
 
                     {signatureFileError && (
@@ -672,17 +764,11 @@ export default function SettingsPage() {
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    {brandingForm.logoUrl ? (
-                      <img
-                        src={brandingForm.logoUrl}
-                        alt="Preview"
-                        className="w-10 h-10 rounded-md object-contain border border-slate-200 bg-white p-1 shrink-0"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-md bg-slate-900 text-white flex items-center justify-center font-bold text-base font-serif shrink-0">
-                        {brandingForm.companyName.charAt(0) || "X"}
-                      </div>
-                    )}
+                    <img
+                      src={brandingForm.logoUrl || "/assets/logo-mark-nobg.png"}
+                      alt="Preview"
+                      className="w-10 h-10 rounded-md object-contain border border-slate-200 bg-white p-1 shrink-0"
+                    />
                     <div>
                       <h4 className="font-serif font-bold text-base text-slate-900 leading-tight">
                         {brandingForm.companyName || "Your Company Name"}
@@ -731,6 +817,59 @@ export default function SettingsPage() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        {/* Database Status & JSON Cloud Backup */}
+        <Card className="border border-border">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="w-4 h-4 text-accent" />
+                  Live PostgreSQL Database &amp; Data Backup
+                </CardTitle>
+                <CardDescription>
+                  Live statistics from your connected Supabase PostgreSQL database and one-click JSON backup export.
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="font-mono text-[10px] text-success border-success/30 bg-success-bg/20">
+                ● Live Connected
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3 rounded-lg border border-border bg-surface-elevated text-center">
+                <span className="text-xl font-bold font-mono text-foreground">{syncCounts.clients}</span>
+                <p className="text-[10px] text-muted uppercase font-mono mt-0.5">Clients</p>
+              </div>
+              <div className="p-3 rounded-lg border border-border bg-surface-elevated text-center">
+                <span className="text-xl font-bold font-mono text-foreground">{syncCounts.projects}</span>
+                <p className="text-[10px] text-muted uppercase font-mono mt-0.5">Projects</p>
+              </div>
+              <div className="p-3 rounded-lg border border-border bg-surface-elevated text-center">
+                <span className="text-xl font-bold font-mono text-foreground">{syncCounts.invoices}</span>
+                <p className="text-[10px] text-muted uppercase font-mono mt-0.5">Invoices</p>
+              </div>
+              <div className="p-3 rounded-lg border border-border bg-surface-elevated text-center">
+                <span className="text-xl font-bold font-mono text-foreground">{syncCounts.proposals}</span>
+                <p className="text-[10px] text-muted uppercase font-mono mt-0.5">Proposals</p>
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleExportBackup}
+                className="flex-1 sm:flex-none"
+              >
+                <Download className="w-3.5 h-3.5 mr-1.5" />
+                Export Database JSON Backup
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
