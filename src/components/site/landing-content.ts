@@ -825,16 +825,6 @@ export const LANDING_HTML = `<header>
                 </div>
               </a>
 
-              <a href="mailto:sayyednawababdulali@gmail.com" class="channel-item">
-                <div class="channel-icon">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                </div>
-                <div class="channel-text">
-                  <span class="channel-title">Engineering Lead</span>
-                  <span class="channel-value mono">sayyednawababdulali@gmail.com</span>
-                </div>
-              </a>
-
               <a href="https://wa.me/917458845252?text=Hi%20Xunique%20Labs,%20I'm%20ready%20to%20build%20a%20project.%20Can%20we%20scope%20it%20out%20and%20discuss%20next%20steps%3F" target="_blank" rel="noopener" class="channel-item">
                 <div class="channel-icon" style="color:#25D366;">
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M17.507 14.307l-.009.075c-.244-.122-1.442-.712-1.666-.793-.223-.082-.386-.122-.549.122-.163.245-.63 1.018-.773 1.18-.143.164-.285.184-.529.062-.244-.123-1.03-.38-1.963-1.212-.726-.647-1.216-1.446-1.359-1.69-.143-.245-.015-.378.107-.5.11-.11.245-.285.367-.428.122-.143.163-.245.244-.408.082-.163.041-.306-.02-.428-.061-.123-.549-1.325-.753-1.815-.198-.478-.4-.413-.549-.42-.143-.008-.306-.01-.469-.01-.163 0-.428.061-.652.305-.224.245-.855.836-.855 2.039 0 1.203.876 2.364.998 2.528.122.163 1.723 2.631 4.173 3.69.583.251 1.038.401 1.393.514.585.186 1.118.16 1.539.097.47-.07 1.442-.59 1.645-1.161.204-.571.204-1.06.143-1.161-.061-.102-.224-.163-.469-.286zM12.02 20.082h-.008a8.04 8.04 0 01-4.103-1.127l-.294-.175-3.053.801.815-2.977-.192-.306a8.037 8.037 0 01-1.233-4.298c0-4.444 3.616-8.06 8.063-8.06 2.152 0 4.175.839 5.696 2.36 1.521 1.522 2.359 3.545 2.358 5.698 0 4.445-3.617 8.086-8.042 8.086zm6.757-14.821A9.516 9.516 0 0012.02 2.457c-5.275 0-9.568 4.292-9.57 9.57 0 1.685.44 3.33 1.277 4.781L2.25 21.75l5.068-1.329a9.55 9.55 0 004.697 1.229h.005c5.274 0 9.568-4.293 9.57-9.571 0-2.557-.996-4.96-2.813-6.818z"/></svg>
@@ -1009,7 +999,6 @@ export const LANDING_HTML = `<header>
       <ul>
         <li><a href="mailto:support@xuniquelabs.com">support@xuniquelabs.com</a></li>
         <li><a href="mailto:xuniquelabs@gmail.com">xuniquelabs@gmail.com</a></li>
-        <li><a href="mailto:sayyednawababdulali@gmail.com">sayyednawababdulali@gmail.com</a></li>
         <li><a href="https://wa.me/917458845252?text=Hi%20Xunique%20Labs,%20I%20have%20an%20inquiry%20regarding%20customer%20support%20and%20services." target="_blank" rel="noopener">WhatsApp — +91 74588 45252</a></li>
         <li><a href="https://maps.app.goo.gl/QW1TKXBxYsGVq1t28" target="_blank" rel="noopener noreferrer" style="color:var(--brass); text-decoration:underline;">📍 Google Maps — Delhi Studio ↗</a></li>
         <li><a href="https://www.instagram.com/xuniquelabs" target="_blank" rel="noopener noreferrer">Instagram — @xuniquelabs ↗</a></li>
