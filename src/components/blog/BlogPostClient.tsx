@@ -266,23 +266,6 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
           </p>
         )}
 
-        {/* Author Strip */}
-        <div className="py-4 px-5 rounded-lg border border-border bg-surface flex items-center justify-between gap-4 mb-10">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-accent/10 border border-accent/20 flex items-center justify-center text-accent text-sm font-bold">
-              SA
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-foreground font-sans">
-                {post.author_name}
-              </div>
-              <div className="text-[11px] text-muted font-mono">
-                Founder & Lead Software Engineer, Xunique Labs
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Cover Image */}
         {post.cover_image && (
           <div className="rounded-xl overflow-hidden border border-border mb-12 shadow-xs bg-surface-elevated">
