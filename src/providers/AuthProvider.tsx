@@ -25,32 +25,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = useCallback(async (userId?: string, userEmail?: string): Promise<Profile | null> => {
+  const fetchProfile = useCallback(async (userId?: string): Promise<Profile | null> => {
+    if (!userId) return null;
     try {
-      if (userId) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId)
-          .maybeSingle();
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .maybeSingle();
 
-        if (!error && data) {
-          return data as Profile;
-        }
+      if (!error && data) {
+        return data as Profile;
       }
-
-      if (userEmail) {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("email", userEmail)
-          .maybeSingle();
-
-        if (!error && data) {
-          return data as Profile;
-        }
-      }
-
       return null;
     } catch {
       return null;
@@ -58,12 +44,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const refreshProfile = useCallback(async () => {
-    if (!user) return;
-    const prof = await fetchProfile(user.id, user.email);
+    if (!user?.id) return;
+    const prof = await fetchProfile(user.id);
     if (prof) {
       setProfile(prof);
     }
-  }, [user, fetchProfile]);
+  }, [user?.id, fetchProfile]);
 
   useEffect(() => {
     let mounted = true;
@@ -76,7 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session?.user) {
           setSession(session);
           setUser(session.user);
-          const prof = await fetchProfile(session.user.id, session.user.email);
+          const prof = await fetchProfile(session.user.id);
           if (mounted && prof) {
             setProfile(prof);
           } else if (mounted) {
@@ -114,7 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (newSession?.user) {
           setSession(newSession);
           setUser(newSession.user);
-          const prof = await fetchProfile(newSession.user.id, newSession.user.email);
+          const prof = await fetchProfile(newSession.user.id);
           if (mounted && prof) {
             setProfile(prof);
           } else if (mounted) {
@@ -156,7 +142,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data.user);
       setSession(data.session);
       if (data.user) {
-        const prof = await fetchProfile(data.user.id, data.user.email);
+        const prof = await fetchProfile(data.user.id);
         if (prof) {
           setProfile(prof);
         } else {

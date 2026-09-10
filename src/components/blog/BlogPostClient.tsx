@@ -32,61 +32,109 @@ interface BlogPostClientProps {
 
 export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
   const [post, setPost] = useState<BlogPost | null>(initialPost);
+  const [isLoading, setIsLoading] = useState(!initialPost);
   const [copied, setCopied] = useState(false);
   const [relatedPosts, setRelatedPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadPost() {
-      // 1. If not found in initialPost, check localStorage & Supabase
-      let currentPost = initialPost;
-      if (!currentPost) {
-        currentPost = getLocalBlogPostBySlug(slug) || null;
+      const cleanSlug = decodeURIComponent(slug || "")
+        .trim()
+        .replace(/^\/+|\/+$/g, "")
+        .replace(/^blog\//, "");
+
+      if (!cleanSlug) {
+        if (isMounted) setIsLoading(false);
+        return;
       }
 
+      // 1. If already provided via initialPost and matches, keep it
+      if (initialPost && initialPost.slug === cleanSlug) {
+        if (isMounted) {
+          setPost(initialPost);
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      // 2. Check local mock & local storage blog posts first for instant render
+      let foundPost: BlogPost | null = getLocalBlogPostBySlug(cleanSlug) || null;
+
+      // 3. Query Supabase database for the live published post
       try {
-        const { data: dbPost } = await supabase
+        const { data: dbPost, error } = await supabase
           .from("blog_posts")
           .select("*")
-          .eq("slug", slug)
-          .single();
+          .eq("slug", cleanSlug)
+          .maybeSingle();
 
-        if (dbPost) {
-          currentPost = dbPost as BlogPost;
+        if (!error && dbPost) {
+          foundPost = dbPost as BlogPost;
+        } else if (!foundPost) {
+          // Case-insensitive query fallback
+          const { data: ilikePost } = await supabase
+            .from("blog_posts")
+            .select("*")
+            .ilike("slug", cleanSlug)
+            .maybeSingle();
+
+          if (ilikePost) {
+            foundPost = ilikePost as BlogPost;
+          }
         }
-      } catch {}
+      } catch (err) {
+        console.warn("Could not query Supabase for post:", err);
+      }
 
-      if (currentPost) {
-        setPost(currentPost);
+      if (!isMounted) return;
+
+      if (foundPost) {
+        setPost(foundPost);
+        setIsLoading(false);
+
+        // Update document title and canonical meta dynamically on client
+        if (typeof document !== "undefined") {
+          document.title = `${foundPost.title} — Xunique Labs`;
+        }
 
         // Record real view (deduplicated per browser session to prevent reload spamming)
         if (typeof window !== "undefined") {
-          const sessionKey = `xunique_blog_view_${slug}`;
+          const sessionKey = `xunique_blog_view_${cleanSlug}`;
           if (!sessionStorage.getItem(sessionKey)) {
             sessionStorage.setItem(sessionKey, "1");
-            incrementLocalBlogPostViews(slug);
+            incrementLocalBlogPostViews(cleanSlug);
 
-            // Attempt to increment in Supabase if post exists in DB
-            if (currentPost.id && !currentPost.id.startsWith("blog-")) {
+            if (foundPost.id && !foundPost.id.startsWith("blog-")) {
               try {
                 supabase
                   .from("blog_posts")
-                  .update({ views_count: (currentPost.views_count || 0) + 1 })
-                  .eq("slug", slug)
+                  .update({ views_count: (foundPost.views_count || 0) + 1 })
+                  .eq("slug", cleanSlug)
                   .then(() => {});
               } catch {}
             }
           }
         }
+      } else {
+        setIsLoading(false);
       }
 
-      // 2. Load related posts
+      // 4. Load related posts
       const allPosts = getLocalBlogPosts().filter(
-        (p) => p.slug !== slug && p.status === "published"
+        (p) => p.slug !== cleanSlug && p.status === "published"
       );
-      setRelatedPosts(allPosts.slice(0, 3));
+      if (isMounted) {
+        setRelatedPosts(allPosts.slice(0, 3));
+      }
     }
 
     loadPost();
+
+    return () => {
+      isMounted = false;
+    };
   }, [slug, initialPost]);
 
   const handleCopyLink = () => {
@@ -110,6 +158,24 @@ export function BlogPostClient({ initialPost, slug }: BlogPostClientProps) {
       return "Published recently";
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col bg-background text-foreground">
+        <BlogNavbar />
+        <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-20 flex flex-col items-center justify-center text-center">
+          <div className="w-10 h-10 rounded-full border-2 border-accent border-t-transparent animate-spin mb-4" />
+          <h2 className="font-serif text-xl font-semibold text-foreground">
+            Retrieving Technical Dispatch...
+          </h2>
+          <p className="text-xs text-muted font-mono mt-1">
+            Fetching content from Xunique Labs publication database
+          </p>
+        </main>
+        <BlogFooter />
+      </div>
+    );
+  }
 
   if (!post) {
     return (

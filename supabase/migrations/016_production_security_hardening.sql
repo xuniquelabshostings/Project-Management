@@ -181,22 +181,34 @@ CREATE POLICY "Authenticated users full access to activity_log"
     WITH CHECK (true);
 
 -- ========================================================
--- 12. PROFILES (Authenticated Access Only)
+-- 12. PROFILES (Authenticated Access Only - No Recursive RLS)
 -- ========================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Public and authenticated full access to profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Admin full access to profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Authenticated users can view all profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Authenticated users can view profiles" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update their own non-role profile fields" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can update any profile" ON public.profiles;
 DROP POLICY IF EXISTS "Admins can delete profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Admins full management of profiles" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
 
+-- Authenticated users can view team profiles
 CREATE POLICY "Authenticated users can view profiles"
     ON public.profiles
     FOR SELECT
     TO authenticated
     USING (true);
+
+-- Users can insert and update their own profile without recursion
+CREATE POLICY "Users can insert own profile"
+    ON public.profiles
+    FOR INSERT
+    TO authenticated
+    WITH CHECK (auth.uid() = id);
 
 CREATE POLICY "Users can update own profile"
     ON public.profiles
@@ -204,23 +216,6 @@ CREATE POLICY "Users can update own profile"
     TO authenticated
     USING (auth.uid() = id)
     WITH CHECK (auth.uid() = id);
-
-CREATE POLICY "Admins full management of profiles"
-    ON public.profiles
-    FOR ALL
-    TO authenticated
-    USING (
-        EXISTS (
-            SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid() AND p.role = 'admin'
-        )
-    )
-    WITH CHECK (
-        EXISTS (
-            SELECT 1 FROM public.profiles p
-            WHERE p.id = auth.uid() AND p.role = 'admin'
-        )
-    );
 
 -- ========================================================
 -- 13. DOCUMENTS (Authenticated Access Only)

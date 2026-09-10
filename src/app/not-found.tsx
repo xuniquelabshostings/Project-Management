@@ -1,11 +1,42 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowLeft, Home, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { BlogPostClient } from "@/components/blog/BlogPostClient";
 
 export default function NotFound() {
+  const [detectedBlogSlug, setDetectedBlogSlug] = useState<string | null>(null);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const pathname = window.location.pathname;
+      const cleanPath = pathname.replace(/^\/+|\/+$/g, "");
+      
+      // Match pattern like /blog/my-article-slug or Project-Management/blog/my-article-slug
+      const blogMatch = cleanPath.match(/(?:^|\/)blog\/([^/?#]+)/);
+      if (blogMatch && blogMatch[1]) {
+        setDetectedBlogSlug(decodeURIComponent(blogMatch[1]));
+      }
+    }
+    setIsChecking(false);
+  }, []);
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 rounded-full border-2 border-accent border-t-transparent animate-spin" />
+      </div>
+    );
+  }
+
+  // If the user hit a custom or newly created blog post on static hosting (Cloudflare/GitHub Pages)
+  if (detectedBlogSlug) {
+    return <BlogPostClient initialPost={null} slug={detectedBlogSlug} />;
+  }
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background px-4 text-center selection:bg-accent/20">
       <div className="max-w-md w-full p-8 rounded-2xl border border-border bg-surface shadow-xs space-y-6">
