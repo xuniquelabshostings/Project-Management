@@ -71,6 +71,9 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "https://xuniquelabs.com",
   },
+  verification: {
+    google: "w-xJRQJB0rJ45SCZvCgC5r8KSQoE2A5onnFx4TeoHno",
+  },
   icons: {
     icon: "/assets/only-x.png",
     shortcut: "/assets/only-x.png",
