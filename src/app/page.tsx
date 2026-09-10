@@ -75,9 +75,9 @@ export const metadata: Metadata = {
     google: "w-xJRQJB0rJ45SCZvCgC5r8KSQoE2A5onnFx4TeoHno",
   },
   icons: {
-    icon: "/assets/only-x.png",
-    shortcut: "/assets/only-x.png",
-    apple: "/assets/only-x.png",
+    icon: "/icons/icon-192x192.png",
+    shortcut: "/icons/icon-192x192.png",
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 

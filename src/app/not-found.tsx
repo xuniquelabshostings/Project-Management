@@ -62,9 +62,9 @@ export default function NotFound() {
               <Home className="w-4 h-4 mr-1.5" /> Return Home
             </Button>
           </Link>
-          <Link href="/management" className="w-full sm:w-auto">
+          <Link href="/blog" className="w-full sm:w-auto">
             <Button variant="outline" size="sm" className="w-full">
-              <ArrowLeft className="w-4 h-4 mr-1.5" /> Operations Dashboard
+              <ArrowLeft className="w-4 h-4 mr-1.5" /> Explore Insights
             </Button>
           </Link>
         </div>

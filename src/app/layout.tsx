@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Lora, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/providers/ThemeProvider";
 import { QueryProvider } from "@/providers/QueryProvider";
 import { AuthProvider } from "@/providers/AuthProvider";
 import { BrandingProvider } from "@/providers/BrandingProvider";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 
 const lora = Lora({
   variable: "--font-lora",
@@ -25,17 +26,33 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://xuniquelabs.com"),
+  applicationName: "Xunique Labs",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Xunique Labs",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   verification: {
     google: "w-xJRQJB0rJ45SCZvCgC5r8KSQoE2A5onnFx4TeoHno",
   },
   title: "Xunique Labs | Internal Client Management",
   description: "Unified client, project, financial, and team management for Xunique Labs",
   icons: {
-    icon: "/assets/only-x.png",
-    shortcut: "/assets/only-x.png",
-    apple: "/assets/only-x.png",
+    icon: "/icons/icon-192x192.png",
+    shortcut: "/icons/icon-192x192.png",
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 
@@ -71,7 +88,10 @@ export default function RootLayout({
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>
-              <BrandingProvider>{children}</BrandingProvider>
+              <BrandingProvider>
+                <ServiceWorkerRegister />
+                {children}
+              </BrandingProvider>
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
